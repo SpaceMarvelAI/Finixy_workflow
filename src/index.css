@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* React Flow custom styles */
+.react-flow__node {
+  cursor: pointer;
+}
+
+.react-flow__edge-path {
+  /* stroke-width: 2; */
+}
+
+.react-flow__handle {
+  background: #3b82f6;
+  border: 2px solid white;
+}
+
+.react-flow__handle:hover {
+  background: #2563eb;
+}
+.cursor-black {
+  /* This creates a custom black arrow cursor with a thin white outline for visibility */
+  cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="black" stroke="white" stroke-width="1" width="14" height="14" viewBox="0 0 24 24"><path d="M7 2l12 11.2-5.8.5 3.3 7.3-2.2.9-3.2-7.4-4.4 4z"/></svg>') 0 0, auto !important;
+}
+
+/* Optional: Force it on the react flow pane specifically */
+.react-flow__pane {
+  cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="black" stroke="white" stroke-width="1" width="20" height="20" viewBox="0 0 24 24"><path d="M7 2l12 11.2-5.8.5 3.3 7.3-2.2.9-3.2-7.4-4.4 4z"/></svg>') 0 0, auto !important;
+}
+/* Hide React Flow watermark */
+.react-flow__panel.react-flow__attribution {
+  display: none !important;
+}
+
+/* Alternative - hide all attribution */
+.react-flow__attribution {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
