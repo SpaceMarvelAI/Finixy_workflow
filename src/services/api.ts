@@ -12,7 +12,8 @@ const api = axios.create({
 
 // 2. Automatically add the Token to every request
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('access_token');
+  // ✅ CHANGED: Now checking sessionStorage
+  const token = sessionStorage.getItem('access_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -24,12 +25,15 @@ export const authService = {
   login: async (email: string, password: string) => {
     const response = await api.post('/auth/login', { email, password });
     if (response.data.access_token) {
-      localStorage.setItem('access_token', response.data.access_token);
+      // ✅ CHANGED: Now saving to sessionStorage
+      sessionStorage.setItem('access_token', response.data.access_token);
     }
     return response.data;
   },
   register: (data: any) => api.post('/auth/register', data),
-  logout: () => localStorage.removeItem('access_token'),
+  
+  // ✅ CHANGED: Now removing from sessionStorage
+  logout: () => sessionStorage.removeItem('access_token'),
 };
 
 export const chatService = {
@@ -63,3 +67,26 @@ export const companyService = {
 };
 
 export default api;
+
+export const documentService = {
+  // Uploads a file (requires multipart/form-data)
+  upload: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post('/documents/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+  
+  // Fetches the list of uploaded documents
+  list: (limit: number = 100) => {
+    return api.get(`/documents?limit=${limit}`);
+  },
+
+  // Fetches the detailed parsed data for the preview table
+  getDocument: (id: string) => {
+    return api.get(`/documents/${id}`);
+  }
+};
