@@ -43,7 +43,7 @@ export const WorkflowProvider: React.FC<{ children: ReactNode }> = ({ children }
     // want to keep the current chat context, or you can opt to clear it.
   };
 
-  // ✅ NEW: Resets everything for a fresh start
+  //  Resets everything for a fresh start
   const clearWorkflow = () => {
     setConfig({
       name: 'New Workflow',
