@@ -1,3 +1,4 @@
+
 import React, { useCallback, useEffect, useRef } from 'react';
 import ReactFlow, {
   addEdge,
@@ -13,8 +14,10 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 import { CustomNode } from '@components/CustomNode';
 import { CustomEdge } from '@components/CustomEdge';
+import { CustomMiniMap } from '@components/CustomMiniMap';
 import { useWorkflow } from '@store/WorkflowContext';
 import { WorkflowNode, NodeType } from '@/types/index';
+import { Layers } from 'lucide-react';
 
 const nodeTypes: NodeTypes = {
   custom: CustomNode,
@@ -49,7 +52,7 @@ export const WorkflowCanvas: React.FC = () => {
     setSelectedNode(null);
   }, [setSelectedNode]);
 
-  // ✅ CRITICAL: Sync config to canvas - Force update when config changes
+  // Sync config to canvas - Force update when config changes
   useEffect(() => {
     const configChanged = 
       JSON.stringify(prevConfigRef.current.nodes) !== JSON.stringify(config.nodes) ||
@@ -290,7 +293,17 @@ export const WorkflowCanvas: React.FC = () => {
   );
 
   return (
-    <div className="h-full bg-black" ref={reactFlowWrapper}>
+    <div className="h-full bg-gradient-to-br from-gray-900 via-black to-gray-900 relative" ref={reactFlowWrapper}>
+      {/* Node Count Overlay - Top Right */}
+      {nodes.length > 0 && (
+        <div className="absolute top-4 right-4 z-10 bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-xl px-4 py-2 shadow-xl backdrop-blur-md flex items-center gap-2">
+          <Layers className="w-4 h-4 text-blue-400" />
+          <span className="text-sm font-medium text-gray-100">
+            {nodes.length} {nodes.length === 1 ? 'Node' : 'Nodes'}
+          </span>
+        </div>
+      )}
+
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -305,10 +318,10 @@ export const WorkflowCanvas: React.FC = () => {
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         fitView
-        className="bg-black"
+        className="bg-transparent"
         deleteKeyCode="Delete"
         defaultEdgeOptions={{
-          type: 'custom', // CRITICAL: Must match edgeTypes
+          type: 'custom',
           animated: true,
           style: { stroke: '#b1b1b7', strokeWidth: 2 }
         }}
@@ -317,9 +330,111 @@ export const WorkflowCanvas: React.FC = () => {
         elementsSelectable={true}
         selectNodesOnDrag={false}
       >
-        <Background color="#aaa" gap={16} />
-        <Controls />
+        {/* Dark Grid Background - More Visible */}
+        <Background 
+          color="#6b7280" 
+          gap={20} 
+          size={2}
+          style={{ backgroundColor: 'transparent' }}
+        />
+        
+        {/* Modern Dark Controls - Left Side */}
+        <Controls 
+          className="!bg-gradient-to-br !from-gray-800 !to-gray-900 !border !border-gray-700 !rounded-xl !shadow-xl"
+          position="top-left"
+        />
+        
+        {/* Custom Mini Map - MUST be inside ReactFlow */}
+        <CustomMiniMap />
       </ReactFlow>
+      
+      {/* Custom Styles for Dark Theme */}
+      <style>{`
+        /* React Flow Dark Theme Overrides */
+        .react-flow__node {
+          font-family: inherit;
+        }
+        
+        .react-flow__edge-path {
+          stroke-width: 2;
+        }
+        
+        .react-flow__edge.selected .react-flow__edge-path {
+          stroke: #ef4444 !important;
+          stroke-width: 4 !important;
+        }
+        
+        .react-flow__controls {
+          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+        
+        .react-flow__controls-button {
+          background: linear-gradient(to bottom right, #1f2937, #111827) !important;
+          border: none !important;
+          border-bottom: 1px solid #374151 !important;
+          color: #9ca3af !important;
+          transition: all 0.2s !important;
+          width: 32px !important;
+          height: 32px !important;
+          padding: 0 !important;
+        }
+        
+        .react-flow__controls-button:first-child {
+          border-top-left-radius: 12px !important;
+          border-top-right-radius: 12px !important;
+        }
+        
+        .react-flow__controls-button:last-child {
+          border-bottom-left-radius: 12px !important;
+          border-bottom-right-radius: 12px !important;
+          border-bottom: none !important;
+        }
+        
+        .react-flow__controls-button:hover {
+          background: linear-gradient(to bottom right, #374151, #1f2937) !important;
+          color: #e5e7eb !important;
+          transform: scale(1.05);
+        }
+        
+        .react-flow__controls-button:hover:enabled {
+          background: linear-gradient(to bottom right, #3b82f6, #2563eb) !important;
+          color: white !important;
+        }
+        
+        .react-flow__controls-button svg {
+          fill: currentColor;
+          max-width: 16px !important;
+          max-height: 16px !important;
+        }
+        
+        .react-flow__background {
+          background-color: transparent;
+        }
+        
+        /* Selection box */
+        .react-flow__selection {
+          background: rgba(59, 130, 246, 0.1);
+          border: 2px solid #3b82f6;
+        }
+        
+        /* Connection line while dragging */
+        .react-flow__connectionline {
+          stroke: #3b82f6;
+          stroke-width: 2;
+        }
+        
+        /* Handle styles */
+        .react-flow__handle {
+          width: 12px;
+          height: 12px;
+          background: #3b82f6;
+          border: 2px solid #1e3a8a;
+        }
+        
+        .react-flow__handle:hover {
+          background: #60a5fa;
+        }
+      `}</style>
     </div>
   );
 };

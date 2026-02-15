@@ -54,21 +54,21 @@ export const ConfigPanel: React.FC = () => {
   const nodeConfig = currentNode.data.config || {};
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col bg-black">
       {/* Header */}
-      <div className="p-4 border-b bg-gray-50 flex justify-between items-center">
-        <h3 className="font-semibold text-gray-800">Configure Node</h3>
+      <div className="p-4 border-b border-gray-800 bg-gradient-to-r from-gray-900 to-black flex justify-between items-center backdrop-blur-sm">
+        <h3 className="font-semibold text-gray-100 tracking-wide">⚙️ Configure Node</h3>
         <div className="flex gap-2">
           <button
             onClick={deleteNode}
-            className="text-red-500 hover:text-red-700 p-2 hover:bg-red-50 rounded transition-colors"
+            className="text-red-400 hover:text-red-300 p-2 hover:bg-red-500/10 rounded-lg transition-all border border-transparent hover:border-red-500/30"
             title="Delete node"
           >
             <Trash2 className="w-4 h-4" />
           </button>
           <button
             onClick={closePanel}
-            className="text-gray-500 hover:text-gray-700 p-2 hover:bg-gray-100 rounded transition-colors"
+            className="text-gray-400 hover:text-gray-200 p-2 hover:bg-gray-800 rounded-lg transition-all border border-transparent hover:border-gray-700"
             title="Close panel"
           >
             <X className="w-4 h-4" />
@@ -77,10 +77,11 @@ export const ConfigPanel: React.FC = () => {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-black">
         {/* Common Fields - Available for ALL nodes */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className=" text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
+            <div className="w-1 h-4 bg-blue-500 rounded-full"></div>
             Node Name
           </label>
           <input
@@ -89,7 +90,6 @@ export const ConfigPanel: React.FC = () => {
             onChange={(e) => {
               const newName = e.target.value;
               updateNodeConfig({ name: newName });
-              // Also update the label to prevent reverting
               const updatedNodes = config.nodes.map((n) =>
                 n.id === selectedNode
                   ? {
@@ -111,30 +111,31 @@ export const ConfigPanel: React.FC = () => {
                 lastModified: new Date().toISOString(),
               });
             }}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+            className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-gray-100 placeholder-gray-500 transition-all"
             placeholder="Enter node name"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className=" text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
+            <div className="w-1 h-4 bg-purple-500 rounded-full"></div>
             Description
           </label>
           <textarea
             value={nodeConfig.description || ""}
             onChange={(e) => updateNodeConfig({ description: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+            className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none text-gray-100 placeholder-gray-500 transition-all resize-none"
             rows={3}
             placeholder="Describe what this node does"
           />
         </div>
 
-        {/* Node Type Display */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className=" text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
+            <div className="w-1 h-4 bg-cyan-500 rounded-full"></div>
             Node Type
           </label>
-          <div className="px-3 py-2 bg-gray-100 rounded-md text-sm text-gray-600">
+          <div className="px-3 py-2 bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-lg text-sm text-gray-300 font-mono">
             {currentNode.data.nodeType || 'Unknown'}
           </div>
         </div>
@@ -142,19 +143,18 @@ export const ConfigPanel: React.FC = () => {
         {/* Trigger Node */}
         {currentNode.data.nodeType === "trigger" && (
           <>
-            <div className="border-t pt-4 mt-4">
-              <h4 className="font-medium text-gray-900 mb-3">Trigger Settings</h4>
+            <div className="border-t border-gray-800 pt-4 mt-4">
+              <h4 className="font-medium text-gray-100 mb-3 flex items-center gap-2">
+                <div className="w-1 h-4 bg-green-500 rounded-full"></div>
+                Trigger Settings
+              </h4>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Trigger Type
-              </label>
+              <label className="block text-sm font-medium text-gray-400 mb-2">Trigger Type</label>
               <select
                 value={nodeConfig.triggerType || "manual"}
-                onChange={(e) =>
-                  updateNodeConfig({ triggerType: e.target.value })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                onChange={(e) => updateNodeConfig({ triggerType: e.target.value })}
+                className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none text-gray-100 transition-all"
               >
                 <option value="manual">Manual</option>
                 <option value="scheduled">Scheduled</option>
@@ -167,45 +167,38 @@ export const ConfigPanel: React.FC = () => {
         {/* Email Node */}
         {currentNode.data.nodeType === "email" && (
           <>
-            <div className="border-t pt-4 mt-4">
-              <h4 className="font-medium text-gray-900 mb-3">Email Settings</h4>
+            <div className="border-t border-gray-800 pt-4 mt-4">
+              <h4 className="font-medium text-gray-100 mb-3 flex items-center gap-2">
+                <div className="w-1 h-4 bg-blue-500 rounded-full"></div>
+                Email Settings
+              </h4>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                To
-              </label>
+              <label className="block text-sm font-medium text-gray-400 mb-2">To</label>
               <input
                 type="email"
                 value={nodeConfig.emailTo || ""}
                 onChange={(e) => updateNodeConfig({ emailTo: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-gray-100 placeholder-gray-500 transition-all"
                 placeholder="recipient@example.com"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Subject
-              </label>
+              <label className="block text-sm font-medium text-gray-400 mb-2">Subject</label>
               <input
                 type="text"
                 value={nodeConfig.emailSubject || ""}
-                onChange={(e) =>
-                  updateNodeConfig({ emailSubject: e.target.value })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                onChange={(e) => updateNodeConfig({ emailSubject: e.target.value })}
+                className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-gray-100 placeholder-gray-500 transition-all"
                 placeholder="Email subject"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Body
-              </label>
+              <label className="block text-sm font-medium text-gray-400 mb-2">Body</label>
               <textarea
                 value={nodeConfig.emailBody || ""}
-                onChange={(e) =>
-                  updateNodeConfig({ emailBody: e.target.value })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                onChange={(e) => updateNodeConfig({ emailBody: e.target.value })}
+                className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-gray-100 placeholder-gray-500 transition-all resize-none"
                 rows={4}
                 placeholder="Email body content"
               />
@@ -216,34 +209,29 @@ export const ConfigPanel: React.FC = () => {
         {/* Delay Node */}
         {currentNode.data.nodeType === "delay" && (
           <>
-            <div className="border-t pt-4 mt-4">
-              <h4 className="font-medium text-gray-900 mb-3">Delay Settings</h4>
+            <div className="border-t border-gray-800 pt-4 mt-4">
+              <h4 className="font-medium text-gray-100 mb-3 flex items-center gap-2">
+                <div className="w-1 h-4 bg-yellow-500 rounded-full"></div>
+                Delay Settings
+              </h4>
             </div>
             <div className="flex gap-2">
               <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Wait
-                </label>
+                <label className="block text-sm font-medium text-gray-400 mb-2">Wait</label>
                 <input
                   type="number"
                   value={nodeConfig.delayAmount || 1}
-                  onChange={(e) =>
-                    updateNodeConfig({ delayAmount: parseInt(e.target.value) })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  onChange={(e) => updateNodeConfig({ delayAmount: parseInt(e.target.value) })}
+                  className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 outline-none text-gray-100 transition-all"
                   min="1"
                 />
               </div>
               <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Unit
-                </label>
+                <label className="block text-sm font-medium text-gray-400 mb-2">Unit</label>
                 <select
                   value={nodeConfig.delayUnit || "days"}
-                  onChange={(e) =>
-                    updateNodeConfig({ delayUnit: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  onChange={(e) => updateNodeConfig({ delayUnit: e.target.value })}
+                  className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 outline-none text-gray-100 transition-all"
                 >
                   <option value="minutes">Minutes</option>
                   <option value="hours">Hours</option>
@@ -257,19 +245,18 @@ export const ConfigPanel: React.FC = () => {
         {/* Export Node */}
         {currentNode.data.nodeType === "export" && (
           <>
-            <div className="border-t pt-4 mt-4">
-              <h4 className="font-medium text-gray-900 mb-3">Export Settings</h4>
+            <div className="border-t border-gray-800 pt-4 mt-4">
+              <h4 className="font-medium text-gray-100 mb-3 flex items-center gap-2">
+                <div className="w-1 h-4 bg-indigo-500 rounded-full"></div>
+                Export Settings
+              </h4>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Export Format
-              </label>
+              <label className="block text-sm font-medium text-gray-400 mb-2">Export Format</label>
               <select
                 value={nodeConfig.exportFormat || "CSV"}
-                onChange={(e) =>
-                  updateNodeConfig({ exportFormat: e.target.value })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                onChange={(e) => updateNodeConfig({ exportFormat: e.target.value })}
+                className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-gray-100 transition-all"
               >
                 <option value="CSV">CSV</option>
                 <option value="Excel">Excel</option>
@@ -283,18 +270,19 @@ export const ConfigPanel: React.FC = () => {
         {/* Condition Node */}
         {currentNode.data.nodeType === "condition" && (
           <>
-            <div className="border-t pt-4 mt-4">
-              <h4 className="font-medium text-gray-900 mb-3">Condition Settings</h4>
+            <div className="border-t border-gray-800 pt-4 mt-4">
+              <h4 className="font-medium text-gray-100 mb-3 flex items-center gap-2">
+                <div className="w-1 h-4 bg-orange-500 rounded-full"></div>
+                Condition Settings
+              </h4>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Condition Expression
-              </label>
+              <label className="block text-sm font-medium text-gray-400 mb-2">Condition Expression</label>
               <input
                 type="text"
                 value={nodeConfig.condition || ""}
                 onChange={(e) => updateNodeConfig({ condition: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none text-gray-100 placeholder-gray-500 transition-all font-mono text-sm"
                 placeholder="e.g., amount > 1000"
               />
             </div>
@@ -304,17 +292,18 @@ export const ConfigPanel: React.FC = () => {
         {/* Code Node */}
         {currentNode.data.nodeType === "code" && (
           <>
-            <div className="border-t pt-4 mt-4">
-              <h4 className="font-medium text-gray-900 mb-3">Code Settings</h4>
+            <div className="border-t border-gray-800 pt-4 mt-4">
+              <h4 className="font-medium text-gray-100 mb-3 flex items-center gap-2">
+                <div className="w-1 h-4 bg-pink-500 rounded-full"></div>
+                Code Settings
+              </h4>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Code
-              </label>
+              <label className="block text-sm font-medium text-gray-400 mb-2">Code</label>
               <textarea
                 value={nodeConfig.code || ""}
                 onChange={(e) => updateNodeConfig({ code: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm outline-none"
+                className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none text-gray-100 placeholder-gray-500 transition-all font-mono text-sm resize-none"
                 rows={8}
                 placeholder="// Write your code here"
               />
@@ -324,16 +313,18 @@ export const ConfigPanel: React.FC = () => {
 
         {/* Info Message for Backend Agent Nodes */}
         {!['trigger', 'email', 'delay', 'export', 'condition', 'code'].includes(currentNode.data.nodeType || '') && (
-          <div className="border-t pt-4 mt-4">
-            <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
-              <p className="text-sm text-blue-800">
-                <strong>📋 Backend Agent Node</strong>
+          <div className="border-t border-gray-800 pt-4 mt-4">
+            <div className="bg-gradient-to-br from-blue-900/20 to-purple-900/20 border border-blue-500/30 rounded-lg p-4 backdrop-blur-sm">
+              <p className="text-sm text-blue-300 flex items-center gap-2">
+                <span className="text-lg">📋</span>
+                <strong>Backend Agent Node</strong>
               </p>
-              <p className="text-sm text-blue-700 mt-2">
-                This <strong>{currentNode.data.nodeType}</strong> node is configured through backend agent logic. 
+              <p className="text-sm text-gray-300 mt-2">
+                This <strong className="text-purple-300">{currentNode.data.nodeType}</strong> node is configured through backend agent logic. 
                 You can customize its name and description above for documentation purposes.
               </p>
-              <p className="text-xs text-blue-600 mt-2">
+              <p className="text-xs text-gray-400 mt-2 flex items-center gap-1">
+                <span>⚡</span>
                 The node's execution logic is handled by the corresponding agent in your backend.
               </p>
             </div>
