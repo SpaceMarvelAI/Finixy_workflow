@@ -1,4 +1,11 @@
 import React, { useState, useEffect } from "react";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  useNavigate,
+  useParams,
+} from "react-router-dom";
 import { WorkflowProvider, useWorkflow } from "@store/WorkflowContext";
 import { AuthProvider, useAuth } from "@store/AuthContext";
 import { Header } from "@components/Header";
@@ -15,7 +22,10 @@ type Tab = "workflow" | "analysis" | "report";
 // --- MAIN APP CONTENT ---
 const MainLayout: React.FC = () => {
   const { isAuthenticated } = useAuth();
-  const { selectedNode, config } = useWorkflow();
+  const { selectedNode, config, currentChatId, setCurrentChatId } =
+    useWorkflow();
+  const navigate = useNavigate();
+  const { chatId } = useParams<{ chatId?: string }>();
 
   const [activeTab, setActiveTab] = useState<Tab>("workflow");
   const [isChatExpanded, setIsChatExpanded] = useState(true);
@@ -29,6 +39,17 @@ const MainLayout: React.FC = () => {
   useEffect(() => {
     setIsWorkflowMounted(true);
   }, []);
+
+  // Sync URL with currentChatId
+  useEffect(() => {
+    if (currentChatId && currentChatId !== chatId) {
+      console.log("🔗 Updating URL with chat ID:", currentChatId);
+      navigate(`/chat/${currentChatId}`, { replace: true });
+    } else if (!currentChatId && chatId) {
+      console.log("🔗 Loading chat from URL:", chatId);
+      setCurrentChatId(chatId);
+    }
+  }, [currentChatId, chatId, navigate, setCurrentChatId]);
 
   // Sync report from config if available
   useEffect(() => {
@@ -135,11 +156,16 @@ const MainLayout: React.FC = () => {
 // --- ROOT APP ---
 const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <WorkflowProvider>
-        <MainLayout />
-      </WorkflowProvider>
-    </AuthProvider>
+    <BrowserRouter>
+      <AuthProvider>
+        <WorkflowProvider>
+          <Routes>
+            <Route path="/" element={<MainLayout />} />
+            <Route path="/chat/:chatId" element={<MainLayout />} />
+          </Routes>
+        </WorkflowProvider>
+      </AuthProvider>
+    </BrowserRouter>
   );
 };
 
