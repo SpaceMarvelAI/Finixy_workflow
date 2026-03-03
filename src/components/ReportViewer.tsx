@@ -188,26 +188,115 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
       return;
     }
 
-    // Fallback: Generate client-side if we have data
     if (reportData) {
       console.log("📥 Generating client-side Excel...");
       let columns: any[] = [];
       let dataToExport: any[] = [];
+      let summary: any = {};
       const title = reportMeta?.report_title || "Report Export";
-
       const reportType = reportMeta?.report_type?.toLowerCase() || "";
+
+      const findKey = (data: any, possibleKeys: string[]): string => {
+        if (!data || data.length === 0) return possibleKeys[0];
+        return (
+          possibleKeys.find((key) => data[0].hasOwnProperty(key)) ||
+          possibleKeys[0]
+        );
+      };
 
       if (reportType.includes("aging")) {
         dataToExport = reportData.invoices || reportData.data || [];
-        columns = [
-          { key: "invoice_number", label: "Invoice #" },
-          { key: "vendor_name", label: "Vendor" },
-          { key: "invoice_date", label: "Date" },
-          { key: "due_date", label: "Due Date" },
-          { key: "amount", label: "Amount", format: "currency" },
-          { key: "outstanding", label: "Outstanding", format: "currency" },
-          { key: "days_outstanding", label: "Days" },
-        ];
+        const reportSummary = reportData.summary || {};
+
+        if (dataToExport.length > 0) {
+          columns = [
+            {
+              key: findKey(dataToExport, [
+                "invoice_number",
+                "invoice_no",
+                "invoiceNumber",
+              ]),
+              label: "Invoice #",
+            },
+            {
+              key: findKey(dataToExport, [
+                "vendor_name",
+                "customer_name",
+                "vendorName",
+                "name",
+              ]),
+              label: "Vendor",
+            },
+            {
+              key: findKey(dataToExport, [
+                "invoice_date",
+                "date",
+                "invoiceDate",
+              ]),
+              label: "Date",
+              format: "date",
+            },
+            {
+              key: findKey(dataToExport, ["due_date", "dueDate"]),
+              label: "Due Date",
+              format: "date",
+            },
+            {
+              key: findKey(dataToExport, ["amount", "invoice_amount"]),
+              label: "Amount",
+              format: "currency",
+            },
+            {
+              key: findKey(dataToExport, ["tax", "tax_amount", "taxAmount"]),
+              label: "Tax",
+              format: "currency",
+            },
+            {
+              key: findKey(dataToExport, [
+                "total",
+                "total_amount",
+                "totalAmount",
+              ]),
+              label: "Total",
+              format: "currency",
+            },
+            {
+              key: findKey(dataToExport, ["outstanding", "outstanding_amount"]),
+              label: "Outstanding",
+              format: "currency",
+            },
+            {
+              key: findKey(dataToExport, [
+                "days_outstanding",
+                "daysOutstanding",
+                "days",
+              ]),
+              label: "Days",
+            },
+            {
+              key: findKey(dataToExport, ["status", "payment_status"]),
+              label: "Status",
+            },
+          ];
+
+          summary = {
+            totalInvoices: reportSummary.total_invoices || dataToExport.length,
+            totalAmount:
+              reportSummary.total_amount ||
+              dataToExport.reduce(
+                (sum: number, inv: any) => sum + (inv.amount || inv.total || 0),
+                0,
+              ),
+            paidAmount: reportSummary.paid_amount || 0,
+            outstanding:
+              reportSummary.total_outstanding ||
+              reportSummary.outstanding ||
+              dataToExport.reduce(
+                (sum: number, inv: any) => sum + (inv.outstanding || 0),
+                0,
+              ),
+          };
+        }
       } else if (
         reportType.includes("register") ||
         reportType.includes("ar") ||
@@ -219,16 +308,94 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
           reportData.records ||
           Object.values(reportData).find((v) => Array.isArray(v)) ||
           [];
-        columns = [
-          { key: "invoice_number", label: "Invoice #" },
-          { key: "vendor_name", label: "Vendor/Customer" },
-          { key: "date", label: "Date" },
-          { key: "amount", label: "Amount", format: "currency" },
-          { key: "status", label: "Status" },
-          { key: "outstanding", label: "Outstanding", format: "currency" },
-        ];
+        const reportSummary =
+          reportData.summary || reportData.metadata?.summary || {};
+
+        if (dataToExport.length > 0) {
+          columns = [
+            {
+              key: findKey(dataToExport, [
+                "invoice_number",
+                "invoice_no",
+                "invoiceNumber",
+              ]),
+              label: "Invoice #",
+            },
+            {
+              key: findKey(dataToExport, [
+                "vendor_name",
+                "customer_name",
+                "vendorName",
+                "name",
+              ]),
+              label: "Vendor/Customer",
+            },
+            {
+              key: findKey(dataToExport, [
+                "invoice_date",
+                "date",
+                "invoiceDate",
+              ]),
+              label: "Date",
+              format: "date",
+            },
+            {
+              key: findKey(dataToExport, ["amount", "invoice_amount"]),
+              label: "Amount",
+              format: "currency",
+            },
+            {
+              key: findKey(dataToExport, ["tax", "tax_amount", "taxAmount"]),
+              label: "Tax",
+              format: "currency",
+            },
+            {
+              key: findKey(dataToExport, [
+                "total",
+                "total_amount",
+                "totalAmount",
+              ]),
+              label: "Total",
+              format: "currency",
+            },
+            {
+              key: findKey(dataToExport, ["paid", "paid_amount", "paidAmount"]),
+              label: "Paid",
+              format: "currency",
+            },
+            {
+              key: findKey(dataToExport, ["outstanding", "outstanding_amount"]),
+              label: "Outstanding",
+              format: "currency",
+            },
+            {
+              key: findKey(dataToExport, ["status", "payment_status"]),
+              label: "Status",
+            },
+          ];
+
+          const totalAmount =
+            reportSummary.total_amount ||
+            dataToExport.reduce(
+              (sum: number, inv: any) => sum + (inv.amount || inv.total || 0),
+              0,
+            );
+          const paidAmount =
+            reportSummary.paid_amount ||
+            dataToExport.reduce(
+              (sum: number, inv: any) =>
+                sum + (inv.paid || inv.paid_amount || 0),
+              0,
+            );
+
+          summary = {
+            totalInvoices: dataToExport.length,
+            totalAmount: totalAmount,
+            paidAmount: paidAmount,
+            outstanding: reportSummary.outstanding || totalAmount - paidAmount,
+          };
+        }
       } else {
-        // Generic auto-detect columns
         dataToExport = Array.isArray(reportData)
           ? reportData
           : Object.values(reportData).find((v) => Array.isArray(v)) || [];
@@ -236,12 +403,30 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
           columns = Object.keys(dataToExport[0]).map((k) => ({
             key: k,
             label: k.replace(/_/g, " ").toUpperCase(),
+            format:
+              k.toLowerCase().includes("amount") ||
+              k.toLowerCase().includes("total") ||
+              k.toLowerCase().includes("tax") ||
+              k.toLowerCase().includes("paid") ||
+              k.toLowerCase().includes("outstanding")
+                ? "currency"
+                : k.toLowerCase().includes("date")
+                  ? "date"
+                  : undefined,
           }));
         }
       }
 
+      console.log("📥 Excel columns:", columns);
+      console.log("📥 Excel summary:", summary);
+
       if (dataToExport.length > 0) {
-        await generateExcelFromReportData(title, dataToExport, columns);
+        await generateExcelFromReportData(
+          title,
+          dataToExport,
+          columns,
+          summary,
+        );
       } else {
         alert("No tabular data found to export.");
       }
@@ -492,18 +677,53 @@ const AgingReportDashboard: React.FC<{ data: any; meta: any }> = ({ data }) => {
 
       {/* Invoices Table */}
       {invoices.length > 0 && (
-        <DataTable
+        <SmartDataTable
           title="Invoice Details"
           data={invoices}
-          columns={[
-            { key: "invoice_number", label: "Invoice #" },
-            { key: "vendor_name", label: "Vendor" },
-            { key: "invoice_date", label: "Date", format: "date" },
-            { key: "due_date", label: "Due Date", format: "date" },
-            { key: "amount", label: "Amount", format: "currency" },
-            { key: "outstanding", label: "Outstanding", format: "currency" },
-            { key: "days_outstanding", label: "Days", format: "number" },
-            { key: "aging_bucket", label: "Bucket" },
+          preferredColumns={[
+            {
+              keys: ["invoice_number", "invoice_no", "invoiceNumber"],
+              label: "Invoice #",
+            },
+            {
+              keys: [
+                "vendor_name",
+                "customer_name",
+                "vendorName",
+                "customerName",
+                "name",
+              ],
+              label: "Vendor",
+            },
+            {
+              keys: ["invoice_date", "date", "invoiceDate"],
+              label: "Date",
+              format: "date",
+            },
+            {
+              keys: ["due_date", "dueDate"],
+              label: "Due Date",
+              format: "date",
+            },
+            {
+              keys: ["amount", "invoice_amount", "invoiceAmount"],
+              label: "Amount",
+              format: "currency",
+            },
+            {
+              keys: ["outstanding", "outstanding_amount", "outstandingAmount"],
+              label: "Outstanding",
+              format: "currency",
+            },
+            {
+              keys: ["days_outstanding", "daysOutstanding", "days"],
+              label: "Days",
+              format: "number",
+            },
+            {
+              keys: ["aging_bucket", "agingBucket", "bucket"],
+              label: "Bucket",
+            },
           ]}
         />
       )}

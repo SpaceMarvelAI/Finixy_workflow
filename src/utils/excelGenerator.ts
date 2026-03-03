@@ -238,14 +238,22 @@ export const generateExcelFromReportData = async (
   title: string,
   data: any[],
   columns: any[],
+  summary?: {
+    totalInvoices?: number;
+    totalAmount?: number;
+    paidAmount?: number;
+    outstanding?: number;
+  }
 ) => {
   const ExcelJS = await loadExcelJS();
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet("Report");
 
+  let currentRow = 1;
+
   // Title
-  worksheet.mergeCells(1, 1, 1, columns.length);
-  const titleCell = worksheet.getCell(1, 1);
+  worksheet.mergeCells(currentRow, 1, currentRow, columns.length);
+  const titleCell = worksheet.getCell(currentRow, 1);
   titleCell.value = title;
   titleCell.font = { size: 16, bold: true, color: { argb: "FFFFFF" } };
   titleCell.fill = {
@@ -253,11 +261,70 @@ export const generateExcelFromReportData = async (
     pattern: "solid",
     fgColor: { argb: "3B82F6" },
   };
-  titleCell.alignment = { horizontal: "center" };
-  worksheet.getRow(1).height = 30;
+  titleCell.alignment = { horizontal: "center", vertical: "middle" };
+  worksheet.getRow(currentRow).height = 30;
+  currentRow += 2;
+
+  // Summary Section (if provided)
+  if (summary) {
+    worksheet.mergeCells(currentRow, 1, currentRow, columns.length);
+    const summaryTitleCell = worksheet.getCell(currentRow, 1);
+    summaryTitleCell.value = "Summary";
+    summaryTitleCell.font = { size: 14, bold: true, color: { argb: "FFFFFF" } };
+    summaryTitleCell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "10B981" },
+    };
+    summaryTitleCell.alignment = { horizontal: "center", vertical: "middle" };
+    worksheet.getRow(currentRow).height = 25;
+    currentRow++;
+
+    // Summary rows
+    const summaryData = [
+      ["Total Invoices", summary.totalInvoices || data.length],
+      ["Total Amount", summary.totalAmount || 0],
+      ["Paid Amount", summary.paidAmount || 0],
+      ["Outstanding", summary.outstanding || 0],
+    ];
+
+    summaryData.forEach(([label, value]) => {
+      const row = worksheet.getRow(currentRow);
+      row.getCell(1).value = label;
+      row.getCell(1).font = { bold: true };
+      row.getCell(1).fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "F3F4F6" },
+      };
+      
+      row.getCell(2).value = value;
+      if (typeof value === "number" && label !== "Total Invoices") {
+        row.getCell(2).numFmt = "₹#,##0.00";
+      }
+      
+      // Add borders
+      row.getCell(1).border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" },
+      };
+      row.getCell(2).border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" },
+      };
+      
+      currentRow++;
+    });
+    
+    currentRow += 2; // Add spacing
+  }
 
   // Headers
-  const headerRow = worksheet.getRow(3);
+  const headerRow = worksheet.getRow(currentRow);
   columns.forEach((col, i) => {
     const cell = headerRow.getCell(i + 1);
     cell.value = col.label;
@@ -267,19 +334,47 @@ export const generateExcelFromReportData = async (
       pattern: "solid",
       fgColor: { argb: "1F2937" },
     };
+    cell.alignment = { horizontal: "center", vertical: "middle" };
     worksheet.getColumn(i + 1).width = 20;
   });
+  headerRow.height = 25;
+  currentRow++;
 
   // Data
-  data.forEach((row, rowIndex) => {
-    const sheetRow = worksheet.getRow(rowIndex + 4);
+  data.forEach((row) => {
+    const sheetRow = worksheet.getRow(currentRow);
     columns.forEach((col, colIndex) => {
       let value = row[col.key];
+      const cell = sheetRow.getCell(colIndex + 1);
+      
       if (col.format === "currency") {
-        sheetRow.getCell(colIndex + 1).numFmt = "₹#,##0.00";
+        cell.numFmt = "₹#,##0.00";
+        cell.value = value || 0;
+      } else if (col.format === "date") {
+        if (value) {
+          try {
+            const date = new Date(value);
+            cell.value = date;
+            cell.numFmt = "dd-mm-yyyy";
+          } catch {
+            cell.value = value;
+          }
+        } else {
+          cell.value = "-";
+        }
+      } else {
+        cell.value = value || "-";
       }
-      sheetRow.getCell(colIndex + 1).value = value;
+      
+      // Add borders
+      cell.border = {
+        top: { style: "thin", color: { argb: "E5E7EB" } },
+        left: { style: "thin", color: { argb: "E5E7EB" } },
+        bottom: { style: "thin", color: { argb: "E5E7EB" } },
+        right: { style: "thin", color: { argb: "E5E7EB" } },
+      };
     });
+    currentRow++;
   });
 
   const buffer = await workbook.xlsx.writeBuffer();
