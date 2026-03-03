@@ -570,19 +570,58 @@ const RegisterDashboard: React.FC<{ data: any; meta: any }> = ({ data }) => {
 
       {/* Invoices Table */}
       {invoices.length > 0 && (
-        <DataTable
+        <SmartDataTable
           title="Invoice Register"
           data={invoices}
-          columns={[
-            { key: "invoice_number", label: "Invoice #" },
-            { key: "vendor_name", label: "Vendor/Customer" },
-            { key: "invoice_date", label: "Date", format: "date" },
-            { key: "amount", label: "Amount", format: "currency" },
-            { key: "tax", label: "Tax", format: "currency" },
-            { key: "total", label: "Total", format: "currency" },
-            { key: "paid", label: "Paid", format: "currency" },
-            { key: "outstanding", label: "Outstanding", format: "currency" },
-            { key: "status", label: "Status" },
+          preferredColumns={[
+            {
+              keys: ["invoice_number", "invoice_no", "invoiceNumber"],
+              label: "Invoice #",
+            },
+            {
+              keys: [
+                "vendor_name",
+                "customer_name",
+                "vendorName",
+                "customerName",
+                "name",
+              ],
+              label: "Vendor/Customer",
+            },
+            {
+              keys: ["invoice_date", "date", "invoiceDate"],
+              label: "Date",
+              format: "date",
+            },
+            {
+              keys: ["amount", "invoice_amount"],
+              label: "Amount",
+              format: "currency",
+            },
+            {
+              keys: ["tax", "tax_amount", "taxAmount"],
+              label: "Tax",
+              format: "currency",
+            },
+            {
+              keys: ["total", "total_amount", "totalAmount"],
+              label: "Total",
+              format: "currency",
+            },
+            {
+              keys: ["paid", "paid_amount", "paidAmount"],
+              label: "Paid",
+              format: "currency",
+            },
+            {
+              keys: ["outstanding", "outstanding_amount", "outstandingAmount"],
+              label: "Outstanding",
+              format: "currency",
+            },
+            {
+              keys: ["status", "payment_status", "paymentStatus"],
+              label: "Status",
+            },
           ]}
         />
       )}
@@ -792,6 +831,16 @@ const DataTable: React.FC<{
     return String(value);
   };
 
+  // Debug: Log first row to see actual data structure
+  if (data.length > 0) {
+    console.log("📊 DataTable - First row data:", data[0]);
+    console.log("📊 DataTable - Available keys:", Object.keys(data[0]));
+    console.log(
+      "📊 DataTable - Expected columns:",
+      columns.map((c) => c.key),
+    );
+  }
+
   return (
     <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-2xl shadow-xl overflow-hidden">
       <div className="bg-gradient-to-r from-gray-800 to-gray-900 border-b border-gray-700 px-6 py-4">
@@ -837,4 +886,31 @@ const DataTable: React.FC<{
       </div>
     </div>
   );
+};
+
+// Smart Data Table that auto-detects field names
+const SmartDataTable: React.FC<{
+  title: string;
+  data: any[];
+  preferredColumns: Array<{
+    keys: string[];
+    label: string;
+    format?: "currency" | "date" | "number";
+  }>;
+}> = ({ title, data, preferredColumns }) => {
+  if (data.length === 0) return null;
+
+  // Auto-detect which keys exist in the data
+  const actualColumns = preferredColumns.map((col) => {
+    const foundKey = col.keys.find((key) => data[0].hasOwnProperty(key));
+    return {
+      key: foundKey || col.keys[0],
+      label: col.label,
+      format: col.format,
+    };
+  });
+
+  console.log("📊 SmartDataTable - Detected columns:", actualColumns);
+
+  return <DataTable title={title} data={data} columns={actualColumns} />;
 };
