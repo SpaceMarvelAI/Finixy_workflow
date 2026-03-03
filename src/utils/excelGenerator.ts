@@ -36,7 +36,7 @@ export const generateExcelFromDocument = async (documentData: DocumentData) => {
   // Dynamically import ExcelJS
   const ExcelJS = await loadExcelJS();
   const workbook = new ExcelJS.Workbook();
-  
+
   // Set workbook properties
   workbook.creator = 'Finixy';
   workbook.created = new Date();
@@ -78,11 +78,11 @@ export const generateExcelFromDocument = async (documentData: DocumentData) => {
       pattern: 'solid',
       fgColor: { argb: 'F3F4F6' },
     };
-    
+
     if (isCurrency && typeof value === 'number') {
       row.getCell(2).numFmt = '₹#,##0.00';
     }
-    
+
     row.eachCell((cell) => {
       cell.border = {
         top: { style: 'thin', color: { argb: 'D1D5DB' } },
@@ -123,7 +123,7 @@ export const generateExcelFromDocument = async (documentData: DocumentData) => {
 
   // Create Line Items Sheet
   const lineItems = documentData.canonical_data?.extracted_fields?.line_items || [];
-  
+
   if (lineItems.length > 0) {
     const itemsSheet = workbook.addWorksheet('Line Items', {
       properties: { tabColor: { argb: '10B981' } },
@@ -228,6 +228,68 @@ export const generateExcelFromDocument = async (documentData: DocumentData) => {
   const link = document.createElement('a');
   link.href = url;
   link.download = `${documentData.file_name?.replace(/\.[^/.]+$/, '') || 'document'}_export.xlsx`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  window.URL.revokeObjectURL(url);
+};
+
+export const generateExcelFromReportData = async (
+  title: string,
+  data: any[],
+  columns: any[],
+) => {
+  const ExcelJS = await loadExcelJS();
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet("Report");
+
+  // Title
+  worksheet.mergeCells(1, 1, 1, columns.length);
+  const titleCell = worksheet.getCell(1, 1);
+  titleCell.value = title;
+  titleCell.font = { size: 16, bold: true, color: { argb: "FFFFFF" } };
+  titleCell.fill = {
+    type: "pattern",
+    pattern: "solid",
+    fgColor: { argb: "3B82F6" },
+  };
+  titleCell.alignment = { horizontal: "center" };
+  worksheet.getRow(1).height = 30;
+
+  // Headers
+  const headerRow = worksheet.getRow(3);
+  columns.forEach((col, i) => {
+    const cell = headerRow.getCell(i + 1);
+    cell.value = col.label;
+    cell.font = { bold: true, color: { argb: "FFFFFF" } };
+    cell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "1F2937" },
+    };
+    worksheet.getColumn(i + 1).width = 20;
+  });
+
+  // Data
+  data.forEach((row, rowIndex) => {
+    const sheetRow = worksheet.getRow(rowIndex + 4);
+    columns.forEach((col, colIndex) => {
+      let value = row[col.key];
+      if (col.format === "currency") {
+        sheetRow.getCell(colIndex + 1).numFmt = "₹#,##0.00";
+      }
+      sheetRow.getCell(colIndex + 1).value = value;
+    });
+  });
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${title.replace(/\s+/g, "_")}_${new Date().toISOString().split("T")[0]}.xlsx`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

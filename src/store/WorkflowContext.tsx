@@ -6,7 +6,14 @@ interface WorkflowContextType {
   updateConfig: (config: WorkflowConfig) => void;
   selectedNode: string | null;
   setSelectedNode: (id: string | null) => void;
-  loadWorkflow: (name: string, nodes: any[], edges: any[]) => void;
+  loadWorkflow: (
+    name: string,
+    nodes: any[],
+    edges: any[],
+    reportId?: string,
+    reportUrl?: string,
+    reportFileName?: string
+  ) => void;
   clearWorkflow: () => void;
   sessionId: number;
   chatHistory: ChatMessage[];
@@ -48,12 +55,22 @@ export const WorkflowProvider: React.FC<{ children: ReactNode }> = ({
     setSidebarRefreshTrigger((prev) => prev + 1);
   };
 
-  const loadWorkflow = (name: string, nodes: any[], edges: any[]) => {
+  const loadWorkflow = (
+    name: string,
+    nodes: any[],
+    edges: any[],
+    reportId?: string,
+    reportUrl?: string,
+    reportFileName?: string
+  ) => {
     setConfig({
       name,
       nodes,
       edges,
       lastModified: new Date().toISOString(),
+      reportId,
+      reportUrl,
+      reportFileName,
     });
     // We do NOT change sessionId here because loading history might
     // want to keep the current chat context, or you can opt to clear it.

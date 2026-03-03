@@ -175,8 +175,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
             ]);
           }
 
-          // Try to load workflow if exists
+          // Try to load workflow and report if exists
           let workflow_id = null;
+          let latest_report_id = null;
+
+          if (chat.final_report_ids && chat.final_report_ids.length > 0) {
+            latest_report_id = chat.final_report_ids[chat.final_report_ids.length - 1];
+            console.log("📊 Found latest report ID in chat:", latest_report_id);
+          }
 
           // Check messages for workflow_id
           if (chat.messages) {
@@ -222,6 +228,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     wf.name || wf.query || "Loaded Workflow",
                     safeNodes,
                     safeEdges,
+                    latest_report_id || undefined,
                   );
 
                   showToast("Workflow loaded", "success");
@@ -229,7 +236,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
               }
             } catch (wfError) {
               console.error("❌ Failed to load workflow:", wfError);
+              // Fallback: Clear workflow but keep the report ID if we have it
+              if (latest_report_id) {
+                loadWorkflow("New Workflow", [], [], latest_report_id);
+              }
             }
+          } else if (latest_report_id) {
+            // No workflow but have report
+            loadWorkflow("New Workflow", [], [], latest_report_id);
           }
 
           setIsHistoryOpen(false);

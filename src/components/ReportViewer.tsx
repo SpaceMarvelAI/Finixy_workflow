@@ -18,7 +18,8 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { useWorkflow } from "../store/WorkflowContext";
-import { reportService } from "../services/api";
+import { reportService, chatService } from "../services/api";
+import { generateExcelFromReportData } from "../utils/excelGenerator";
 
 interface ReportViewerProps {
   reportId?: string | null;
@@ -33,7 +34,7 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
   reportFileName: propReportFileName,
   onGoBack,
 }) => {
-  const { config } = useWorkflow();
+  const { config, currentChatId, updateConfig } = useWorkflow();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reportData, setReportData] = useState<any>(null);
@@ -49,56 +50,207 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
     console.log("  - reportId:", reportId);
     console.log("  - reportUrl:", reportUrl);
     console.log("  - reportFileName:", reportFileName);
+    console.log("  - currentChatId:", currentChatId);
 
     if (reportId) {
       console.log("✅ Report ID found, loading data...");
-      loadReportData();
+      loadReportData(reportId as string);
+    } else if (currentChatId) {
+      console.log("🔄 No report ID, checking for latest report in current chat...");
+      fetchLatestReportForChat(currentChatId);
+    } else if (reportUrl) {
+      console.log("⚠️ No report ID, but URL available - showing download only");
     } else {
-      console.log("⚠️ No report ID provided");
+      console.log("⚠️ No report ID, URL or currentChatId provided");
     }
-  }, [reportId]);
+  }, [reportId, currentChatId]);
 
-  const loadReportData = async () => {
-    if (!reportId) return;
-
+  const fetchLatestReportForChat = async (chatId: string) => {
     setLoading(true);
-    setError(null);
-
     try {
-      console.log("📊 Loading report data for ID:", reportId);
-      const response = await reportService.getReport(reportId);
+      const response = await chatService.getChatDetails(chatId);
+      const chat = response.data;
+      
+      if (chat.final_report_ids && chat.final_report_ids.length > 0) {
+        const latestReportId = chat.final_report_ids[chat.final_report_ids.length - 1];
+        console.log("✅ Found latest report ID for chat:", latestReportId);
+        
+        // Fetch report details to get URL and FileName
+        const repResponse = await reportService.getReport(latestReportId);
+        const report = repResponse.data.report || (repResponse.data.report_id ? repResponse.data : null);
 
-      if (response.data?.status === "success" && response.data.report) {
-        const report = response.data.report;
-        setReportMeta({
-          report_id: report.report_id,
-          report_type: report.report_type,
-          report_title: report.report_title,
-          generated_at: report.generated_at,
-          status: report.status,
-        });
-        setReportData(report.report_data);
-        console.log("✅ Report data loaded:", report.report_data);
+        if (report) {
+          console.log("✅ Found report metadata:", report);
+          
+          // Update global config so this report is "active"
+          updateConfig({
+            ...config,
+            reportId: latestReportId,
+            reportUrl: report.download_url || report.report_url || `http://localhost:8000/api/v1/reports/download/${latestReportId}`,
+            reportFileName: report.report_title ? `${report.report_title}.xlsx` : "report.xlsx"
+          });
+
+          // loadReportData will be triggered by reportId change
+        }
+      } else {
+        console.log("⚠️ No reports found for this chat");
       }
-    } catch (err: any) {
-      console.error("❌ Failed to load report:", err);
-      setError(err.message || "Failed to load report");
+    } catch (err) {
+      console.error("❌ Failed to fetch chat reports:", err);
+      // Don't set global error here to allow "No Report Generated Yet" screen
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDownload = () => {
+  const loadReportData = async (specificReportId?: string) => {
+    const idToLoad = specificReportId || reportId;
+    if (!idToLoad) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      console.log("📊 Loading report data for ID:", idToLoad);
+      const response = await reportService.getReport(idToLoad);
+      console.log("📦 Full API Response:", response.data);
+
+      const report = response.data.report || (response.data.report_id ? response.data : null);
+
+      if (report) {
+        console.log("📊 Report object identified:", report);
+
+        // Extract metadata
+        setReportMeta({
+          report_id: report.report_id,
+          report_type: report.report_type,
+          report_title:
+            report.report_title || report.name || "Financial Report",
+          generated_at: report.generated_at || report.created_at,
+          status: report.status,
+        });
+
+        // Extract report data - handle multiple possible structures
+        let finalReportData = null;
+
+        // Check for final_report in multiple locations
+        if (report.report_data?.final_report) {
+          finalReportData = report.report_data.final_report;
+          console.log("✅ Found final_report in report_data");
+        } else if (report.report_data) {
+          finalReportData = report.report_data;
+          console.log("✅ Using report_data directly");
+        } else if (report.final_report) {
+          finalReportData = report.final_report;
+          console.log("✅ Found final_report in report object");
+        }
+
+        if (finalReportData) {
+          console.log(
+            "📊 Final Report Data Structure:",
+            Object.keys(finalReportData),
+          );
+          setReportData(finalReportData);
+        } else {
+          console.warn("⚠️ No report data found in response");
+          setError("Report data not available");
+        }
+      } else {
+        console.error("❌ Invalid response structure:", response.data);
+        setError("Invalid report response");
+      }
+    } catch (err: any) {
+      console.error("❌ Failed to load report:", err);
+      console.error("Error details:", err.response?.data);
+      setError(
+        err.response?.data?.detail || err.message || "Failed to load report",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDownload = async () => {
     if (reportUrl) {
       window.open(reportUrl, "_blank");
+      return;
+    }
+
+    // Fallback: Generate client-side if we have data
+    if (reportData) {
+      console.log("📥 Generating client-side Excel...");
+      let columns: any[] = [];
+      let dataToExport: any[] = [];
+      const title = reportMeta?.report_title || "Report Export";
+
+      const reportType = reportMeta?.report_type?.toLowerCase() || "";
+
+      if (reportType.includes("aging")) {
+        dataToExport = reportData.invoices || reportData.data || [];
+        columns = [
+          { key: "invoice_number", label: "Invoice #" },
+          { key: "vendor_name", label: "Vendor" },
+          { key: "invoice_date", label: "Date" },
+          { key: "due_date", label: "Due Date" },
+          { key: "amount", label: "Amount", format: "currency" },
+          { key: "outstanding", label: "Outstanding", format: "currency" },
+          { key: "days_outstanding", label: "Days" },
+        ];
+      } else if (
+        reportType.includes("register") ||
+        reportType.includes("ar") ||
+        reportType.includes("ap")
+      ) {
+        dataToExport =
+          reportData.invoices ||
+          reportData.data ||
+          reportData.records ||
+          Object.values(reportData).find((v) => Array.isArray(v)) ||
+          [];
+        columns = [
+          { key: "invoice_number", label: "Invoice #" },
+          { key: "vendor_name", label: "Vendor/Customer" },
+          { key: "date", label: "Date" },
+          { key: "amount", label: "Amount", format: "currency" },
+          { key: "status", label: "Status" },
+          { key: "outstanding", label: "Outstanding", format: "currency" },
+        ];
+      } else {
+        // Generic auto-detect columns
+        dataToExport = Array.isArray(reportData)
+          ? reportData
+          : Object.values(reportData).find((v) => Array.isArray(v)) || [];
+        if (dataToExport.length > 0) {
+          columns = Object.keys(dataToExport[0]).map((k) => ({
+            key: k,
+            label: k.replace(/_/g, " ").toUpperCase(),
+          }));
+        }
+      }
+
+      if (dataToExport.length > 0) {
+        await generateExcelFromReportData(title, dataToExport, columns);
+      } else {
+        alert("No tabular data found to export.");
+      }
     }
   };
 
   // Render different dashboard layouts based on report type
   const renderDashboard = () => {
-    if (!reportData) return null;
+    if (!reportData) {
+      console.log("⚠️ No report data to render");
+      return (
+        <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-2xl p-12 text-center">
+          <FileSpreadsheet className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+          <p className="text-gray-400">No report data available</p>
+        </div>
+      );
+    }
 
+    console.log("🎨 Rendering dashboard with data:", reportData);
     const reportType = reportMeta?.report_type?.toLowerCase() || "";
+    console.log("📊 Report type:", reportType);
 
     // AP Aging Report Dashboard
     if (reportType.includes("aging")) {
@@ -106,7 +258,11 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
     }
 
     // AP/AR Register Dashboard
-    if (reportType.includes("register")) {
+    if (
+      reportType.includes("register") ||
+      reportType.includes("ap_register") ||
+      reportType.includes("ar_register")
+    ) {
       return <RegisterDashboard data={reportData} meta={reportMeta} />;
     }
 
@@ -116,6 +272,7 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
     }
 
     // Generic Table Dashboard (fallback)
+    console.log("📋 Using generic table dashboard");
     return <GenericTableDashboard data={reportData} meta={reportMeta} />;
   };
 
@@ -188,9 +345,9 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
   }
 
   return (
-    <div className="h-full flex flex-col bg-gradient-to-br from-gray-900 via-black to-gray-900">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-gray-900 to-black border-b border-gray-800 p-6 backdrop-blur-md">
+    <div className="h-full w-full flex flex-col bg-gradient-to-br from-gray-900 via-black to-gray-900 overflow-hidden">
+      {/* Header - Fixed in flex layout */}
+      <div className="bg-gradient-to-r from-gray-900 to-black border-b border-gray-800 p-6 backdrop-blur-md z-20 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-gradient-to-br from-green-600 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
@@ -209,7 +366,7 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
           </div>
 
           <div className="flex gap-3">
-            {reportUrl && (
+            {(reportUrl || reportData) && (
               <button
                 onClick={handleDownload}
                 className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white rounded-xl transition-all font-medium text-sm shadow-lg hover:shadow-green-500/30"
@@ -223,7 +380,38 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
       </div>
 
       {/* Dashboard Content */}
-      <div className="flex-1 overflow-auto p-6">{renderDashboard()}</div>
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 custom-scrollbar pb-32 min-h-0">
+        <div className="max-w-7xl mx-auto space-y-8">
+          {renderDashboard()}
+        </div>
+      </div>
+
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 12px;
+          height: 12px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: rgba(15, 23, 42, 0.4);
+          border-radius: 10px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: linear-gradient(to bottom, #3b82f6, #1d4ed8);
+          border-radius: 10px;
+          border: 3px solid #0f172a;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(to bottom, #60a5fa, #3b82f6);
+        }
+
+        /* Prevent nested scrollbars but allow horizontal on tables */
+        .report-table-container {
+          max-height: none !important;
+        }
+      `}</style>
     </div>
   );
 };
@@ -231,7 +419,6 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
 // Aging Report Dashboard Component
 const AgingReportDashboard: React.FC<{ data: any; meta: any }> = ({
   data,
-  meta,
 }) => {
   const summary = data?.summary || {};
   const aging_buckets = data?.aging_buckets || [];
@@ -319,10 +506,31 @@ const AgingReportDashboard: React.FC<{ data: any; meta: any }> = ({
 // Register Dashboard Component
 const RegisterDashboard: React.FC<{ data: any; meta: any }> = ({
   data,
-  meta,
 }) => {
-  const summary = data?.summary || {};
-  const invoices = data?.invoices || data?.data || [];
+  console.log("📊 RegisterDashboard received data:", data);
+
+  // Extract summary and invoices from multiple possible structures
+  const summary = data?.summary || data?.metadata?.summary || {};
+  const invoices = data?.invoices || data?.data || data?.records || [];
+
+  console.log("📊 Summary:", summary);
+  console.log("📊 Invoices count:", invoices.length);
+  console.log("📊 Sample invoice:", invoices[0]);
+
+  // Calculate totals if not provided in summary
+  const totalAmount =
+    summary.total_amount ||
+    invoices.reduce(
+      (sum: number, inv: any) => sum + (inv.amount || inv.total || 0),
+      0,
+    );
+  const paidAmount =
+    summary.paid_amount ||
+    invoices.reduce(
+      (sum: number, inv: any) => sum + (inv.paid || inv.paid_amount || 0),
+      0,
+    );
+  const outstanding = summary.outstanding || totalAmount - paidAmount;
 
   return (
     <div className="space-y-6">
@@ -336,19 +544,19 @@ const RegisterDashboard: React.FC<{ data: any; meta: any }> = ({
         />
         <StatCard
           title="Total Amount"
-          value={`₹${(summary.total_amount || 0).toLocaleString()}`}
+          value={`₹${totalAmount.toLocaleString()}`}
           icon={<DollarSign className="w-5 h-5" />}
           color="green"
         />
         <StatCard
           title="Paid Amount"
-          value={`₹${(summary.paid_amount || 0).toLocaleString()}`}
+          value={`₹${paidAmount.toLocaleString()}`}
           icon={<CheckCircle className="w-5 h-5" />}
           color="emerald"
         />
         <StatCard
           title="Outstanding"
-          value={`₹${(summary.outstanding || 0).toLocaleString()}`}
+          value={`₹${outstanding.toLocaleString()}`}
           icon={<AlertTriangle className="w-5 h-5" />}
           color="orange"
         />
@@ -422,23 +630,93 @@ const GenericTableDashboard: React.FC<{ data: any; meta: any }> = ({
   data,
   meta,
 }) => {
-  const dataArray = Array.isArray(data)
-    ? data
-    : data?.data || data?.invoices || [];
+  console.log("📋 GenericTableDashboard received data:", data);
+
+  // Try to extract array data from multiple possible structures
+  let dataArray = [];
+
+  if (Array.isArray(data)) {
+    dataArray = data;
+  } else if (data?.data && Array.isArray(data.data)) {
+    dataArray = data.data;
+  } else if (data?.invoices && Array.isArray(data.invoices)) {
+    dataArray = data.invoices;
+  } else if (data?.records && Array.isArray(data.records)) {
+    dataArray = data.records;
+  } else if (data?.items && Array.isArray(data.items)) {
+    dataArray = data.items;
+  }
+
+  console.log("📋 Extracted array with", dataArray.length, "items");
 
   if (dataArray.length === 0) {
+    // Show summary data if available but no array data
+    if (data?.summary || data?.metadata) {
+      const summaryData = data.summary || data.metadata;
+      console.log("📊 Showing summary data:", summaryData);
+
+      return (
+        <div className="space-y-6">
+          <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-2xl p-8 shadow-xl">
+            <h3 className="text-xl font-bold text-gray-100 mb-6 flex items-center gap-2">
+              <BarChart3 className="w-6 h-6 text-blue-400" />
+              Report Summary
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {Object.entries(summaryData).map(([key, value]) => (
+                <div
+                  key={key}
+                  className="bg-gray-900/50 border border-gray-700 rounded-xl p-4"
+                >
+                  <p className="text-xs text-gray-400 mb-1">
+                    {key
+                      .replace(/_/g, " ")
+                      .replace(/\b\w/g, (l) => l.toUpperCase())}
+                  </p>
+                  <p className="text-xl font-bold text-gray-100">
+                    {typeof value === "number" &&
+                    key.toLowerCase().includes("amount")
+                      ? `₹${value.toLocaleString()}`
+                      : String(value)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-2xl p-12 text-center">
         <FileSpreadsheet className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-        <p className="text-gray-400">No data available to display</p>
+        <p className="text-gray-400">No tabular data available to display</p>
+        <p className="text-xs text-gray-500 mt-2">
+          The report may contain summary data only
+        </p>
       </div>
     );
   }
 
+  // Auto-detect columns from first row
   const columns = Object.keys(dataArray[0]).map((key) => ({
     key,
     label: key.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
+    format: (key.toLowerCase().includes("amount") ||
+      key.toLowerCase().includes("total") ||
+      key.toLowerCase().includes("paid") ||
+      key.toLowerCase().includes("outstanding") ||
+      key.toLowerCase().includes("tax")
+        ? "currency"
+        : key.toLowerCase().includes("date")
+          ? "date"
+          : undefined) as "number" | "currency" | "date" | undefined,
   }));
+
+  console.log(
+    "📋 Auto-detected columns:",
+    columns.map((c) => c.key),
+  );
 
   return <DataTable title="Report Data" data={dataArray} columns={columns} />;
 };
@@ -485,16 +763,25 @@ const DataTable: React.FC<{
   }>;
 }> = ({ title, data, columns }) => {
   const formatValue = (value: any, format?: string) => {
-    if (value === null || value === undefined) return "-";
+    if (value === null || value === undefined || value === "") return "-";
 
     if (format === "currency") {
-      return `₹${Number(value).toLocaleString()}`;
+      const numValue = Number(value);
+      return isNaN(numValue) ? "-" : `₹${numValue.toLocaleString()}`;
     }
     if (format === "date") {
-      return new Date(value).toLocaleDateString();
+      try {
+        const date = new Date(value);
+        return isNaN(date.getTime())
+          ? String(value)
+          : date.toLocaleDateString();
+      } catch {
+        return String(value);
+      }
     }
     if (format === "number") {
-      return Number(value).toLocaleString();
+      const numValue = Number(value);
+      return isNaN(numValue) ? String(value) : numValue.toLocaleString();
     }
     return String(value);
   };
@@ -509,7 +796,7 @@ const DataTable: React.FC<{
         <p className="text-xs text-gray-400 mt-1">{data.length} records</p>
       </div>
 
-      <div className="overflow-auto max-h-[600px] custom-scrollbar">
+      <div className="overflow-x-auto report-table-container custom-scrollbar">
         <table className="w-full text-sm">
           <thead className="sticky top-0 z-10 bg-gray-800 border-b-2 border-gray-700">
             <tr>
