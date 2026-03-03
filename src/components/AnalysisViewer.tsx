@@ -15,6 +15,7 @@ import { chatService, reportService } from "../services/api";
 import { BarChart } from "./charts/BarChart";
 import { DonutChart } from "./charts/DonutChart";
 import { PieChart } from "./charts/PieChart";
+import { ChartContainer } from "./ChartContainer";
 
 export const AnalysisViewer: React.FC = () => {
   const { currentChatId } = useWorkflow();
@@ -140,11 +141,11 @@ export const AnalysisViewer: React.FC = () => {
           {/* Charts */}
           {bucketChartData.length > 0 && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-2xl p-6 shadow-xl">
-                <h3 className="text-lg font-bold text-gray-100 mb-4 flex items-center gap-2">
-                  <PieChartIcon className="w-5 h-5 text-blue-400" />
-                  Aging Distribution
-                </h3>
+              <ChartContainer
+                title="Aging Distribution"
+                icon={<PieChartIcon className="w-5 h-5 text-blue-400" />}
+                chartName="Aging_Distribution"
+              >
                 <div
                   className="flex items-center justify-center"
                   style={{ height: "350px" }}
@@ -157,13 +158,13 @@ export const AnalysisViewer: React.FC = () => {
                     centerSubtext="Total Outstanding"
                   />
                 </div>
-              </div>
+              </ChartContainer>
 
-              <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-2xl p-6 shadow-xl">
-                <h3 className="text-lg font-bold text-gray-100 mb-4 flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5 text-green-400" />
-                  Amount by Aging Bucket
-                </h3>
+              <ChartContainer
+                title="Amount by Aging Bucket"
+                icon={<BarChart3 className="w-5 h-5 text-green-400" />}
+                chartName="Aging_Bucket_Amounts"
+              >
                 <div
                   className="flex items-center justify-center"
                   style={{ height: "350px" }}
@@ -175,7 +176,7 @@ export const AnalysisViewer: React.FC = () => {
                     color="#10b981"
                   />
                 </div>
-              </div>
+              </ChartContainer>
             </div>
           )}
         </div>
@@ -255,11 +256,11 @@ export const AnalysisViewer: React.FC = () => {
 
           {/* Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-2xl p-6 shadow-xl">
-              <h3 className="text-lg font-bold text-gray-100 mb-4 flex items-center gap-2">
-                <PieChartIcon className="w-5 h-5 text-purple-400" />
-                Payment Status
-              </h3>
+            <ChartContainer
+              title="Payment Status"
+              icon={<PieChartIcon className="w-5 h-5 text-purple-400" />}
+              chartName="Payment_Status"
+            >
               <div
                 className="flex items-center justify-center"
                 style={{ height: "350px" }}
@@ -271,14 +272,14 @@ export const AnalysisViewer: React.FC = () => {
                   colors={["#10b981", "#f59e0b"]}
                 />
               </div>
-            </div>
+            </ChartContainer>
 
             {topVendorsData.length > 0 && (
-              <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-2xl p-6 shadow-xl">
-                <h3 className="text-lg font-bold text-gray-100 mb-4 flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5 text-blue-400" />
-                  Top Vendors/Customers
-                </h3>
+              <ChartContainer
+                title="Top Vendors/Customers"
+                icon={<BarChart3 className="w-5 h-5 text-blue-400" />}
+                chartName="Top_Vendors"
+              >
                 <div
                   className="flex items-center justify-center"
                   style={{ height: "350px" }}
@@ -290,7 +291,7 @@ export const AnalysisViewer: React.FC = () => {
                     color="#3b82f6"
                   />
                 </div>
-              </div>
+              </ChartContainer>
             )}
           </div>
         </div>

@@ -8,8 +8,6 @@ import {
   Table,
   TrendingUp,
   DollarSign,
-  Calendar,
-  Users,
   BarChart3,
   PieChart,
   FileSpreadsheet,
@@ -850,7 +848,7 @@ const RegisterDashboard: React.FC<{ data: any; meta: any }> = ({ data }) => {
 };
 
 // DSO Dashboard Component
-const DSODashboard: React.FC<{ data: any; meta: any }> = ({ data, meta }) => {
+const DSODashboard: React.FC<{ data: any; meta: any }> = ({ data }) => {
   const dso = data?.dso || data?.days_sales_outstanding || 0;
   const summary = data?.summary || {};
 
@@ -893,7 +891,6 @@ const DSODashboard: React.FC<{ data: any; meta: any }> = ({ data, meta }) => {
 // Generic Table Dashboard (fallback)
 const GenericTableDashboard: React.FC<{ data: any; meta: any }> = ({
   data,
-  meta,
 }) => {
   console.log("📋 GenericTableDashboard received data:", data);
 

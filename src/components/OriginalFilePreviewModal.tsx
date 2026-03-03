@@ -1,5 +1,5 @@
 import React from "react";
-import { X, FileText, Download, ExternalLink } from "lucide-react";
+import { X, FileText, ExternalLink } from "lucide-react";
 
 interface OriginalFilePreviewModalProps {
   fileData: { url: string; type: string } | null;
