@@ -56,7 +56,9 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
       console.log("✅ Report ID found, loading data...");
       loadReportData(reportId as string);
     } else if (currentChatId) {
-      console.log("🔄 No report ID, checking for latest report in current chat...");
+      console.log(
+        "🔄 No report ID, checking for latest report in current chat...",
+      );
       fetchLatestReportForChat(currentChatId);
     } else if (reportUrl) {
       console.log("⚠️ No report ID, but URL available - showing download only");
@@ -70,24 +72,32 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
     try {
       const response = await chatService.getChatDetails(chatId);
       const chat = response.data;
-      
+
       if (chat.final_report_ids && chat.final_report_ids.length > 0) {
-        const latestReportId = chat.final_report_ids[chat.final_report_ids.length - 1];
+        const latestReportId =
+          chat.final_report_ids[chat.final_report_ids.length - 1];
         console.log("✅ Found latest report ID for chat:", latestReportId);
-        
+
         // Fetch report details to get URL and FileName
         const repResponse = await reportService.getReport(latestReportId);
-        const report = repResponse.data.report || (repResponse.data.report_id ? repResponse.data : null);
+        const report =
+          repResponse.data.report ||
+          (repResponse.data.report_id ? repResponse.data : null);
 
         if (report) {
           console.log("✅ Found report metadata:", report);
-          
+
           // Update global config so this report is "active"
           updateConfig({
             ...config,
             reportId: latestReportId,
-            reportUrl: report.download_url || report.report_url || `http://localhost:8000/api/v1/reports/download/${latestReportId}`,
-            reportFileName: report.report_title ? `${report.report_title}.xlsx` : "report.xlsx"
+            reportUrl:
+              report.download_url ||
+              report.report_url ||
+              `http://localhost:8000/api/v1/reports/download/${latestReportId}`,
+            reportFileName: report.report_title
+              ? `${report.report_title}.xlsx`
+              : "report.xlsx",
           });
 
           // loadReportData will be triggered by reportId change
@@ -115,7 +125,9 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
       const response = await reportService.getReport(idToLoad);
       console.log("📦 Full API Response:", response.data);
 
-      const report = response.data.report || (response.data.report_id ? response.data : null);
+      const report =
+        response.data.report ||
+        (response.data.report_id ? response.data : null);
 
       if (report) {
         console.log("📊 Report object identified:", report);
@@ -381,9 +393,7 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
 
       {/* Dashboard Content */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 custom-scrollbar pb-32 min-h-0">
-        <div className="max-w-7xl mx-auto space-y-8">
-          {renderDashboard()}
-        </div>
+        <div className="max-w-7xl mx-auto space-y-8">{renderDashboard()}</div>
       </div>
 
       <style>{`
@@ -417,9 +427,7 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
 };
 
 // Aging Report Dashboard Component
-const AgingReportDashboard: React.FC<{ data: any; meta: any }> = ({
-  data,
-}) => {
+const AgingReportDashboard: React.FC<{ data: any; meta: any }> = ({ data }) => {
   const summary = data?.summary || {};
   const aging_buckets = data?.aging_buckets || [];
   const invoices = data?.invoices || data?.data || [];
@@ -504,9 +512,7 @@ const AgingReportDashboard: React.FC<{ data: any; meta: any }> = ({
 };
 
 // Register Dashboard Component
-const RegisterDashboard: React.FC<{ data: any; meta: any }> = ({
-  data,
-}) => {
+const RegisterDashboard: React.FC<{ data: any; meta: any }> = ({ data }) => {
   console.log("📊 RegisterDashboard received data:", data);
 
   // Extract summary and invoices from multiple possible structures
@@ -703,14 +709,14 @@ const GenericTableDashboard: React.FC<{ data: any; meta: any }> = ({
     key,
     label: key.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
     format: (key.toLowerCase().includes("amount") ||
-      key.toLowerCase().includes("total") ||
-      key.toLowerCase().includes("paid") ||
-      key.toLowerCase().includes("outstanding") ||
-      key.toLowerCase().includes("tax")
-        ? "currency"
-        : key.toLowerCase().includes("date")
-          ? "date"
-          : undefined) as "number" | "currency" | "date" | undefined,
+    key.toLowerCase().includes("total") ||
+    key.toLowerCase().includes("paid") ||
+    key.toLowerCase().includes("outstanding") ||
+    key.toLowerCase().includes("tax")
+      ? "currency"
+      : key.toLowerCase().includes("date")
+        ? "date"
+        : undefined) as "number" | "currency" | "date" | undefined,
   }));
 
   console.log(

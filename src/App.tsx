@@ -15,6 +15,7 @@ import { WorkflowCanvas } from "@components/WorkflowCanvas";
 import { ConfigPanel } from "@components/ConfigPanel";
 import { NodePalette } from "@components/NodePalette";
 import { ReportViewer } from "@components/ReportViewer";
+import { AnalysisViewer } from "@components/AnalysisViewer";
 import { Login } from "@components/Login";
 
 type Tab = "workflow" | "analysis" | "report";
@@ -34,11 +35,40 @@ const MainLayout: React.FC = () => {
   const [currentReportFileName, setCurrentReportFileName] =
     useState<string>("report.xlsx");
   const [isWorkflowMounted, setIsWorkflowMounted] = useState(false);
+  const [reportChatId, setReportChatId] = useState<string | null>(null); // Track which chat the report belongs to
 
   // Mark workflow as mounted after first render
   useEffect(() => {
     setIsWorkflowMounted(true);
   }, []);
+
+  // Clear report when switching to a different chat OR when starting new chat
+  useEffect(() => {
+    // Case 1: Switching to a different chat (both IDs exist but different)
+    if (currentChatId && reportChatId && currentChatId !== reportChatId) {
+      console.log("🔄 Switching chat - clearing old report");
+      setCurrentReportId(null);
+      setCurrentReportUrl(null);
+      setCurrentReportFileName("report.xlsx");
+      setReportChatId(null);
+      // Switch back to workflow tab if we were viewing a report
+      if (activeTab === "report") {
+        setActiveTab("workflow");
+      }
+    }
+    // Case 2: Starting new chat (currentChatId becomes null)
+    else if (!currentChatId && reportChatId) {
+      console.log("🆕 New chat - clearing old report");
+      setCurrentReportId(null);
+      setCurrentReportUrl(null);
+      setCurrentReportFileName("report.xlsx");
+      setReportChatId(null);
+      // Switch back to workflow tab if we were viewing a report
+      if (activeTab === "report") {
+        setActiveTab("workflow");
+      }
+    }
+  }, [currentChatId, reportChatId, activeTab]);
 
   // Sync URL with currentChatId
   useEffect(() => {
@@ -51,19 +81,29 @@ const MainLayout: React.FC = () => {
     }
   }, [currentChatId, chatId, navigate, setCurrentChatId]);
 
-  // Sync report from config if available
+  // Sync report from config if available AND we have a current chat
   useEffect(() => {
-    if (config.reportUrl || config.reportId) {
+    if ((config.reportUrl || config.reportId) && currentChatId) {
       console.log("Config updated with report:", {
         reportId: config.reportId,
         reportUrl: config.reportUrl,
         reportFileName: config.reportFileName,
+        chatId: currentChatId,
       });
       setCurrentReportId(config.reportId || null);
       setCurrentReportUrl(config.reportUrl || null);
       setCurrentReportFileName(config.reportFileName || "report.xlsx");
+      // Link report to current chat
+      setReportChatId(currentChatId);
+    } else if (!currentChatId && (config.reportId || config.reportUrl)) {
+      // If config has report but no current chat, clear it
+      console.log("⚠️ Config has report but no current chat - clearing");
+      setCurrentReportId(null);
+      setCurrentReportUrl(null);
+      setCurrentReportFileName("report.xlsx");
+      setReportChatId(null);
     }
-  }, [config.reportId, config.reportUrl, config.reportFileName]);
+  }, [config.reportId, config.reportUrl, config.reportFileName, currentChatId]);
 
   const handleSwitchToReport = (reportUrl: string, fileName: string) => {
     console.log("Switching to report tab:", { reportUrl, fileName });
@@ -83,7 +123,11 @@ const MainLayout: React.FC = () => {
 
   return (
     <div className="h-screen flex flex-col bg-gray-900">
-      <Header activeTab={activeTab} onTabChange={setActiveTab} />
+      <Header
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        hasReport={!!currentReportId || !!currentReportUrl}
+      />
 
       <div className="flex-1 flex overflow-hidden">
         <Sidebar
@@ -120,13 +164,8 @@ const MainLayout: React.FC = () => {
           </div>
 
           {isWorkflowMounted && activeTab === "analysis" && (
-            <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-gray-900 via-black to-gray-900">
-              <div className="text-center space-y-4">
-                <h2 className="text-2xl font-bold text-gray-100">
-                  Analysis Dashboard
-                </h2>
-                <p className="text-gray-400">Coming Soon</p>
-              </div>
+            <div className="flex-1 flex flex-col overflow-hidden">
+              <AnalysisViewer />
             </div>
           )}
 
