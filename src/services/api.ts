@@ -118,6 +118,11 @@ export const documentService = {
     return api.get(`/documents/${id}`);
   },
 
+  // Updates the parsed data
+  updateDocumentData: (id: string, data: any) => {
+    return api.put(`/documents/${id}/canonical-data`, { canonical_data: data });
+  },
+
   // Download original file
   getFileUrl: (id: string) => {
     return `${API_URL}/documents/${id}/download`;

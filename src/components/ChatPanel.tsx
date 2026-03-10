@@ -333,12 +333,33 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
         const {
           document_id,
           extracted_data,
-          file_url,
+          file_url: backendFileUrl,
           s3_key,
           category,
           party,
           chat_id,
         } = response.data;
+        
+        let fileUrlToUse = backendFileUrl;
+        
+        // If backend didn't return a file_url (presigned s3), let's fetch it specifically
+        // to ensure the preview comes from S3 as per user request.
+        if (!fileUrlToUse && document_id) {
+          try {
+            console.log("📥 Fetching S3 presigned URL for new upload...");
+            const docDetailsRes = await documentService.getDocument(document_id);
+            if (docDetailsRes.data.status === "success" && docDetailsRes.data.document) {
+              fileUrlToUse = docDetailsRes.data.document.file_url || docDetailsRes.data.document.fileUrl;
+              console.log("✅ Got S3 presigned URL:", fileUrlToUse);
+            }
+          } catch (fetchErr) {
+            console.warn("⚠️ Failed to fetch S3 URL immediately, fallback to blob:", fetchErr);
+            fileUrlToUse = URL.createObjectURL(file);
+          }
+        } else if (!fileUrlToUse) {
+          fileUrlToUse = URL.createObjectURL(file);
+        }
+
         const vendor =
           extracted_data?.vendor_name ||
           party?.vendor_name ||
@@ -348,7 +369,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
           role: "assistant" as const,
           content: `✅ **Successfully Processed: ${file.name}**\n\n**Vendor:** ${vendor}\n**Category:** ${category || "Unknown"}\n\nItemized financial records are now ready for review.`,
           documentId: document_id,
-          fileUrl: file_url || URL.createObjectURL(file),
+          fileUrl: fileUrlToUse,
           fileType: file.type,
         };
 
@@ -398,7 +419,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
               {
                 document_id,
                 s3_key: s3_key || undefined, // Store S3 key for long-term access
-                file_url: file_url || undefined, // Also store current URL for immediate use
+                file_url: fileUrlToUse || undefined, // Also store current URL for immediate use
                 file_type: file.type,
                 vendor,
                 category,
@@ -733,6 +754,11 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
       <DocumentPreviewModal
         previewData={parsedPreviewData}
         onClose={() => setParsedPreviewData(null)}
+        onRefresh={() => {
+          if (parsedPreviewData?.id) {
+            handleViewParsedData(parsedPreviewData.id);
+          }
+        }}
       />
 
       <OriginalFilePreviewModal
