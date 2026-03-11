@@ -125,7 +125,14 @@ export const documentService = {
 
   // Download original file
   getFileUrl: (id: string) => {
-    return `${API_URL}/documents/${id}/download`;
+    return `${API_URL}/documents/download/${id}`;
+  },
+
+  // Download original file as blob (to handle authentication)
+  downloadFile: (id: string) => {
+    return api.get(`/documents/download/${id}`, {
+      responseType: 'blob',
+    });
   }
 };
 

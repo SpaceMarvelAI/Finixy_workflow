@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Send, Loader2, Paperclip, Eye, FileText } from "lucide-react";
+import { Send, Loader2, Paperclip, Eye, FileText, Download } from "lucide-react";
 import { ChatMessage } from "@/types/index";
 import { useWorkflow } from "../../store/WorkflowContext";
 import { INITIAL_CHAT_MESSAGE } from "../../utils/constants";
@@ -11,7 +11,6 @@ import {
   mapBackendEdgesToFrontend,
 } from "../../utils/workflowMapper";
 import { DocumentPreviewModal } from "../modals/DocumentPreviewModal";
-import { OriginalFilePreviewModal } from "../modals/OriginalFilePreviewModal";
 
 interface ExtendedChatMessage extends ChatMessage {
   documentId?: string;
@@ -61,10 +60,6 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
   });
 
   const [parsedPreviewData, setParsedPreviewData] = useState<any>(null);
-  const [originalFileData, setOriginalFileData] = useState<{
-    url: string;
-    type: string;
-  } | null>(null);
   const [loadingPreview, setLoadingPreview] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -91,7 +86,6 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
       });
       setMessages([{ role: "assistant", content: INITIAL_CHAT_MESSAGE }]);
       setParsedPreviewData(null);
-      setOriginalFileData(null);
       prevSessionIdRef.current = sessionId;
     }
   }, [sessionId]);
@@ -218,93 +212,71 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
     fileType: string,
     documentId?: string,
   ) => {
-    console.log("🔍 Opening original file:", { fileUrl, fileType, documentId });
-
-    // If fileUrl is missing but we have documentId, fetch it from the API
-    if ((!fileUrl || fileUrl === "") && documentId) {
-      console.log("📥 Fetching file URL from document API for:", documentId);
-      setLoadingPreview(true);
-      try {
-        const response = await documentService.getDocument(documentId);
-        console.log("📦 Full document response:", response.data);
-
-        if (response.data.status === "success" && response.data.document) {
-          const doc = response.data.document;
-          console.log("📄 Document object:", doc);
-
-          // Check multiple possible field names for file URL
-          const fetchedFileUrl =
-            doc.file_url ||
-            doc.fileUrl ||
-            doc.s3_url ||
-            doc.s3Url ||
-            doc.url ||
-            doc.original_file_url ||
-            doc.originalFileUrl;
-
-          const fetchedFileType =
-            doc.file_type ||
-            doc.fileType ||
-            doc.mime_type ||
-            doc.mimeType ||
-            fileType ||
-            "application/pdf";
-
-          console.log("📊 Extracted from document:");
-          console.log("  - File URL:", fetchedFileUrl);
-          console.log("  - File Type:", fetchedFileType);
-          console.log("  - S3 Key:", doc.s3_key || doc.s3Key);
-
-          if (fetchedFileUrl) {
-            console.log("✅ Fetched file URL:", fetchedFileUrl);
-            console.log("✅ File type:", fetchedFileType);
-            setOriginalFileData({ url: fetchedFileUrl, type: fetchedFileType });
-          } else {
-            // If no URL found in document, use the download endpoint
-            const downloadUrl = documentService.getFileUrl(documentId);
-            console.log(
-              "⚠️ No file URL in document response, using download endpoint:",
-              downloadUrl,
-            );
-            setOriginalFileData({ url: downloadUrl, type: fetchedFileType });
-          }
-        } else {
-          console.error("❌ Invalid document response:", response.data);
-          setMessages((prev) => [
-            ...prev,
-            {
-              role: "assistant",
-              content:
-                "⚠️ File URL not available for this document. The presigned URL may have expired.",
-            },
-          ]);
-        }
-      } catch (e: any) {
-        console.error("❌ Error fetching file URL:", e);
-        const errorMsg =
-          e.response?.data?.detail || e.message || "Unknown error";
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "assistant",
-            content: `⚠️ Error loading file: ${errorMsg}. The S3 presigned URL may have expired. Please re-upload the document.`,
-          },
-        ]);
-      } finally {
-        setLoadingPreview(false);
-      }
-    } else if (fileUrl) {
-      console.log("✅ Using provided file URL:", fileUrl);
-      setOriginalFileData({ url: fileUrl, type: fileType });
-    } else {
+    if (!documentId && !fileUrl) {
       console.error("❌ No file URL or document ID provided");
+      return;
+    }
+
+    console.log("📥 Initiating download:", { fileUrl, fileType, documentId });
+    setLoadingPreview(true);
+
+    try {
+      let finalDownloadUrl = fileUrl;
+      let fileName = "document";
+
+      // 1. If we have a documentId, try to get the details (especially S3 presigned URL)
+      if (documentId) {
+        try {
+          const response = await documentService.getDocument(documentId);
+          if (response.data.status === "success" && response.data.document) {
+            const doc = response.data.document;
+            // Use presigned S3 URL if available
+            finalDownloadUrl = doc.file_url || doc.s3_url || doc.url || finalDownloadUrl;
+            fileName = doc.file_name || fileName;
+          }
+        } catch (err) {
+          console.warn("Could not fetch document details, falling back to proxy download", err);
+        }
+      }
+
+      // 2. Determine if we should use axios blob download (for proxy) or direct link (for S3)
+      const isProxyUrl = finalDownloadUrl && (finalDownloadUrl.includes("/api/v1/documents/") || !finalDownloadUrl);
+      
+      if (documentId && (isProxyUrl || !finalDownloadUrl)) {
+        console.log("🛠️ Using authenticated blob download via API proxy");
+        const response = await documentService.downloadFile(documentId);
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", fileName.includes('.') ? fileName : `${fileName}.${fileType.split('/')[1] || 'pdf'}`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+      } else if (finalDownloadUrl) {
+        console.log("🚀 Using direct S3/File URL for download");
+        const link = document.createElement("a");
+        link.href = finalDownloadUrl;
+        link.target = "_blank";
+        link.setAttribute("download", fileName);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      } else {
+        throw new Error("No download URL available");
+      }
+    } catch (error: any) {
+      console.error("❌ Download failed:", error);
+      const errorMsg = error.response?.data?.detail || error.message || "Failed to download file";
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content: "⚠️ Cannot open file: No URL or document ID available.",
+          content: `⚠️ Error downloading file: ${errorMsg}. If the link expired, please refresh or re-upload.`,
         },
       ]);
+    } finally {
+      setLoadingPreview(false);
     }
   };
 
@@ -660,7 +632,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                     }
                     className="flex items-center gap-2 px-3 py-2 bg-purple-600/20 hover:bg-purple-600/30 text-purple-400 text-xs font-bold rounded-lg border border-purple-500/30 transition-all shadow-lg hover:shadow-purple-500/20"
                   >
-                    <FileText className="w-3.5 h-3.5" /> Preview
+                    <Download className="w-3.5 h-3.5" /> Download Original
                   </button>
 
                   <button
@@ -761,10 +733,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
         }}
       />
 
-      <OriginalFilePreviewModal
-        fileData={originalFileData}
-        onClose={() => setOriginalFileData(null)}
-      />
+
 
       <style>{`
         @keyframes slide-in-up {
