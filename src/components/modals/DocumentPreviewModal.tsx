@@ -38,10 +38,48 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
 
+  // Normalize the raw API document into a consistent shape for editing
+  const normalizeDocumentData = (doc: any) => {
+    if (!doc) return doc;
+    const canonical = doc.canonical_data || {};
+    const totals = canonical.totals || {};
+    const vendor = canonical.vendor || {};
+    const customer = canonical.customer || {};
+    const docMeta = canonical.document_metadata || {};
+
+    // Merge flat-level fields INTO canonical_data so there's one source of truth
+    return {
+      ...doc,
+      canonical_data: {
+        ...canonical,
+        totals: {
+          ...totals,
+          grand_total:  totals.grand_total  || doc.grand_total  || 0,
+          tax_total:    totals.tax_total    || doc.tax_total    || 0,
+          amount_paid:  totals.amount_paid  || doc.paid_amount  || 0,
+          balance_due:  totals.balance_due  || doc.outstanding  || 0,
+        },
+        vendor: {
+          ...vendor,
+          name: vendor.name || doc.vendor_name || "",
+        },
+        customer: {
+          ...customer,
+          name: customer.name || doc.customer_name || "",
+        },
+        document_metadata: {
+          ...docMeta,
+          document_number: docMeta.document_number || doc.document_number || "",
+          currency: docMeta.currency || doc.currency || "INR",
+        },
+      },
+    };
+  };
+
   // Initialize editedData when previewData changes or when starting edit
   useEffect(() => {
     if (previewData && !isEditing) {
-      setEditedData(JSON.parse(JSON.stringify(previewData)));
+      setEditedData(normalizeDocumentData(JSON.parse(JSON.stringify(previewData))));
     }
   }, [previewData, isEditing]);
 
@@ -102,31 +140,28 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
   };
 
   const getDisplayValue = (field: string) => {
-    const d = isEditing ? editedData : previewData;
+    const d = isEditing ? editedData : normalizeDocumentData(previewData);
     if (!d) return null;
-
     const canonical = d.canonical_data || {};
-    
-    // We prioritize canonical fields because they are what we successfully save to the backend
     switch (field) {
-      case "grand_total": return canonical.totals?.grand_total ?? d.grand_total;
-      case "tax_total": return canonical.totals?.tax_total ?? d.tax_total;
-      case "paid_amount": return canonical.totals?.amount_paid ?? d.paid_amount;
-      case "outstanding": return canonical.totals?.balance_due ?? d.outstanding;
-      case "vendor_name": return canonical.vendor?.name ?? d.vendor_name;
-      case "customer_name": return canonical.customer?.name ?? d.customer_name;
-      case "document_number": return canonical.document_metadata?.document_number ?? (d.document_number || d.document_metadata?.document_number);
+      case "grand_total":    return canonical.totals?.grand_total;
+      case "tax_total":      return canonical.totals?.tax_total;
+      case "paid_amount":    return canonical.totals?.amount_paid;
+      case "outstanding":    return canonical.totals?.balance_due;
+      case "vendor_name":    return canonical.vendor?.name;
+      case "customer_name":  return canonical.customer?.name;
+      case "document_number": return canonical.document_metadata?.document_number;
       default: return d[field];
     }
   };
 
-  const handleInputChange = (field: string, value: any, isNested: boolean = false) => {
+  const handleInputChange = (field: string, value: any) => {
     setEditedData((prev: any) => {
-      const next = { ...prev };
+      if (!prev) return prev;
       let sanitizedValue = value;
 
-      // Sanitize names to allow only letters and spaces
-      if (field === "vendor_name" || field === "customer_name" || field === "description") {
+      // Sanitize name fields
+      if (field === "vendor_name" || field === "customer_name") {
         if (/[^a-zA-Z\s]/.test(value)) {
           setValidationError("Special characters & numbers are not allowed in this field.");
           setTimeout(() => setValidationError(null), 3000);
@@ -134,18 +169,27 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
         sanitizedValue = value.replace(/[^a-zA-Z\s]/g, "");
       }
 
-      if (isNested) {
-        const parts = field.split(".");
-        let current = next;
-        for (let i = 0; i < parts.length - 1; i++) {
-          if (!current[parts[i]]) current[parts[i]] = {};
-          current = current[parts[i]];
-        }
-        current[parts[parts.length - 1]] = sanitizedValue;
-      } else {
-        next[field] = sanitizedValue;
+      const canonical = prev.canonical_data || {};
+
+      // Map frontend field names directly into canonical_data structure
+      switch (field) {
+        case "grand_total":
+          return { ...prev, canonical_data: { ...canonical, totals: { ...(canonical.totals || {}), grand_total: parseFloat(sanitizedValue) || 0 } } };
+        case "tax_total":
+          return { ...prev, canonical_data: { ...canonical, totals: { ...(canonical.totals || {}), tax_total: parseFloat(sanitizedValue) || 0 } } };
+        case "paid_amount":
+          return { ...prev, canonical_data: { ...canonical, totals: { ...(canonical.totals || {}), amount_paid: parseFloat(sanitizedValue) || 0 } } };
+        case "outstanding":
+          return { ...prev, canonical_data: { ...canonical, totals: { ...(canonical.totals || {}), balance_due: parseFloat(sanitizedValue) || 0 } } };
+        case "vendor_name":
+          return { ...prev, canonical_data: { ...canonical, vendor: { ...(canonical.vendor || {}), name: sanitizedValue } } };
+        case "customer_name":
+          return { ...prev, canonical_data: { ...canonical, customer: { ...(canonical.customer || {}), name: sanitizedValue } } };
+        case "document_number":
+          return { ...prev, canonical_data: { ...canonical, document_metadata: { ...(canonical.document_metadata || {}), document_number: sanitizedValue } } };
+        default:
+          return { ...prev, [field]: sanitizedValue };
       }
-      return next;
     });
   };
 
@@ -243,104 +287,46 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
     });
   };
 
-  const validateInputs = () => {
-    const MAX_AMOUNT = 1000000000; // 100 Crore
-    const nameRegex = /^[a-zA-Z\s]*$/;
 
-    // Check Entity Names
-    if (editedData.vendor_name && !nameRegex.test(editedData.vendor_name)) {
-      return "Vendor name should only contain letters and spaces (no numbers or special characters allowed).";
-    }
-    if (editedData.customer_name && !nameRegex.test(editedData.customer_name)) {
-      return "Customer name should only contain letters and spaces (no numbers or special characters allowed).";
-    }
-
-    // Check Financial Amounts
-    const financialFields = [
-      { name: "Grand Total", val: editedData.grand_total },
-      { name: "Tax Total", val: editedData.tax_total },
-      { name: "Paid Amount", val: editedData.paid_amount },
-      { name: "Outstanding", val: editedData.outstanding }
-    ];
-
-    for (const field of financialFields) {
-      const num = parseFloat(field.val);
-      if (num < 0) return `${field.name} cannot be negative.`;
-      if (num > MAX_AMOUNT) return `${field.name} cannot exceed 100 Crore (₹100,00,00,000).`;
-    }
-
-    // Check Line Items
-    const lineItems = editedData.canonical_data?.extracted_fields?.line_items || [];
-    for (let i = 0; i < lineItems.length; i++) {
-      const item = lineItems[i];
-      const quantity = parseFloat(item.quantity);
-      const unitPrice = parseFloat(item.unit_price);
-      const amount = parseFloat(item.amount);
-
-      if (quantity < 0 || unitPrice < 0 || amount < 0) {
-        return `Line item ${i + 1} has negative values. All amounts must be positive.`;
-      }
-      if (amount > MAX_AMOUNT || unitPrice > MAX_AMOUNT) {
-        return `Line item ${i + 1} amount/rate exceeds 100 Crore limit.`;
-      }
-    }
-
-    return null;
-  };
 
   const handleSave = async () => {
     if (!previewData?.id) return;
-    
-    const error = validateInputs();
-    if (error) {
-      setValidationError(error);
-      setTimeout(() => setValidationError(null), 5000); // Clear after 5s
-      return;
-    }
 
     setValidationError(null);
     setSaving(true);
     try {
-      // Map frontend fields back to CanonicalFinancialDocument schema
+      // editedData.canonical_data has all edits normalized into the canonical structure
       const canonical = editedData.canonical_data || {};
-      
+
+      // Normalize line items (may be in canonical.line_items or canonical.extracted_fields.line_items)
+      const line_items = (canonical.line_items || canonical.extracted_fields?.line_items || []).map((item: any) => ({
+        description: item.description || "",
+        quantity: parseFloat(item.quantity) || 0,
+        unit_price: parseFloat(item.unit_price) || 0,
+        line_total: parseFloat(item.line_total ?? item.amount) || 0,
+        tax_amount: parseFloat(item.tax_amount) || 0,
+      }));
+
+      // Build the final payload:
+      // Start with the full canonical spread (preserves ALL backend fields),
+      // then override only the structured sub-sections we manage in the UI.
       const dataToSave: any = {
         ...canonical,
-        document_metadata: {
-          ...(canonical.document_metadata || {}),
-          document_number: editedData.document_number,
-          currency: editedData.currency || "INR",
-        },
-        totals: {
-          ...(canonical.totals || {}),
-          grand_total: parseFloat(editedData.grand_total) || 0,
-          tax_total: parseFloat(editedData.tax_total) || 0,
-          amount_paid: parseFloat(editedData.paid_amount) || 0,
-          balance_due: parseFloat(editedData.outstanding) || 0,
-        },
-        vendor: {
-          ...(canonical.vendor || {}),
-          name: editedData.vendor_name,
-        },
-        customer: {
-          ...(canonical.customer || {}),
-          name: editedData.customer_name,
-        },
-        line_items: (canonical.extracted_fields?.line_items || canonical.line_items || []).map((item: any) => ({
-          description: item.description,
-          quantity: parseFloat(item.quantity) || 0,
-          unit_price: parseFloat(item.unit_price) || 0,
-          line_total: parseFloat(item.amount || item.line_total) || 0,
-          tax_amount: parseFloat(item.tax_amount) || 0,
-        }))
+        totals: { ...(canonical.totals || {}) },
+        vendor: { ...(canonical.vendor || {}) },
+        customer: { ...(canonical.customer || {}) },
+        document_metadata: { ...(canonical.document_metadata || {}) },
+        line_items,
       };
 
-      // Clean up legacy fields if they exist to avoid confusion
+      // Remove legacy/duplicate keys
       delete dataToSave.extracted_fields;
 
+      console.log("💾 Saving to backend:", JSON.stringify(dataToSave, null, 2));
       const response = await documentService.updateDocumentData(previewData.id, dataToSave);
-      
-      if (response.data.document_id) {
+      console.log("✅ Save response:", response.data);
+
+      if (response.data) {
         setSaveSuccess(true);
         setTimeout(() => {
           setSaveSuccess(false);
@@ -348,13 +334,16 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
           if (onRefresh) onRefresh();
         }, 1500);
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error("Save failed:", e);
-      alert("Failed to save changes. Please check console for details.");
+      const errorDetail = e?.response?.data?.detail || e?.message || "Unknown error";
+      setValidationError(`Save failed: ${errorDetail}`);
+      setTimeout(() => setValidationError(null), 6000);
     } finally {
       setSaving(false);
     }
   };
+
 
   const renderLineItems = (canonicalData: any, isEditMode: boolean) => {
     if (!canonicalData) {
@@ -580,7 +569,7 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                 { label: "Paid Amount", field: "paid_amount", color: "emerald" },
                 { label: "Outstanding", field: "outstanding", color: "amber" }
               ].map((item) => (
-                <div 
+                <div
                   key={item.field}
                   className={`bg-gray-900 p-5 rounded-lg border-l-4 border-l-${item.color}-500 shadow-lg border border-gray-800 transition-all`}
                 >
@@ -591,10 +580,9 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                     <input
                       type="number"
                       min="0"
-                      value={editedData[item.field] || 0}
+                      value={getDisplayValue(item.field) ?? 0}
                       onChange={(e) => {
-                        const val = Math.max(0, parseFloat(e.target.value) || 0);
-                        handleInputChange(item.field, val);
+                        handleInputChange(item.field, e.target.value);
                       }}
                       className="w-full bg-gray-800 border-none text-xl font-black text-gray-100 outline-none p-0 focus:ring-0"
                     />
@@ -628,7 +616,7 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                     {isEditing ? (
                       <input
                         type="text"
-                        value={editedData[item.field] || ""}
+                        value={getDisplayValue(item.field) ?? ""}
                         onChange={(e) => handleInputChange(item.field, e.target.value)}
                         className={`bg-gray-800 border border-gray-700 rounded px-3 py-1 text-sm font-bold text-gray-200 outline-none focus:ring-1 focus:ring-blue-500 text-right`}
                       />
