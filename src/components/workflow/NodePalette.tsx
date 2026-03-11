@@ -87,7 +87,7 @@ export const NodePalette: React.FC = () => {
       {/* Dropdown Toggle Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-r from-gray-900 to-gray-800 border border-gray-700 rounded-xl hover:border-blue-500/50 transition-all shadow-lg backdrop-blur-sm"
+        className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-r from-gray-900 to-gray-800 border border-gray-700 rounded-lg hover:border-blue-500/50 transition-all shadow-lg backdrop-blur-sm"
       >
         <span className="text-sm font-semibold text-gray-100 tracking-wide">
           Add Nodes (Drag & Drop)
@@ -101,11 +101,11 @@ export const NodePalette: React.FC = () => {
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute left-3 right-3 mt-2 bg-gradient-to-br from-gray-900 to-black border border-gray-700 rounded-xl shadow-2xl max-h-96 overflow-y-auto z-50 backdrop-blur-md">
+        <div className="absolute left-3 right-3 mt-2 bg-gradient-to-br from-gray-900 to-black border border-gray-700 rounded-lg shadow-2xl max-h-96 overflow-y-auto z-50 backdrop-blur-md">
           {/* Basic Workflow Section */}
           <div className="p-4">
             <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-              <div className="w-1 h-4 bg-blue-500 rounded-full"></div>
+              <div className="w-1 h-4 bg-blue-500 rounded-lg"></div>
               Basic Workflow
             </h4>
             <div className="grid grid-cols-3 gap-2">
@@ -132,7 +132,7 @@ export const NodePalette: React.FC = () => {
           {/* Backend Agents Section */}
           <div className="p-4 border-t border-gray-800">
             <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-              <div className="w-1 h-4 bg-purple-500 rounded-full"></div>
+              <div className="w-1 h-4 bg-purple-500 rounded-lg"></div>
               Backend Agents
             </h4>
             <div className="grid grid-cols-2 gap-2">

@@ -95,7 +95,7 @@ export const CustomEdge: React.FC<EdgeProps> = ({
             <button
               onClick={onEdgeClick}
               onMouseDown={(e) => e.stopPropagation()}
-              className="bg-red-500 hover:bg-red-600 text-white rounded-full p-2 shadow-lg transition-all hover:scale-110 flex items-center justify-center"
+              className="bg-red-500 hover:bg-red-600 text-white rounded-lg p-2 shadow-lg transition-all hover:scale-110 flex items-center justify-center"
               title="Delete connection"
               style={{
                 width: "32px",

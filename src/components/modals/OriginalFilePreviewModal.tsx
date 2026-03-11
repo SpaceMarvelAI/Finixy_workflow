@@ -41,13 +41,13 @@ export const OriginalFilePreviewModal: React.FC<
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl w-[85%] h-[85%] flex flex-col overflow-hidden animate-in zoom-in-95"
+        className="bg-white rounded-lg shadow-2xl w-[85%] h-[85%] flex flex-col overflow-hidden animate-in zoom-in-95"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
         <div className="px-6 py-4 border-b flex justify-between items-center bg-white">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-purple-600 text-white rounded-xl shadow-lg shadow-purple-200">
+            <div className="p-2 bg-purple-600 text-white rounded-lg shadow-lg shadow-purple-200">
               <FileText className="w-5 h-5" />
             </div>
             <div>
@@ -90,7 +90,7 @@ export const OriginalFilePreviewModal: React.FC<
                 {/* Fallback if object tag doesn't work */}
                 <div className="w-full h-full flex items-center justify-center p-8">
                   <div className="text-center space-y-6 max-w-md">
-                    <div className="p-8 bg-white rounded-3xl shadow-xl inline-block">
+                    <div className="p-8 bg-white rounded-lg shadow-xl inline-block">
                       <FileText className="w-20 h-20 text-purple-400 mx-auto" />
                     </div>
                     <div>
@@ -103,7 +103,7 @@ export const OriginalFilePreviewModal: React.FC<
                     </div>
                     <button
                       onClick={handleOpenInNewTab}
-                      className="mt-6 px-8 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-all font-bold shadow-lg flex items-center gap-3 mx-auto"
+                      className="mt-6 px-8 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all font-bold shadow-lg flex items-center gap-3 mx-auto"
                     >
                       <ExternalLink className="w-5 h-5" /> Open PDF in New Tab
                     </button>
@@ -127,7 +127,7 @@ export const OriginalFilePreviewModal: React.FC<
           {!isPDF && !isImage && (
             <div className="w-full h-full flex items-center justify-center p-8">
               <div className="text-center space-y-6 max-w-md">
-                <div className="p-8 bg-white rounded-3xl shadow-xl inline-block">
+                <div className="p-8 bg-white rounded-lg shadow-xl inline-block">
                   <FileText className="w-20 h-20 text-gray-300 mx-auto" />
                 </div>
                 <div>
@@ -145,7 +145,7 @@ export const OriginalFilePreviewModal: React.FC<
                 </div>
                 <button
                   onClick={handleOpenInNewTab}
-                  className="mt-6 px-8 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-all font-bold shadow-lg flex items-center gap-3 mx-auto"
+                  className="mt-6 px-8 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all font-bold shadow-lg flex items-center gap-3 mx-auto"
                 >
                   <ExternalLink className="w-5 h-5" /> Open in New Tab
                 </button>

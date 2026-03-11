@@ -636,7 +636,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
             }}
           >
             <div
-              className={`max-w-[92%] rounded-2xl p-4 shadow-2xl backdrop-blur-md transition-all hover:scale-[1.02] break-words overflow-hidden ${
+              className={`max-w-[92%] rounded-lg p-4 shadow-2xl backdrop-blur-md transition-all hover:scale-[1.02] break-words overflow-hidden ${
                 msg.role === "user"
                   ? "bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-br-none border border-blue-500/50 shadow-blue-500/20"
                   : "bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 text-gray-100 rounded-bl-none"
@@ -694,7 +694,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
 
         {(loading || uploading || loadingPreview) && (
           <div className="flex justify-start animate-pulse">
-            <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 p-4 rounded-2xl flex items-center gap-3 shadow-xl">
+            <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 p-4 rounded-lg flex items-center gap-3 shadow-xl">
               <Loader2 className="w-5 h-5 text-blue-400 animate-spin" />
               <span className="text-sm font-medium text-gray-300">
                 {uploading
@@ -718,7 +718,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={(e) => e.key === "Enter" && handleSend()}
             placeholder="Type your query here..."
-            className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-xl outline-none text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-100 placeholder-gray-500 shadow-lg"
+            className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg outline-none text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-100 placeholder-gray-500 shadow-lg"
             disabled={loading || uploading}
           />
 
@@ -733,7 +733,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading || loading}
-              className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm shadow-lg hover:shadow-purple-500/30 flex items-center justify-center gap-2"
+              className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm shadow-lg hover:shadow-purple-500/30 flex items-center justify-center gap-2"
             >
               <Paperclip className="w-4 h-4" />
               Upload Invoice
@@ -742,7 +742,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
             <button
               onClick={handleSend}
               disabled={!input.trim() || loading || uploading}
-              className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white rounded-xl transition-all font-medium text-sm shadow-lg hover:shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white rounded-lg transition-all font-medium text-sm shadow-lg hover:shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               <Send className="w-4 h-4" />
               {loading ? "Processing..." : "Send Query"}

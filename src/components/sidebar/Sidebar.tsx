@@ -624,9 +624,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* DELETE MODAL */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm">
-          <div className="bg-gradient-to-br from-gray-900 to-black border border-gray-800 rounded-xl shadow-2xl w-96 p-6">
+          <div className="bg-gradient-to-br from-gray-900 to-black border border-gray-800 rounded-lg shadow-2xl w-96 p-6">
             <div className="flex flex-col items-center text-center">
-              <div className="w-14 h-14 bg-red-500/20 rounded-full flex items-center justify-center mb-4 border-2 border-red-500/40">
+              <div className="w-14 h-14 bg-red-500/20 rounded-lg flex items-center justify-center mb-4 border-2 border-red-500/40">
                 <AlertTriangle className="w-7 h-7 text-red-400" />
               </div>
               <h3 className="text-lg font-bold text-gray-100 mb-2">

@@ -436,7 +436,7 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
     if (!reportData) {
       console.log("⚠️ No report data to render");
       return (
-        <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-2xl p-12 text-center">
+        <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-lg p-12 text-center">
           <FileSpreadsheet className="w-16 h-16 text-gray-600 mx-auto mb-4" />
           <p className="text-gray-400">No report data available</p>
         </div>
@@ -475,7 +475,7 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
     return (
       <div className="h-full flex items-center justify-center bg-gradient-to-br from-gray-900 via-black to-gray-900">
         <div className="text-center space-y-6 max-w-md p-8">
-          <div className="w-24 h-24 mx-auto bg-gradient-to-br from-blue-600/20 to-purple-600/20 rounded-2xl flex items-center justify-center border border-gray-700 shadow-xl">
+          <div className="w-24 h-24 mx-auto bg-gradient-to-br from-blue-600/20 to-purple-600/20 rounded-lg flex items-center justify-center border border-gray-700 shadow-xl">
             <FileText className="w-12 h-12 text-blue-400" />
           </div>
           <div className="space-y-2">
@@ -490,7 +490,7 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
           {onGoBack && (
             <button
               onClick={onGoBack}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white rounded-xl transition-all font-medium text-sm shadow-lg hover:shadow-blue-500/30"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white rounded-lg transition-all font-medium text-sm shadow-lg hover:shadow-blue-500/30"
             >
               <ArrowLeft className="w-4 h-4" />
               Go to Workflow
@@ -516,7 +516,7 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
     return (
       <div className="h-full flex items-center justify-center bg-gradient-to-br from-gray-900 via-black to-gray-900">
         <div className="text-center space-y-6 max-w-md p-8">
-          <div className="w-24 h-24 mx-auto bg-gradient-to-br from-red-600/20 to-orange-600/20 rounded-2xl flex items-center justify-center border border-red-700 shadow-xl">
+          <div className="w-24 h-24 mx-auto bg-gradient-to-br from-red-600/20 to-orange-600/20 rounded-lg flex items-center justify-center border border-red-700 shadow-xl">
             <AlertCircle className="w-12 h-12 text-red-400" />
           </div>
           <div className="space-y-2">
@@ -528,7 +528,7 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
           {onGoBack && (
             <button
               onClick={onGoBack}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white rounded-xl transition-all font-medium text-sm shadow-lg"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white rounded-lg transition-all font-medium text-sm shadow-lg"
             >
               <ArrowLeft className="w-4 h-4" />
               Go Back
@@ -545,7 +545,7 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
       <div className="bg-gradient-to-r from-gray-900 to-black border-b border-gray-800 p-6 backdrop-blur-md z-20 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-green-600 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
+            <div className="w-12 h-12 bg-gradient-to-br from-green-600 to-emerald-600 rounded-lg flex items-center justify-center shadow-lg">
               <BarChart3 className="w-6 h-6 text-white" />
             </div>
             <div>
@@ -564,7 +564,7 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
             {(reportUrl || reportData) && (
               <button
                 onClick={handleDownload}
-                className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white rounded-xl transition-all font-medium text-sm shadow-lg hover:shadow-green-500/30"
+                className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white rounded-lg transition-all font-medium text-sm shadow-lg hover:shadow-green-500/30"
               >
                 <Download className="w-4 h-4" />
                 Download Excel
@@ -587,12 +587,12 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
         
         .custom-scrollbar::-webkit-scrollbar-track {
           background: rgba(15, 23, 42, 0.1);
-          border-radius: 10px;
+          border-radius: 8px;
         }
         
         .custom-scrollbar::-webkit-scrollbar-thumb {
           background: rgba(59, 130, 246, 0.5);
-          border-radius: 10px;
+          border-radius: 8px;
           border: 2px solid transparent;
           background-clip: padding-box;
         }
@@ -649,7 +649,7 @@ const AgingReportDashboard: React.FC<{ data: any; meta: any }> = ({ data }) => {
 
       {/* Aging Buckets */}
       {aging_buckets.length > 0 && (
-        <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-2xl p-6 shadow-xl">
+        <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-lg p-6 shadow-xl">
           <h3 className="text-lg font-bold text-gray-100 mb-4 flex items-center gap-2">
             <PieChart className="w-5 h-5 text-blue-400" />
             Aging Buckets
@@ -658,7 +658,7 @@ const AgingReportDashboard: React.FC<{ data: any; meta: any }> = ({ data }) => {
             {aging_buckets.map((bucket: any, idx: number) => (
               <div
                 key={idx}
-                className="bg-gray-900/50 border border-gray-700 rounded-xl p-4"
+                className="bg-gray-900/50 border border-gray-700 rounded-lg p-4"
               >
                 <p className="text-xs text-gray-400 mb-1">
                   {bucket.bucket || bucket.range}
@@ -857,7 +857,7 @@ const DSODashboard: React.FC<{ data: any; meta: any }> = ({ data }) => {
   return (
     <div className="space-y-6">
       {/* DSO Metric */}
-      <div className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl p-8 shadow-2xl text-center">
+      <div className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg p-8 shadow-2xl text-center">
         <p className="text-white/80 text-sm font-medium mb-2">
           Days Sales Outstanding
         </p>
@@ -921,7 +921,7 @@ const GenericTableDashboard: React.FC<{ data: any; meta: any }> = ({
 
       return (
         <div className="space-y-6">
-          <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-2xl p-8 shadow-xl">
+          <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-lg p-8 shadow-xl">
             <h3 className="text-xl font-bold text-gray-100 mb-6 flex items-center gap-2">
               <BarChart3 className="w-6 h-6 text-blue-400" />
               Report Summary
@@ -930,7 +930,7 @@ const GenericTableDashboard: React.FC<{ data: any; meta: any }> = ({
               {Object.entries(summaryData).map(([key, value]) => (
                 <div
                   key={key}
-                  className="bg-gray-900/50 border border-gray-700 rounded-xl p-4"
+                  className="bg-gray-900/50 border border-gray-700 rounded-lg p-4"
                 >
                   <p className="text-xs text-gray-400 mb-1">
                     {key
@@ -952,7 +952,7 @@ const GenericTableDashboard: React.FC<{ data: any; meta: any }> = ({
     }
 
     return (
-      <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-2xl p-12 text-center">
+      <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-lg p-12 text-center">
         <FileSpreadsheet className="w-16 h-16 text-gray-600 mx-auto mb-4" />
         <p className="text-gray-400">No tabular data available to display</p>
         <p className="text-xs text-gray-500 mt-2">
@@ -1002,7 +1002,7 @@ const StatCard: React.FC<{
   };
 
   return (
-    <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-xl p-6 shadow-xl hover:shadow-2xl transition-all">
+    <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-lg p-6 shadow-xl hover:shadow-2xl transition-all">
       <div className="flex items-center justify-between mb-3">
         <p className="text-sm text-gray-400 font-medium">{title}</p>
         <div
@@ -1061,7 +1061,7 @@ const DataTable: React.FC<{
   }
 
   return (
-    <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-2xl shadow-xl overflow-hidden">
+    <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-lg shadow-xl overflow-hidden">
       <div className="bg-gradient-to-r from-gray-800 to-gray-900 border-b border-gray-700 px-6 py-4">
         <h3 className="text-lg font-bold text-gray-100 flex items-center gap-2">
           <Table className="w-5 h-5 text-blue-400" />

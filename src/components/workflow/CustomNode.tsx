@@ -198,7 +198,7 @@ const CustomNodeComponent: React.FC<CustomNodeProps> = ({ data, id }) => {
 
   return (
     <div 
-      className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl shadow-2xl border border-gray-700/50 hover:border-blue-500/50 transition-all cursor-pointer min-w-[280px] backdrop-blur-sm"
+      className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-lg shadow-2xl border border-gray-700/50 hover:border-blue-500/50 transition-all cursor-pointer min-w-[280px] backdrop-blur-sm"
       onClick={() => setSelectedNode(id)}
       style={{
         boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
@@ -214,7 +214,7 @@ const CustomNodeComponent: React.FC<CustomNodeProps> = ({ data, id }) => {
       
       {/* Header with glass effect - ONLY show name here */}
       <div 
-        className={`${colorClass} text-white px-4 py-3 ${!description ? 'rounded-xl' : 'rounded-t-xl'} flex items-center gap-2 backdrop-blur-md bg-opacity-90`}
+        className={`${colorClass} text-white px-4 py-3 ${!description ? 'rounded-lg' : 'rounded-t-lg'} flex items-center gap-2 backdrop-blur-md bg-opacity-90`}
         style={{
           background: `linear-gradient(135deg, ${colorClass.includes('purple') ? '#7c3aed' : 
                        colorClass.includes('blue') ? '#3b82f6' : 
@@ -255,7 +255,7 @@ const CustomNodeComponent: React.FC<CustomNodeProps> = ({ data, id }) => {
           </div>
           
           {/* Bottom gradient accent - only when description exists */}
-          <div className="h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-b-xl opacity-60"></div>
+          <div className="h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-b-lg opacity-60"></div>
         </>
       )}
       
@@ -267,7 +267,7 @@ const CustomNodeComponent: React.FC<CustomNodeProps> = ({ data, id }) => {
               className="w-3 h-3 !bg-green-500 border-2 border-gray-900 shadow-lg"
               style={{ position: 'relative', left: 0, bottom: 0, transform: 'none' }}
             />
-            <span className="text-xs font-semibold text-green-400 bg-gray-900 px-2 py-1 rounded shadow-lg mt-1 whitespace-nowrap border border-green-500/30">
+            <span className="text-xs font-semibold text-green-400 bg-gray-900 px-2 py-1 rounded-lg shadow-lg mt-1 whitespace-nowrap border border-green-500/30">
               IF
             </span>
           </div>
@@ -278,7 +278,7 @@ const CustomNodeComponent: React.FC<CustomNodeProps> = ({ data, id }) => {
               className="w-3 h-3 !bg-red-500 border-2 border-gray-900 shadow-lg"
               style={{ position: 'relative', right: 0, bottom: 0, transform: 'none' }}
             />
-            <span className="text-xs font-semibold text-red-400 bg-gray-900 px-2 py-1 rounded shadow-lg mt-1 whitespace-nowrap border border-red-500/30">
+            <span className="text-xs font-semibold text-red-400 bg-gray-900 px-2 py-1 rounded-lg shadow-lg mt-1 whitespace-nowrap border border-red-500/30">
               ELSE
             </span>
           </div>

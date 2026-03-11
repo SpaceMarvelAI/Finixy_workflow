@@ -425,7 +425,7 @@ export const WorkflowCanvas: React.FC = () => {
       {nodes.length > 0 && (
         <div className="absolute top-4 right-4 z-10 flex items-center gap-3">
           {/* Node Count */}
-          <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-xl px-4 py-2 shadow-xl backdrop-blur-md flex items-center gap-2">
+          <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-lg px-4 py-2 shadow-xl backdrop-blur-md flex items-center gap-2">
             <Layers className="w-4 h-4 text-blue-400" />
             <span className="text-sm font-medium text-gray-100">
               {nodes.length} {nodes.length === 1 ? "Node" : "Nodes"}
@@ -436,7 +436,7 @@ export const WorkflowCanvas: React.FC = () => {
           <button
             onClick={handleRunWorkflow}
             disabled={isExecuting}
-            className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 disabled:from-gray-600 disabled:to-gray-700 text-white px-4 py-2 rounded-xl shadow-xl backdrop-blur-md flex items-center gap-2 transition-all hover:scale-105 disabled:hover:scale-100 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
+            className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 disabled:from-gray-600 disabled:to-gray-700 text-white px-4 py-2 rounded-lg shadow-xl backdrop-blur-md flex items-center gap-2 transition-all hover:scale-105 disabled:hover:scale-100 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
             title="Execute workflow"
           >
             {isExecuting ? (
@@ -490,7 +490,7 @@ export const WorkflowCanvas: React.FC = () => {
 
         {/* Modern Dark Controls - Left Side */}
         <Controls
-          className="!bg-gradient-to-br !from-gray-800 !to-gray-900 !border !border-gray-700 !rounded-xl !shadow-xl"
+          className="!bg-gradient-to-br !from-gray-800 !to-gray-900 !border !border-gray-700 !rounded-lg !shadow-xl"
           position="top-left"
         />
 
@@ -510,7 +510,7 @@ export const WorkflowCanvas: React.FC = () => {
           >
             <div className="flex-shrink-0">
               {notification.type === "success" ? (
-                <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center">
+                <div className="w-5 h-5 rounded-lg bg-white/20 flex items-center justify-center">
                   <svg
                     className="w-3.5 h-3.5 text-white"
                     fill="none"
@@ -526,7 +526,7 @@ export const WorkflowCanvas: React.FC = () => {
                   </svg>
                 </div>
               ) : (
-                <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center">
+                <div className="w-5 h-5 rounded-lg bg-white/20 flex items-center justify-center">
                   <svg
                     className="w-3.5 h-3.5 text-white"
                     fill="none"
@@ -582,13 +582,13 @@ export const WorkflowCanvas: React.FC = () => {
         }
         
         .react-flow__controls-button:first-child {
-          border-top-left-radius: 12px !important;
-          border-top-right-radius: 12px !important;
+          border-top-left-radius: 8px !important;
+          border-top-right-radius: 8px !important;
         }
         
         .react-flow__controls-button:last-child {
-          border-bottom-left-radius: 12px !important;
-          border-bottom-right-radius: 12px !important;
+          border-bottom-left-radius: 8px !important;
+          border-bottom-right-radius: 8px !important;
           border-bottom: none !important;
         }
         

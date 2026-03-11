@@ -83,7 +83,7 @@ export const AnalysisViewer: React.FC = () => {
   const renderCharts = () => {
     if (!reportData || !reportMeta) {
       return (
-        <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-2xl p-12 text-center">
+        <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-lg p-12 text-center">
           <BarChart3 className="w-16 h-16 text-gray-600 mx-auto mb-4" />
           <p className="text-gray-400">
             No report data available for visualization
@@ -305,7 +305,7 @@ export const AnalysisViewer: React.FC = () => {
 
       return (
         <div className="space-y-6">
-          <div className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl p-8 shadow-2xl text-center">
+          <div className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg p-8 shadow-2xl text-center">
             <p className="text-white/80 text-sm font-medium mb-2">
               Days Sales Outstanding
             </p>
@@ -340,7 +340,7 @@ export const AnalysisViewer: React.FC = () => {
     }
 
     return (
-      <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-2xl p-12 text-center">
+      <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-lg p-12 text-center">
         <BarChart3 className="w-16 h-16 text-gray-600 mx-auto mb-4" />
         <p className="text-gray-400">
           Report type not supported for visualization
@@ -365,7 +365,7 @@ export const AnalysisViewer: React.FC = () => {
       <div className="bg-gradient-to-r from-gray-900 to-black border-b border-gray-800 p-6 backdrop-blur-md z-20 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+            <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg flex items-center justify-center shadow-lg">
               <BarChart3 className="w-6 h-6 text-white" />
             </div>
             <div>
@@ -394,12 +394,12 @@ export const AnalysisViewer: React.FC = () => {
         
         .custom-scrollbar::-webkit-scrollbar-track {
           background: rgba(15, 23, 42, 0.4);
-          border-radius: 10px;
+          border-radius: 8px;
         }
         
         .custom-scrollbar::-webkit-scrollbar-thumb {
           background: linear-gradient(to bottom, #3b82f6, #1d4ed8);
-          border-radius: 10px;
+          border-radius: 8px;
           border: 3px solid #0f172a;
         }
         
@@ -427,7 +427,7 @@ const StatCard: React.FC<{
   };
 
   return (
-    <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-xl p-6 shadow-xl hover:shadow-2xl transition-all">
+    <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-lg p-6 shadow-xl hover:shadow-2xl transition-all">
       <div className="flex items-center justify-between mb-3">
         <p className="text-sm text-gray-400 font-medium">{title}</p>
         <div

@@ -81,7 +81,7 @@ export const ConfigPanel: React.FC = () => {
         {/* Common Fields - Available for ALL nodes */}
         <div>
           <label className=" text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
-            <div className="w-1 h-4 bg-blue-500 rounded-full"></div>
+            <div className="w-1 h-4 bg-blue-500 rounded-lg"></div>
             Node Name
           </label>
           <input
@@ -118,7 +118,7 @@ export const ConfigPanel: React.FC = () => {
 
         <div>
           <label className=" text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
-            <div className="w-1 h-4 bg-purple-500 rounded-full"></div>
+            <div className="w-1 h-4 bg-purple-500 rounded-lg"></div>
             Description
           </label>
           <textarea
@@ -132,7 +132,7 @@ export const ConfigPanel: React.FC = () => {
 
         <div>
           <label className=" text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
-            <div className="w-1 h-4 bg-cyan-500 rounded-full"></div>
+            <div className="w-1 h-4 bg-cyan-500 rounded-lg"></div>
             Node Type
           </label>
           <div className="px-3 py-2 bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-lg text-sm text-gray-300 font-mono">
@@ -145,7 +145,7 @@ export const ConfigPanel: React.FC = () => {
           <>
             <div className="border-t border-gray-800 pt-4 mt-4">
               <h4 className="font-medium text-gray-100 mb-3 flex items-center gap-2">
-                <div className="w-1 h-4 bg-green-500 rounded-full"></div>
+                <div className="w-1 h-4 bg-green-500 rounded-lg"></div>
                 Trigger Settings
               </h4>
             </div>
@@ -169,7 +169,7 @@ export const ConfigPanel: React.FC = () => {
           <>
             <div className="border-t border-gray-800 pt-4 mt-4">
               <h4 className="font-medium text-gray-100 mb-3 flex items-center gap-2">
-                <div className="w-1 h-4 bg-blue-500 rounded-full"></div>
+                <div className="w-1 h-4 bg-blue-500 rounded-lg"></div>
                 Email Settings
               </h4>
             </div>
@@ -211,7 +211,7 @@ export const ConfigPanel: React.FC = () => {
           <>
             <div className="border-t border-gray-800 pt-4 mt-4">
               <h4 className="font-medium text-gray-100 mb-3 flex items-center gap-2">
-                <div className="w-1 h-4 bg-yellow-500 rounded-full"></div>
+                <div className="w-1 h-4 bg-yellow-500 rounded-lg"></div>
                 Delay Settings
               </h4>
             </div>
@@ -247,7 +247,7 @@ export const ConfigPanel: React.FC = () => {
           <>
             <div className="border-t border-gray-800 pt-4 mt-4">
               <h4 className="font-medium text-gray-100 mb-3 flex items-center gap-2">
-                <div className="w-1 h-4 bg-indigo-500 rounded-full"></div>
+                <div className="w-1 h-4 bg-indigo-500 rounded-lg"></div>
                 Export Settings
               </h4>
             </div>
@@ -272,7 +272,7 @@ export const ConfigPanel: React.FC = () => {
           <>
             <div className="border-t border-gray-800 pt-4 mt-4">
               <h4 className="font-medium text-gray-100 mb-3 flex items-center gap-2">
-                <div className="w-1 h-4 bg-orange-500 rounded-full"></div>
+                <div className="w-1 h-4 bg-orange-500 rounded-lg"></div>
                 Condition Settings
               </h4>
             </div>
@@ -294,7 +294,7 @@ export const ConfigPanel: React.FC = () => {
           <>
             <div className="border-t border-gray-800 pt-4 mt-4">
               <h4 className="font-medium text-gray-100 mb-3 flex items-center gap-2">
-                <div className="w-1 h-4 bg-pink-500 rounded-full"></div>
+                <div className="w-1 h-4 bg-pink-500 rounded-lg"></div>
                 Code Settings
               </h4>
             </div>
