@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -19,7 +20,29 @@ export default {
           800: '#1e40af',
           900: '#1e3a8a',
         },
+        theme: {
+          'bg-primary': 'var(--bg-primary)',
+          'bg-secondary': 'var(--bg-secondary)',
+          'bg-tertiary': 'var(--bg-tertiary)',
+          'text-primary': 'var(--text-primary)',
+          'text-secondary': 'var(--text-secondary)',
+          'border-primary': 'var(--border-primary)',
+        }
       },
+      backgroundColor: {
+        'theme-primary': 'var(--bg-primary)',
+        'theme-secondary': 'var(--bg-secondary)',
+        'theme-tertiary': 'var(--bg-tertiary)',
+      },
+      textColor: {
+        'theme-primary': 'var(--text-primary)',
+        'theme-secondary': 'var(--text-secondary)',
+        'theme-tertiary': 'var(--text-tertiary)',
+      },
+      borderColor: {
+        'theme-primary': 'var(--border-primary)',
+        'theme-secondary': 'var(--border-secondary)',
+      }
     },
   },
   plugins: [],

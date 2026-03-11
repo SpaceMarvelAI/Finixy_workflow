@@ -436,9 +436,9 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
     if (!reportData) {
       console.log("⚠️ No report data to render");
       return (
-        <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-lg p-12 text-center">
-          <FileSpreadsheet className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-          <p className="text-gray-400">No report data available</p>
+        <div className="theme-panel border rounded-lg p-12 text-center">
+          <FileSpreadsheet className="w-16 h-16 text-theme-tertiary mx-auto mb-4" />
+          <p className="text-theme-secondary">No report data available</p>
         </div>
       );
     }
@@ -473,16 +473,16 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
 
   if (!reportId && !reportUrl) {
     return (
-      <div className="h-full flex items-center justify-center bg-gradient-to-br from-gray-900 via-black to-gray-900">
+      <div className="h-full flex items-center justify-center bg-theme-primary theme-transition">
         <div className="text-center space-y-6 max-w-md p-8">
-          <div className="w-24 h-24 mx-auto bg-gradient-to-br from-blue-600/20 to-purple-600/20 rounded-lg flex items-center justify-center border border-gray-700 shadow-xl">
-            <FileText className="w-12 h-12 text-blue-400" />
+          <div className="w-24 h-24 mx-auto bg-gradient-to-br from-blue-600/20 to-purple-600/20 rounded-lg flex items-center justify-center border border-theme-primary shadow-xl">
+            <FileText className="w-12 h-12 text-blue-500" />
           </div>
           <div className="space-y-2">
-            <h3 className="text-2xl font-bold text-gray-100">
+            <h3 className="text-2xl font-bold text-theme-primary">
               No Report Generated Yet
             </h3>
-            <p className="text-gray-400 text-sm leading-relaxed">
+            <p className="text-theme-secondary text-sm leading-relaxed">
               Run a workflow query to generate a report. Once complete, it will
               appear here with an interactive dashboard.
             </p>
@@ -503,10 +503,10 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
 
   if (loading) {
     return (
-      <div className="h-full flex items-center justify-center bg-gradient-to-br from-gray-900 via-black to-gray-900">
+      <div className="h-full flex items-center justify-center bg-theme-primary theme-transition">
         <div className="text-center space-y-4">
-          <Loader2 className="w-12 h-12 text-blue-400 animate-spin mx-auto" />
-          <p className="text-gray-400">Loading report dashboard...</p>
+          <Loader2 className="w-12 h-12 text-blue-500 animate-spin mx-auto" />
+          <p className="text-theme-secondary">Loading report dashboard...</p>
         </div>
       </div>
     );
@@ -514,16 +514,16 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
 
   if (error) {
     return (
-      <div className="h-full flex items-center justify-center bg-gradient-to-br from-gray-900 via-black to-gray-900">
+      <div className="h-full flex items-center justify-center bg-theme-primary theme-transition">
         <div className="text-center space-y-6 max-w-md p-8">
-          <div className="w-24 h-24 mx-auto bg-gradient-to-br from-red-600/20 to-orange-600/20 rounded-lg flex items-center justify-center border border-red-700 shadow-xl">
-            <AlertCircle className="w-12 h-12 text-red-400" />
+          <div className="w-24 h-24 mx-auto bg-red-500/10 rounded-lg flex items-center justify-center border border-red-500/20 shadow-xl">
+            <AlertCircle className="w-12 h-12 text-red-500" />
           </div>
           <div className="space-y-2">
-            <h3 className="text-2xl font-bold text-gray-100">
+            <h3 className="text-2xl font-bold text-theme-primary">
               Error Loading Report
             </h3>
-            <p className="text-gray-400 text-sm">{error}</p>
+            <p className="text-theme-secondary text-sm">{error}</p>
           </div>
           {onGoBack && (
             <button
@@ -540,19 +540,19 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
   }
 
   return (
-    <div className="h-full w-full flex flex-col bg-gradient-to-br from-gray-900 via-black to-gray-900 overflow-hidden">
+    <div className="h-full w-full flex flex-col bg-theme-primary overflow-hidden theme-transition">
       {/* Header - Fixed in flex layout */}
-      <div className="bg-gradient-to-r from-gray-900 to-black border-b border-gray-800 p-6 backdrop-blur-md z-20 flex-shrink-0">
+      <div className="bg-theme-secondary border-b border-theme-primary p-6 z-20 flex-shrink-0 theme-transition">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-gradient-to-br from-green-600 to-emerald-600 rounded-lg flex items-center justify-center shadow-lg">
               <BarChart3 className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-100">
+              <h2 className="text-xl font-bold text-theme-primary">
                 {reportMeta?.report_title || "Report Dashboard"}
               </h2>
-              <p className="text-sm text-gray-400 mt-1">
+              <p className="text-sm text-theme-secondary mt-1">
                 {reportMeta?.generated_at
                   ? new Date(reportMeta.generated_at).toLocaleString()
                   : reportFileName}
@@ -649,8 +649,8 @@ const AgingReportDashboard: React.FC<{ data: any; meta: any }> = ({ data }) => {
 
       {/* Aging Buckets */}
       {aging_buckets.length > 0 && (
-        <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-lg p-6 shadow-xl">
-          <h3 className="text-lg font-bold text-gray-100 mb-4 flex items-center gap-2">
+        <div className="theme-panel rounded-lg p-6 shadow-xl border">
+          <h3 className="text-lg font-bold text-theme-primary mb-4 flex items-center gap-2">
             <PieChart className="w-5 h-5 text-blue-400" />
             Aging Buckets
           </h3>
@@ -658,15 +658,15 @@ const AgingReportDashboard: React.FC<{ data: any; meta: any }> = ({ data }) => {
             {aging_buckets.map((bucket: any, idx: number) => (
               <div
                 key={idx}
-                className="bg-gray-900/50 border border-gray-700 rounded-lg p-4"
+                className="bg-theme-tertiary border border-theme-primary rounded-lg p-4"
               >
-                <p className="text-xs text-gray-400 mb-1">
+                <p className="text-xs text-theme-tertiary mb-1">
                   {bucket.bucket || bucket.range}
                 </p>
-                <p className="text-2xl font-bold text-gray-100">
+                <p className="text-2xl font-bold text-theme-primary">
                   ₹{(bucket.amount || 0).toLocaleString()}
                 </p>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-theme-secondary mt-1">
                   {bucket.count || 0} invoices
                 </p>
               </div>
@@ -921,8 +921,8 @@ const GenericTableDashboard: React.FC<{ data: any; meta: any }> = ({
 
       return (
         <div className="space-y-6">
-          <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-lg p-8 shadow-xl">
-            <h3 className="text-xl font-bold text-gray-100 mb-6 flex items-center gap-2">
+          <div className="theme-panel rounded-lg p-8 shadow-xl border">
+            <h3 className="text-xl font-bold text-theme-primary mb-6 flex items-center gap-2">
               <BarChart3 className="w-6 h-6 text-blue-400" />
               Report Summary
             </h3>
@@ -930,14 +930,14 @@ const GenericTableDashboard: React.FC<{ data: any; meta: any }> = ({
               {Object.entries(summaryData).map(([key, value]) => (
                 <div
                   key={key}
-                  className="bg-gray-900/50 border border-gray-700 rounded-lg p-4"
+                  className="bg-theme-tertiary border border-theme-primary rounded-lg p-4"
                 >
-                  <p className="text-xs text-gray-400 mb-1">
+                  <p className="text-xs text-theme-tertiary mb-1">
                     {key
                       .replace(/_/g, " ")
                       .replace(/\b\w/g, (l) => l.toUpperCase())}
                   </p>
-                  <p className="text-xl font-bold text-gray-100">
+                  <p className="text-xl font-bold text-theme-primary">
                     {typeof value === "number" &&
                     key.toLowerCase().includes("amount")
                       ? `₹${value.toLocaleString()}`
@@ -952,10 +952,10 @@ const GenericTableDashboard: React.FC<{ data: any; meta: any }> = ({
     }
 
     return (
-      <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-lg p-12 text-center">
-        <FileSpreadsheet className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-        <p className="text-gray-400">No tabular data available to display</p>
-        <p className="text-xs text-gray-500 mt-2">
+      <div className="theme-panel rounded-lg p-12 text-center border">
+        <FileSpreadsheet className="w-16 h-16 text-theme-tertiary mx-auto mb-4" />
+        <p className="text-theme-secondary">No tabular data available to display</p>
+        <p className="text-xs text-theme-tertiary mt-2">
           The report may contain summary data only
         </p>
       </div>
@@ -1002,16 +1002,16 @@ const StatCard: React.FC<{
   };
 
   return (
-    <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-lg p-6 shadow-xl hover:shadow-2xl transition-all">
+    <div className="theme-panel rounded-lg p-6 shadow-xl hover:shadow-2xl transition-all border">
       <div className="flex items-center justify-between mb-3">
-        <p className="text-sm text-gray-400 font-medium">{title}</p>
+        <p className="text-sm text-theme-secondary font-medium">{title}</p>
         <div
           className={`w-10 h-10 bg-gradient-to-br ${colorClasses[color]} rounded-lg flex items-center justify-center text-white`}
         >
           {icon}
         </div>
       </div>
-      <p className="text-2xl font-bold text-gray-100">{value}</p>
+      <p className="text-2xl font-bold text-theme-primary">{value}</p>
     </div>
   );
 };
@@ -1061,39 +1061,39 @@ const DataTable: React.FC<{
   }
 
   return (
-    <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-lg shadow-xl overflow-hidden">
-      <div className="bg-gradient-to-r from-gray-800 to-gray-900 border-b border-gray-700 px-6 py-4">
-        <h3 className="text-lg font-bold text-gray-100 flex items-center gap-2">
+    <div className="theme-panel rounded-lg shadow-xl overflow-hidden border">
+      <div className="bg-theme-tertiary border-b border-theme-primary px-6 py-4">
+        <h3 className="text-lg font-bold text-theme-primary flex items-center gap-2">
           <Table className="w-5 h-5 text-blue-400" />
           {title}
         </h3>
-        <p className="text-xs text-gray-400 mt-1">{data.length} records</p>
+        <p className="text-xs text-theme-tertiary mt-1">{data.length} records</p>
       </div>
 
       <div className="overflow-x-auto report-table-container custom-scrollbar">
         <table className="w-full text-sm">
-          <thead className="sticky top-0 z-10 bg-gray-800 border-b-2 border-gray-700">
+          <thead className="sticky top-0 z-10 theme-table-head border-b-2">
             <tr>
               {columns.map((col, idx) => (
                 <th
                   key={idx}
-                  className="px-6 py-3 text-left text-xs font-bold text-gray-300 uppercase tracking-wider whitespace-nowrap"
+                  className="px-6 py-3 text-left text-xs font-bold text-theme-tertiary uppercase tracking-wider whitespace-nowrap"
                 >
                   {col.label}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-800">
+          <tbody className="divide-y divide-theme-primary">
             {data.map((row, rowIdx) => (
               <tr
                 key={rowIdx}
-                className="hover:bg-gray-800/50 transition-colors"
+                className="hover:bg-theme-tertiary transition-colors"
               >
                 {columns.map((col, colIdx) => (
                   <td
                     key={colIdx}
-                    className="px-6 py-4 text-gray-300 whitespace-nowrap"
+                    className="px-6 py-4 text-theme-secondary whitespace-nowrap"
                   >
                     {formatValue(row[col.key], col.format)}
                   </td>

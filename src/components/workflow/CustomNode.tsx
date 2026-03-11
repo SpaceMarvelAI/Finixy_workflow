@@ -197,12 +197,10 @@ const CustomNodeComponent: React.FC<CustomNodeProps> = ({ data, id }) => {
   const isConditionNode = nodeType === 'condition';
 
   return (
-    <div 
-      className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-lg shadow-2xl border border-gray-700/50 hover:border-blue-500/50 transition-all cursor-pointer min-w-[280px] backdrop-blur-sm"
+    <div
+      className="bg-theme-secondary border border-theme-primary hover:border-blue-500/50 rounded-lg shadow-2xl transition-all cursor-pointer min-w-[280px] theme-transition"
       onClick={() => setSelectedNode(id)}
-      style={{
-        boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
-      }}
+      style={{ boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.2)' }}
     >
       {nodeType !== 'trigger' && (
         <Handle 
@@ -242,20 +240,20 @@ const CustomNodeComponent: React.FC<CustomNodeProps> = ({ data, id }) => {
         <span className="font-semibold text-sm capitalize tracking-wide">{name}</span>
       </div>
       
-      {/* Content with glass effect - ONLY show if description exists AND is meaningful */}
+      {/* Content – only shown when description is meaningful and unique */}
       {description && (
         <>
-          <div className="px-4 py-4 text-sm bg-gradient-to-b from-gray-800/50 to-gray-900/50 backdrop-blur-md">
-            <div 
-              className="text-xs text-gray-400 line-clamp-3 max-w-[240px]" 
+          <div className="px-4 py-4 bg-theme-tertiary">
+            <div
+              className="text-xs text-theme-tertiary line-clamp-3 max-w-[240px]"
               title={description}
             >
               {description}
             </div>
           </div>
-          
-          {/* Bottom gradient accent - only when description exists */}
-          <div className="h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-b-lg opacity-60"></div>
+
+          {/* Bottom accent bar */}
+          <div className="h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-b-lg opacity-60" />
         </>
       )}
       

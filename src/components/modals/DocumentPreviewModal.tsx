@@ -365,74 +365,74 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
     }
 
     return (
-      <div className="overflow-hidden border border-gray-700 rounded-lg bg-gray-800 shadow-lg">
-        <table className="min-w-full divide-y divide-gray-700">
-          <thead className="bg-gray-900">
+      <div className="overflow-hidden theme-panel rounded-lg shadow-lg border">
+        <table className="min-w-full divide-y divide-theme-primary">
+          <thead className="theme-table-head">
             <tr>
-              <th className="px-4 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+              <th className="px-4 py-3 text-left text-[10px] font-bold text-theme-tertiary uppercase tracking-widest">
                 Description
               </th>
-              <th className="px-4 py-3 text-right text-[10px] font-bold text-gray-400 uppercase tracking-widest w-24">
+              <th className="px-4 py-3 text-right text-[10px] font-bold text-theme-tertiary uppercase tracking-widest w-24">
                 Qty
               </th>
-              <th className="px-4 py-3 text-right text-[10px] font-bold text-gray-400 uppercase tracking-widest w-32">
+              <th className="px-4 py-3 text-right text-[10px] font-bold text-theme-tertiary uppercase tracking-widest w-32">
                 Rate
               </th>
-              <th className="px-4 py-3 text-right text-[10px] font-bold text-gray-400 uppercase tracking-widest w-32">
+              <th className="px-4 py-3 text-right text-[10px] font-bold text-theme-tertiary uppercase tracking-widest w-32">
                 Amount
               </th>
-              {isEditMode && <th className="px-4 py-3 text-right text-[10px] font-bold text-gray-400 uppercase tracking-widest w-16"></th>}
+              {isEditMode && <th className="px-4 py-3 text-right text-[10px] font-bold text-theme-tertiary uppercase tracking-widest w-16"></th>}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-700 bg-gray-800">
+          <tbody className="divide-y divide-theme-primary bg-theme-secondary">
             {items.map((item: any, i: number) => (
-              <tr key={i} className="hover:bg-gray-700/50 transition-colors">
-                <td className="px-4 py-3 text-sm font-medium text-gray-200">
+              <tr key={i} className="hover:bg-theme-tertiary transition-colors">
+                <td className="px-4 py-3 text-sm font-medium text-theme-primary">
                   {isEditMode ? (
                     <input
                       type="text"
                       value={item.description || ""}
                       onChange={(e) => handleLineItemChange(i, "description", e.target.value)}
-                      className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm outline-none focus:ring-1 focus:ring-blue-500"
+                      className="w-full theme-input border rounded px-2 py-1 text-sm outline-none focus:ring-1 focus:ring-blue-500"
                     />
                   ) : (
                     item.description || "N/A"
                   )}
                 </td>
-                <td className="px-4 py-3 text-sm text-right text-gray-300">
+                <td className="px-4 py-3 text-sm text-right text-theme-primary">
                   {isEditMode ? (
                     <input
                       type="number"
                       min="0"
                       value={item.quantity || "0"}
                       onChange={(e) => handleLineItemChange(i, "quantity", e.target.value)}
-                      className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm text-right outline-none focus:ring-1 focus:ring-blue-500"
+                      className="w-full theme-input border rounded px-2 py-1 text-sm text-right outline-none focus:ring-1 focus:ring-blue-500"
                     />
                   ) : (
                     item.quantity || "1"
                   )}
                 </td>
-                <td className="px-4 py-3 text-sm text-right text-gray-300 font-mono">
+                <td className="px-4 py-3 text-sm text-right text-theme-primary font-mono">
                   {isEditMode ? (
                     <input
                       type="number"
                       min="0"
                       value={item.unit_price || "0"}
                       onChange={(e) => handleLineItemChange(i, "unit_price", e.target.value)}
-                      className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm text-right outline-none focus:ring-1 focus:ring-blue-500"
+                      className="w-full theme-input border rounded px-2 py-1 text-sm text-right outline-none focus:ring-1 focus:ring-blue-500"
                     />
                   ) : (
                     formatOriginalCurrency(item.unit_price, item.currency || previewData.currency)
                   )}
                 </td>
-                <td className="px-4 py-3 text-sm text-right text-gray-100 font-bold font-mono">
+                <td className="px-4 py-3 text-sm text-right text-theme-primary font-bold font-mono">
                   {isEditMode ? (
                     <input
                       type="number"
                       min="0"
                       value={item.amount || item.line_total || "0"}
                       onChange={(e) => handleLineItemChange(i, "amount", e.target.value)}
-                      className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm text-right outline-none focus:ring-1 focus:ring-blue-500"
+                      className="w-full theme-input border rounded px-2 py-1 text-sm text-right outline-none focus:ring-1 focus:ring-blue-500"
                     />
                   ) : (
                     formatOriginalCurrency(item.amount || item.line_total, item.currency || previewData.currency)
@@ -480,24 +480,24 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
       onClick={() => !isEditing && onClose()}
     >
       <div
-        className="bg-gray-900 rounded-lg shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 border border-gray-800"
+        className="bg-theme-secondary rounded-lg shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 border border-theme-primary"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className="px-6 py-5 border-b border-gray-800 flex justify-between items-center bg-gray-900 sticky top-0 z-10">
+        <div className="px-6 py-5 border-b border-theme-primary flex justify-between items-center bg-theme-secondary sticky top-0 z-10">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-lg shadow-lg shadow-blue-500/20">
               <FileText className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="font-bold text-xl text-gray-100 tracking-tight">
+              <h3 className="font-bold text-xl text-theme-primary tracking-tight">
                 {data.file_name || "Document Preview"}
               </h3>
               <div className="flex items-center gap-2 mt-1">
                 <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                   {isEditing ? "EDITING" : "VERIFIED"}
                 </span>
-                <span className="text-xs text-gray-500 flex items-center gap-1 font-medium">
+                <span className="text-xs text-theme-tertiary flex items-center gap-1 font-medium">
                   <Calendar className="w-3 h-3" /> Upload Date:{" "}
                   {formatDate(data.uploaded_at)}
                 </span>
@@ -539,7 +539,7 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                 <button
                   onClick={() => setIsEditing(false)}
                   disabled={saving}
-                  className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-bold rounded-lg transition-all border border-gray-700"
+                  className="flex items-center gap-2 px-4 py-2 bg-theme-tertiary hover:bg-theme-secondary text-theme-primary text-sm font-bold rounded-lg transition-all border border-theme-primary"
                 >
                   <RotateCcw className="w-4 h-4" /> Cancel
                 </button>
@@ -548,7 +548,7 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
             {!isEditing && (
               <button
                 onClick={onClose}
-                className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                className="p-2 text-theme-tertiary hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
               >
                 <X className="w-6 h-6" />
               </button>
@@ -556,10 +556,10 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
           </div>
         </div>
 
-        <div className="p-8 overflow-y-auto flex-1 bg-gray-950 space-y-8 custom-scrollbar">
+        <div className="p-8 overflow-y-auto flex-1 bg-theme-primary space-y-8 custom-scrollbar">
           {/* 1. Financial Overview Cards */}
           <div>
-            <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+            <h4 className="text-xs font-black text-theme-tertiary uppercase tracking-widest mb-4 flex items-center gap-2">
               <DollarSign className="w-4 h-4" /> Financial Summary
             </h4>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -571,9 +571,9 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
               ].map((item) => (
                 <div
                   key={item.field}
-                  className={`bg-gray-900 p-5 rounded-lg border-l-4 border-l-${item.color}-500 shadow-lg border border-gray-800 transition-all`}
+                  className={`theme-panel p-5 rounded-lg border-l-4 border-l-${item.color}-500 shadow-lg border transition-all`}
                 >
-                  <p className="text-[10px] text-gray-500 font-bold uppercase mb-1 tracking-tighter">
+                  <p className="text-[10px] text-theme-tertiary font-bold uppercase mb-1 tracking-tighter">
                     {item.label}
                   </p>
                   {isEditing ? (
@@ -584,10 +584,10 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                       onChange={(e) => {
                         handleInputChange(item.field, e.target.value);
                       }}
-                      className="w-full bg-gray-800 border-none text-xl font-black text-gray-100 outline-none p-0 focus:ring-0"
+                      className="w-full bg-theme-tertiary border-none text-xl font-black text-theme-primary outline-none p-0 focus:ring-0"
                     />
                   ) : (
-                    <p className="text-2xl font-black text-gray-100">
+                    <p className="text-2xl font-black text-theme-primary">
                       {formatCurrency(getDisplayValue(item.field))}
                     </p>
                   )}
@@ -600,17 +600,17 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Entity Details Card */}
             <div className="space-y-4">
-              <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
+              <h4 className="text-xs font-black text-theme-tertiary uppercase tracking-widest flex items-center gap-2">
                 <Users className="w-4 h-4" /> Entities & Details
               </h4>
-              <div className="bg-gray-900 rounded-lg border border-gray-800 shadow-lg divide-y divide-gray-800 overflow-hidden">
+              <div className="theme-panel rounded-lg border shadow-lg divide-y divide-theme-primary overflow-hidden">
                 {[
                   { label: "Vendor Name", field: "vendor_name", icon: <Building className="w-3.5 h-3.5" /> },
                   { label: "Customer Name", field: "customer_name", icon: <Users className="w-3.5 h-3.5" /> },
                   { label: "Document Number", field: "document_number", icon: <Hash className="w-3.5 h-3.5" />, mono: true },
                 ].map((item) => (
-                  <div key={item.field} className="p-4 flex justify-between items-center bg-gray-900 hover:bg-gray-800/50 transition-colors">
-                    <span className="text-xs text-gray-500 font-bold flex items-center gap-2">
+                  <div key={item.field} className="p-4 flex justify-between items-center bg-transparent hover:bg-theme-tertiary transition-colors">
+                    <span className="text-xs text-theme-tertiary font-bold flex items-center gap-2">
                       {item.icon} {item.label}
                     </span>
                     {isEditing ? (
@@ -618,17 +618,17 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                         type="text"
                         value={getDisplayValue(item.field) ?? ""}
                         onChange={(e) => handleInputChange(item.field, e.target.value)}
-                        className={`bg-gray-800 border border-gray-700 rounded px-3 py-1 text-sm font-bold text-gray-200 outline-none focus:ring-1 focus:ring-blue-500 text-right`}
+                        className={`theme-input border rounded px-3 py-1 text-sm font-bold outline-none focus:ring-1 focus:ring-blue-500 text-right`}
                       />
                     ) : (
-                      <span className={`text-sm font-bold ${item.mono ? 'font-mono text-blue-400' : 'text-gray-200'}`}>
+                      <span className={`text-sm font-bold ${item.mono ? 'font-mono text-blue-400' : 'text-theme-primary'}`}>
                         {getDisplayValue(item.field) || "N/A"}
                       </span>
                     )}
                   </div>
                 ))}
-                <div className="p-4 flex justify-between items-center bg-gray-900 hover:bg-gray-800/50 transition-colors">
-                  <span className="text-xs text-gray-500 font-bold flex items-center gap-2">
+                <div className="p-4 flex justify-between items-center bg-transparent hover:bg-theme-tertiary transition-colors">
+                  <span className="text-xs text-theme-tertiary font-bold flex items-center gap-2">
                     <FileCheck className="w-3.5 h-3.5" /> Status
                   </span>
                   <div>{getStatusBadge(data.status)}</div>
@@ -638,22 +638,22 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
 
             {/* System Analysis Card */}
             <div className="space-y-4">
-              <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
+              <h4 className="text-xs font-black text-theme-tertiary uppercase tracking-widest flex items-center gap-2">
                 <Activity className="w-4 h-4" /> Technical Analysis
               </h4>
-              <div className="bg-gray-900 rounded-lg border border-gray-800 shadow-lg p-5 space-y-6">
+              <div className="theme-panel rounded-lg border shadow-lg p-5 space-y-6">
                 <div className="flex justify-between items-center">
                   <div>
-                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">
+                    <p className="text-[10px] text-theme-tertiary font-bold uppercase tracking-widest">
                       File Properties
                     </p>
-                    <p className="text-sm font-bold text-gray-200 uppercase mt-1">
+                    <p className="text-sm font-bold text-theme-primary uppercase mt-1">
                       {data.file_type?.replace(".", "") || "PDF"} /{" "}
                       {formatBytes(data.file_size)}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">
+                    <p className="text-[10px] text-theme-tertiary font-bold uppercase tracking-widest">
                       AI Confidence
                     </p>
                     <p className="text-sm font-bold text-emerald-400 mt-1">
@@ -663,8 +663,8 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                     </p>
                   </div>
                 </div>
-                <div className="pt-4 border-t border-gray-800">
-                  <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">
+                <div className="pt-4 border-t border-theme-primary">
+                  <p className="text-[10px] text-theme-tertiary font-bold uppercase tracking-widest mb-1">
                     Processing Result
                   </p>
                   <span className="inline-block px-3 py-1 bg-blue-500/20 text-blue-400 text-[10px] font-black rounded-lg uppercase tracking-tighter border border-blue-500/30">
@@ -677,7 +677,7 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
 
           {/* 3. Itemized Records Table */}
           <div>
-            <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+            <h4 className="text-xs font-black text-theme-tertiary uppercase tracking-widest mb-4 flex items-center gap-2">
               <Table className="w-4 h-4" /> Itemized Records
             </h4>
             {renderLineItems(data.canonical_data, isEditing)}

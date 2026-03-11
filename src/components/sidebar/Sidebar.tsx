@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
-
   Plus,
   History,
   Settings,
@@ -17,6 +16,7 @@ import {
   FileText,
   FolderOpen,
 } from "lucide-react";
+import { useTheme } from "../../store/ThemeContext";
 import { chatService } from "../../services/api";
 import { useWorkflow } from "../../store/WorkflowContext";
 import { INITIAL_CHAT_MESSAGE } from "../../utils/constants";
@@ -59,6 +59,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isChatExpanded,
   onToggleChat,
 }) => {
+  const { theme } = useTheme();
   const {
     loadWorkflow,
     clearWorkflow,
@@ -67,7 +68,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     sidebarRefreshTrigger,
   } = useWorkflow();
 
-  // State
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isDocumentsOpen, setIsDocumentsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -81,12 +81,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
 
-  // Refs
   const menuRef = useRef<HTMLDivElement>(null);
   const isFetchingRef = useRef(false);
 
   // ============================================================================
-  // TOAST NOTIFICATIONS
+  // TOAST
   // ============================================================================
   const showToast = useCallback(
     (message: string, type: "success" | "error" = "success") => {
@@ -101,45 +100,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
   );
 
   // ============================================================================
-  // FETCH CHAT HISTORY - WITH FILTERING
+  // FETCH CHAT HISTORY
   // ============================================================================
   const fetchHistory = useCallback(async () => {
-    if (isFetchingRef.current) {
-      console.log("⏸️ Already fetching, skipping...");
-      return;
-    }
-
+    if (isFetchingRef.current) return;
     isFetchingRef.current = true;
     setLoading(true);
-
     try {
       const response = await chatService.getChatHistory(100, 0);
-      console.log("📋 Raw API Response:", response.data);
-
       if (response.data && Array.isArray(response.data)) {
-        console.log("📊 Sample chat item:", response.data[0]);
-
-        // Deduplicate by chat_id using Map
         const uniqueChatsMap = new Map<string, ChatItem>();
         response.data.forEach((chat: ChatItem) => {
           if (chat.chat_id && !uniqueChatsMap.has(chat.chat_id)) {
             uniqueChatsMap.set(chat.chat_id, chat);
           }
         });
-
-        const uniqueChats = Array.from(uniqueChatsMap.values());
-
-        console.log("📊 Total fetched:", response.data.length);
-        console.log("📊 Unique chats:", uniqueChats.length);
-
-        setChatItems(uniqueChats);
+        setChatItems(Array.from(uniqueChatsMap.values()));
       } else {
-        console.error("❌ Invalid response format");
         showToast("Invalid response format", "error");
         setChatItems([]);
       }
-    } catch (error) {
-      console.error("❌ Failed to load chat history:", error);
+    } catch {
       showToast("Failed to load history", "error");
       setChatItems([]);
     } finally {
@@ -149,46 +130,29 @@ export const Sidebar: React.FC<SidebarProps> = ({
   }, [showToast]);
 
   // ============================================================================
-  // LOAD CHAT HANDLER
+  // LOAD CHAT
   // ============================================================================
   const handleChatItemClick = useCallback(
     async (chat_id: string) => {
       if (activeMenuId || editingId) return;
-
       try {
         showToast("Loading chat...", "success");
         const response = await chatService.getChatDetails(chat_id);
-
-        console.log("=== LOADING CHAT ===");
-        console.log("Chat ID:", chat_id);
-        console.log("Response:", response.data);
-
         if (response.data && response.data.chat_id) {
           const chat = response.data;
-
-          // Set current chat ID
           setCurrentChatId(chat.chat_id);
-
-          // Load messages
           if (chat.messages && Array.isArray(chat.messages)) {
-            console.log("📝 Loading", chat.messages.length, "messages");
             setChatHistory(chat.messages);
           } else {
-            setChatHistory([
-              { role: "assistant", content: INITIAL_CHAT_MESSAGE },
-            ]);
+            setChatHistory([{ role: "assistant", content: INITIAL_CHAT_MESSAGE }]);
           }
 
-          // Try to load workflow and report if exists
           let workflow_id = null;
           let latest_report_id = null;
 
           if (chat.final_report_ids && chat.final_report_ids.length > 0) {
             latest_report_id = chat.final_report_ids[chat.final_report_ids.length - 1];
-            console.log("📊 Found latest report ID in chat:", latest_report_id);
           }
-
-          // Check messages for workflow_id
           if (chat.messages) {
             for (let i = chat.messages.length - 1; i >= 0; i--) {
               if (chat.messages[i]?.metadata?.workflow_id) {
@@ -197,100 +161,58 @@ export const Sidebar: React.FC<SidebarProps> = ({
               }
             }
           }
-
-          // Check chat metadata
           if (!workflow_id && chat.metadata?.workflow_id) {
             workflow_id = chat.metadata.workflow_id;
           }
 
           if (workflow_id) {
             try {
-              console.log("🔄 Loading workflow:", workflow_id);
-              const wfResponse =
-                await chatService.getWorkflowDetails(workflow_id);
-
-              if (
-                wfResponse.data?.status === "success" &&
-                wfResponse.data.workflow
-              ) {
+              const wfResponse = await chatService.getWorkflowDetails(workflow_id);
+              if (wfResponse.data?.status === "success" && wfResponse.data.workflow) {
                 const wf = wfResponse.data.workflow;
                 const rawNodes = wf.workflow_definition?.nodes || [];
                 const rawEdges = wf.workflow_definition?.edges || [];
-
                 if (rawNodes.length > 0) {
-                  const safeNodes = mapBackendNodesToFrontend(
-                    rawNodes,
-                    wf.name || "",
-                    wf.report_type || "",
-                  );
-                  const safeEdges = mapBackendEdgesToFrontend(
-                    rawEdges,
-                    safeNodes,
-                  );
-
-                  loadWorkflow(
-                    wf.name || wf.query || "Loaded Workflow",
-                    safeNodes,
-                    safeEdges,
-                    latest_report_id || undefined,
-                  );
-
+                  const safeNodes = mapBackendNodesToFrontend(rawNodes, wf.name || "", wf.report_type || "");
+                  const safeEdges = mapBackendEdgesToFrontend(rawEdges, safeNodes);
+                  loadWorkflow(wf.name || wf.query || "Loaded Workflow", safeNodes, safeEdges, latest_report_id || undefined);
                   showToast("Workflow loaded", "success");
                 }
               }
-            } catch (wfError) {
-              console.error("❌ Failed to load workflow:", wfError);
-              // Fallback: Clear workflow but keep the report ID if we have it
-              if (latest_report_id) {
-                loadWorkflow("New Workflow", [], [], latest_report_id);
-              }
+            } catch {
+              if (latest_report_id) loadWorkflow("New Workflow", [], [], latest_report_id);
             }
           } else if (latest_report_id) {
-            // No workflow but have report
             loadWorkflow("New Workflow", [], [], latest_report_id);
           }
-
           setIsHistoryOpen(false);
         }
-      } catch (error: any) {
-        console.error("❌ Load Error:", error);
+      } catch {
         showToast("Failed to load chat", "error");
       }
     },
-    [
-      activeMenuId,
-      editingId,
-      showToast,
-      setCurrentChatId,
-      setChatHistory,
-      loadWorkflow,
-    ],
+    [activeMenuId, editingId, showToast, setCurrentChatId, setChatHistory, loadWorkflow],
   );
 
   // ============================================================================
-  // PIN HANDLER
+  // PIN / RENAME / DELETE
   // ============================================================================
   const handlePin = useCallback(
     async (e: React.MouseEvent, id: string) => {
       e.stopPropagation();
       const item = chatItems.find((i) => i.chat_id === id);
       if (!item) return;
-
       try {
         const newPinnedStatus = !item.pinned;
         setChatItems((prev) =>
-          prev.map((i) =>
-            i.chat_id === id ? { ...i, pinned: newPinnedStatus } : i,
-          ),
+          prev.map((i) => (i.chat_id === id ? { ...i, pinned: newPinnedStatus } : i)),
         );
         await chatService.updateChat(id, { pinned: newPinnedStatus });
         showToast(newPinnedStatus ? "Pinned" : "Unpinned");
-      } catch (error) {
+      } catch {
         showToast("Failed to pin", "error");
         setChatItems((prev) =>
-          prev.map((i) =>
-            i.chat_id === id ? { ...i, pinned: item.pinned } : i,
-          ),
+          prev.map((i) => (i.chat_id === id ? { ...i, pinned: item.pinned } : i)),
         );
       }
       setActiveMenuId(null);
@@ -298,9 +220,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     [chatItems, showToast],
   );
 
-  // ============================================================================
-  // RENAME HANDLERS
-  // ============================================================================
   const startRename = useCallback(
     (e: React.MouseEvent, id: string, currentTitle: string) => {
       e.stopPropagation();
@@ -316,9 +235,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       try {
         await chatService.updateChat(editingId, { session_title: editValue });
         setChatItems((prev) =>
-          prev.map((i) =>
-            i.chat_id === editingId ? { ...i, session_title: editValue } : i,
-          ),
+          prev.map((i) => (i.chat_id === editingId ? { ...i, session_title: editValue } : i)),
         );
         showToast("Renamed");
       } catch {
@@ -328,9 +245,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
   }, [editingId, editValue, showToast]);
 
-  // ============================================================================
-  // DELETE HANDLERS
-  // ============================================================================
   const confirmDelete = useCallback((e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     setItemToDelete(id);
@@ -352,17 +266,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
   }, [itemToDelete, showToast]);
 
-  // ============================================================================
-  // MENU TOGGLE
-  // ============================================================================
   const toggleMenu = useCallback((e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     setActiveMenuId((prev) => (prev === id ? null : id));
   }, []);
 
-  // ============================================================================
-  // NEW CHAT HANDLER
-  // ============================================================================
   const handleNewChat = useCallback(() => {
     clearWorkflow();
     setChatHistory([]);
@@ -371,7 +279,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   }, [clearWorkflow, setChatHistory, setCurrentChatId]);
 
   // ============================================================================
-  // FILTERED AND SORTED HISTORY
+  // FILTERED HISTORY
   // ============================================================================
   const filteredHistory = chatItems
     .filter((item) =>
@@ -389,17 +297,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   // EFFECTS
   // ============================================================================
   useEffect(() => {
-    if (isHistoryOpen) {
-      fetchHistory();
-    }
+    if (isHistoryOpen) fetchHistory();
   }, [isHistoryOpen, fetchHistory]);
 
-  // Refresh sidebar when trigger changes (e.g., after file upload)
   useEffect(() => {
-    if (sidebarRefreshTrigger > 0 && isHistoryOpen) {
-      console.log("🔄 Sidebar refresh triggered");
-      fetchHistory();
-    }
+    if (sidebarRefreshTrigger > 0 && isHistoryOpen) fetchHistory();
   }, [sidebarRefreshTrigger, isHistoryOpen, fetchHistory]);
 
   useEffect(() => {
@@ -413,50 +315,61 @@ export const Sidebar: React.FC<SidebarProps> = ({
   }, []);
 
   // ============================================================================
+  // ICON BUTTON HELPER — adapts to dark/light
+  // ============================================================================
+  const iconBtnBase =
+    "w-full px-2 py-2.5 flex items-center gap-3 rounded-lg transition-all group hover:bg-black/5 dark:hover:bg-white/5";
+
+  const iconBox = (active: boolean, colors: string) =>
+    `w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg transition-all ${
+      active
+        ? colors
+        : theme === "light"
+          ? "bg-theme-tertiary text-theme-secondary shadow-md border border-theme-primary/50"
+          : "bg-theme-tertiary text-theme-primary"
+    }`;
+
+  const iconColor = useMemo(() => {
+    return theme === "light" ? "text-theme-secondary" : "text-white";
+  }, [theme]);
+
+  // ============================================================================
   // RENDER
   // ============================================================================
   return (
     <>
+      {/* SIDEBAR RAIL */}
       <div
-        className={`relative bg-gradient-to-b from-gray-900 to-black flex flex-col items-start py-4 gap-2 border-r border-gray-800 h-full z-50 transition-all duration-300 ${
-          isHovered ? "w-54" : "w-12"
-        }`}
+        className={`relative flex flex-col items-start py-4 gap-2 border-r h-full z-50 transition-all duration-300 theme-transition
+          bg-theme-secondary border-theme-primary
+          ${isHovered ? "w-48" : "w-12"}`}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
         {/* NEW CHAT */}
-        <button
-          onClick={handleNewChat}
-          className="w-full px-2 py-2.5 flex items-center gap-3 hover:bg-gray-800/50 rounded-lg transition-all group"
-          title="New Chat"
-        >
+        <button onClick={handleNewChat} className={iconBtnBase} title="New Chat">
           <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg group-hover:shadow-blue-500/50 transition-all">
             <Plus className="w-4 h-4 text-white" />
           </div>
           {isHovered && (
-            <span className="text-sm font-medium text-gray-200 whitespace-nowrap">
+            <span className="text-sm font-medium text-theme-secondary whitespace-nowrap">
               New Chat
             </span>
           )}
         </button>
 
         {/* ASK FINIXY AI */}
-        <button
-          onClick={onToggleChat}
-          className="w-full px-2 py-2.5 flex items-center gap-3 hover:bg-gray-800/50 rounded-lg transition-all group"
-          title={isChatExpanded ? "Collapse Chat" : "Expand Chat"}
-        >
-          <div
-            className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg transition-all ${
-              isChatExpanded
-                ? "bg-gradient-to-br from-purple-600 to-purple-700 group-hover:from-purple-500 group-hover:to-purple-600 group-hover:shadow-purple-500/50"
-                : "bg-gradient-to-br from-gray-700 to-gray-800 group-hover:from-gray-600 group-hover:to-gray-700"
-            }`}
-          >
-            <MessageSquare className="w-4 h-4 text-white" />
+        <button onClick={onToggleChat} className={iconBtnBase} title={isChatExpanded ? "Collapse Chat" : "Expand Chat"}>
+          <div className={iconBox(
+            isChatExpanded,
+            theme === "light" 
+              ? "bg-purple-100 border border-purple-200 shadow-sm" 
+              : "bg-gradient-to-br from-purple-600 to-purple-700 group-hover:from-purple-500 group-hover:to-purple-600 group-hover:shadow-purple-500/50",
+          )}>
+            <MessageSquare className={`w-4 h-4 ${isChatExpanded && theme === "light" ? "text-purple-600" : iconColor}`} />
           </div>
           {isHovered && (
-            <span className="text-sm font-medium text-gray-200 whitespace-nowrap">
+            <span className="text-sm font-medium text-theme-secondary whitespace-nowrap">
               Ask Finixy AI
             </span>
           )}
@@ -464,24 +377,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* HISTORY */}
         <button
-          onClick={() => {
-            setIsHistoryOpen(!isHistoryOpen);
-            setIsDocumentsOpen(false);
-          }}
-          className="w-full px-2 py-2.5 flex items-center gap-3 hover:bg-gray-800/50 rounded-lg transition-all group"
+          onClick={() => { setIsHistoryOpen(!isHistoryOpen); setIsDocumentsOpen(false); }}
+          className={iconBtnBase}
           title="History"
         >
-          <div
-            className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg transition-all ${
-              isHistoryOpen
-                ? "bg-gradient-to-br from-cyan-600 to-cyan-700 group-hover:from-cyan-500 group-hover:to-cyan-600 group-hover:shadow-cyan-500/50"
-                : "bg-gradient-to-br from-gray-700 to-gray-800 group-hover:from-gray-600 group-hover:to-gray-700"
-            }`}
-          >
-            <History className="w-4 h-4 text-white" />
+          <div className={iconBox(
+            isHistoryOpen,
+            theme === "light" 
+              ? "bg-cyan-100 border border-cyan-200 shadow-sm"
+              : "bg-gradient-to-br from-cyan-600 to-cyan-700 group-hover:from-cyan-500 group-hover:to-cyan-600 group-hover:shadow-cyan-500/50",
+          )}>
+            <History className={`w-4 h-4 ${isHistoryOpen && theme === "light" ? "text-cyan-600" : iconColor}`} />
           </div>
           {isHovered && (
-            <span className="text-sm font-medium text-gray-200 whitespace-nowrap">
+            <span className="text-sm font-medium text-theme-secondary whitespace-nowrap">
               History
             </span>
           )}
@@ -489,36 +398,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* MY DOCUMENTS */}
         <button
-          onClick={() => {
-            setIsDocumentsOpen(!isDocumentsOpen);
-            setIsHistoryOpen(false);
-          }}
-          className="w-full px-2 py-2.5 flex items-center gap-3 hover:bg-gray-800/50 rounded-lg transition-all group"
+          onClick={() => { setIsDocumentsOpen(!isDocumentsOpen); setIsHistoryOpen(false); }}
+          className={iconBtnBase}
           title="My Documents"
         >
-          <div
-            className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg transition-all ${
-              isDocumentsOpen
-                ? "bg-gradient-to-br from-indigo-600 to-purple-700 group-hover:from-indigo-500 group-hover:to-purple-600 group-hover:shadow-indigo-500/50"
-                : "bg-gradient-to-br from-gray-700 to-gray-800 group-hover:from-gray-600 group-hover:to-gray-700"
-            }`}
-          >
-            <FolderOpen className="w-4 h-4 text-white" />
+          <div className={iconBox(
+            isDocumentsOpen,
+            theme === "light" 
+              ? "bg-indigo-100 border border-indigo-200 shadow-sm"
+              : "bg-gradient-to-br from-indigo-600 to-purple-700 group-hover:from-indigo-500 group-hover:to-purple-600 group-hover:shadow-indigo-500/50",
+          )}>
+            <FolderOpen className={`w-4 h-4 ${isDocumentsOpen && theme === "light" ? "text-indigo-600" : iconColor}`} />
           </div>
           {isHovered && (
-            <span className="text-sm font-medium text-gray-200 whitespace-nowrap">
+            <span className="text-sm font-medium text-theme-secondary whitespace-nowrap">
               My Documents
             </span>
           )}
         </button>
 
         {/* SETTINGS */}
-        <button className="w-full px-2 py-2.5 flex items-center gap-3 hover:bg-gray-800/50 rounded-lg transition-all group mt-auto">
-          <div className="w-8 h-8 bg-gradient-to-br from-gray-700 to-gray-800 hover:from-gray-600 hover:to-gray-700 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg transition-all">
-            <Settings className="w-4 h-4 text-white" />
+        <button className={`${iconBtnBase} mt-auto`}>
+          <div className="w-8 h-8 bg-theme-tertiary text-theme-primary rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg transition-all">
+            <Settings className="w-4 h-4 text-theme-secondary" />
           </div>
           {isHovered && (
-            <span className="text-sm font-medium text-gray-200 whitespace-nowrap">
+            <span className="text-sm font-medium text-theme-secondary whitespace-nowrap">
               Settings
             </span>
           )}
@@ -526,41 +431,39 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* HISTORY PANEL */}
         {isHistoryOpen && (
-          <div className="absolute left-full top-0 h-full w-80 bg-gradient-to-br from-gray-900 to-black border-r border-gray-800 shadow-2xl flex flex-col z-[60]">
+          <div className="absolute left-full top-0 h-full w-80 theme-slide-panel border-r shadow-2xl flex flex-col z-[60]">
             {/* Header */}
-            <div className="p-4 border-b border-gray-800">
+            <div className="p-4 border-b border-theme-primary">
               <div className="flex justify-between items-center mb-3">
-                <h3 className="font-semibold text-gray-100 text-sm">
-                  Chat History
-                </h3>
+                <h3 className="font-semibold text-theme-primary text-sm">Chat History</h3>
                 <button
                   onClick={() => setIsHistoryOpen(false)}
-                  className="text-gray-400 hover:text-gray-200 hover:bg-gray-800 p-1.5 rounded-lg transition-all"
+                  className="text-theme-tertiary hover:text-theme-primary hover:bg-theme-tertiary p-1.5 rounded-lg transition-all"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-theme-tertiary" />
                 <input
                   type="text"
                   placeholder="Search chats..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-3 py-2 text-sm bg-gray-800 border border-gray-700 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-gray-200 placeholder-gray-500"
+                  className="w-full pl-10 pr-3 py-2 text-sm theme-input border rounded-lg"
                 />
               </div>
             </div>
 
             {/* Chat List */}
-            <div className="flex-1 overflow-y-auto p-3 space-y-2" ref={menuRef}>
+            <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar" ref={menuRef}>
               {loading ? (
-                <div className="flex flex-col items-center justify-center h-32 text-gray-500">
+                <div className="flex flex-col items-center justify-center h-32 text-theme-tertiary">
                   <Loader2 className="w-6 h-6 animate-spin mb-2 text-blue-400" />
                   <span className="text-xs">Loading...</span>
                 </div>
               ) : filteredHistory.length === 0 ? (
-                <div className="text-center py-12 text-gray-500 text-sm">
+                <div className="text-center py-12 text-theme-tertiary text-sm">
                   <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
                   <p>No chats found</p>
                 </div>
@@ -569,17 +472,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <div
                     key={item.chat_id}
                     onClick={() => handleChatItemClick(item.chat_id)}
-                    className={`group relative flex items-center gap-3 p-3 hover:bg-gray-800 rounded-lg cursor-pointer transition-all border ${
+                    className={`group relative flex items-center gap-3 p-3 hover:bg-theme-tertiary rounded-lg cursor-pointer transition-all border ${
                       item.pinned
-                        ? "bg-gray-800/50 border-gray-700"
-                        : "border-transparent hover:border-gray-700"
+                        ? "bg-theme-tertiary border-theme-secondary"
+                        : "border-transparent hover:border-theme-primary"
                     }`}
                   >
                     <div
                       className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
                         item.pinned
-                          ? "bg-gradient-to-br from-yellow-600 to-yellow-700 text-white shadow-lg"
-                          : "bg-gray-800 border border-gray-700 text-blue-400"
+                          ? "bg-theme-secondary border border-yellow-500 text-yellow-500 shadow-lg"
+                          : "bg-theme-tertiary border border-theme-primary text-blue-500"
                       }`}
                     >
                       {item.pinned ? (
@@ -597,15 +500,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           onBlur={saveRename}
                           onKeyDown={(e) => e.key === "Enter" && saveRename()}
                           autoFocus
-                          className="w-full text-sm font-medium bg-gray-900 border border-blue-500 rounded-lg px-2 py-1 outline-none text-gray-100"
+                          className="w-full text-sm font-medium theme-input border rounded-lg px-2 py-1"
                           onClick={(e) => e.stopPropagation()}
                         />
                       ) : (
                         <>
-                          <p className="text-sm font-medium text-gray-100 truncate">
+                          <p className="text-sm font-medium text-theme-primary truncate">
                             {item.session_title}
                           </p>
-                          <p className="text-[10px] text-gray-500 mt-0.5">
+                          <p className="text-[10px] text-theme-tertiary mt-0.5">
                             {new Date(item.created_at).toLocaleDateString()}
                           </p>
                         </>
@@ -613,30 +516,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     </div>
                     <button
                       onClick={(e) => toggleMenu(e, item.chat_id)}
-                      className="p-1.5 rounded-lg hover:bg-gray-700 text-gray-500 hover:text-gray-300"
+                      className="p-1.5 rounded-lg hover:bg-theme-tertiary text-theme-tertiary hover:text-theme-primary"
                     >
                       <ChevronRight
                         className={`w-4 h-4 transition-transform ${activeMenuId === item.chat_id ? "rotate-90" : ""}`}
                       />
                     </button>
                     {activeMenuId === item.chat_id && (
-                      <div className="absolute right-0 top-full mt-1 w-36 bg-gray-800 rounded-lg shadow-xl border border-gray-700 z-[70] py-1">
+                      <div className="absolute right-0 top-full mt-1 w-36 theme-modal rounded-lg shadow-xl border z-[70] py-1">
                         <button
                           onClick={(e) => handlePin(e, item.chat_id)}
-                          className="w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-gray-700 flex items-center gap-2"
+                          className="w-full text-left px-3 py-2 text-xs text-theme-secondary hover:bg-theme-tertiary flex items-center gap-2"
                         >
                           <Pin className="w-3 h-3" />
                           {item.pinned ? "Unpin" : "Pin"}
                         </button>
                         <button
-                          onClick={(e) =>
-                            startRename(e, item.chat_id, item.session_title)
-                          }
-                          className="w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-gray-700 flex items-center gap-2"
+                          onClick={(e) => startRename(e, item.chat_id, item.session_title)}
+                          className="w-full text-left px-3 py-2 text-xs text-theme-secondary hover:bg-theme-tertiary flex items-center gap-2"
                         >
                           <Edit2 className="w-3 h-3" /> Rename
                         </button>
-                        <div className="h-px bg-gray-700 my-1"></div>
+                        <div className="h-px bg-theme-primary my-1" />
                         <button
                           onClick={(e) => confirmDelete(e, item.chat_id)}
                           className="w-full text-left px-3 py-2 text-xs text-red-400 hover:bg-red-500/10 flex items-center gap-2"
@@ -660,28 +561,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* DELETE MODAL */}
       {showDeleteModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm">
-          <div className="bg-gradient-to-br from-gray-900 to-black border border-gray-800 rounded-lg shadow-2xl w-96 p-6">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center theme-modal-overlay backdrop-blur-sm">
+          <div className="theme-modal border rounded-lg shadow-2xl w-96 p-6">
             <div className="flex flex-col items-center text-center">
               <div className="w-14 h-14 bg-red-500/20 rounded-lg flex items-center justify-center mb-4 border-2 border-red-500/40">
                 <AlertTriangle className="w-7 h-7 text-red-400" />
               </div>
-              <h3 className="text-lg font-bold text-gray-100 mb-2">
-                Delete Chat?
-              </h3>
-              <p className="text-sm text-gray-400 mb-6">
-                This action cannot be undone.
-              </p>
+              <h3 className="text-lg font-bold text-theme-primary mb-2">Delete Chat?</h3>
+              <p className="text-sm text-theme-secondary mb-6">This action cannot be undone.</p>
               <div className="flex gap-3 w-full">
                 <button
                   onClick={() => setShowDeleteModal(false)}
-                  className="flex-1 px-4 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-200 rounded-lg text-sm font-medium transition-all border border-gray-700"
+                  className="flex-1 px-4 py-2.5 bg-theme-tertiary hover:bg-theme-secondary text-theme-primary rounded-lg text-sm font-medium transition-all border border-theme-primary"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={executeDelete}
-                  className="flex-1 px-4 py-2.5 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white rounded-lg text-sm font-medium transition-all shadow-lg"
+                  className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-lg text-sm font-medium transition-all shadow-lg"
                 >
                   Delete
                 </button>
@@ -699,7 +596,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-xl border ${
               toast.type === "error"
                 ? "bg-red-600 border-red-500"
-                : "bg-gray-800 border-gray-700"
+                : "bg-theme-secondary border-theme-primary"
             }`}
           >
             {toast.type === "error" ? (
@@ -707,7 +604,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             ) : (
               <CheckCircle className="w-5 h-5 text-green-400" />
             )}
-            <span className="text-sm font-medium text-white">
+            <span className="text-sm font-medium text-theme-primary">
               {toast.message}
             </span>
           </div>

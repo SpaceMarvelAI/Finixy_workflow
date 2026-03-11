@@ -48,10 +48,10 @@ export const ChartContainer: React.FC<ChartContainerProps> = ({
   };
 
   return (
-    <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-2xl p-6 shadow-xl">
+    <div className="theme-panel border rounded-2xl p-6 shadow-md hover:shadow-lg transition-all theme-transition">
       {/* Header with Download Options */}
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold text-gray-100 flex items-center gap-2">
+        <h3 className="text-lg font-bold text-theme-primary flex items-center gap-2">
           {icon}
           {title}
         </h3>
@@ -68,17 +68,17 @@ export const ChartContainer: React.FC<ChartContainerProps> = ({
 
           {/* Dropdown Menu */}
           {!downloading && (
-            <div className="absolute right-0 top-full mt-2 w-40 bg-gray-800 border border-gray-700 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+            <div className="absolute right-0 top-full mt-2 w-40 theme-modal border rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
               <button
                 onClick={() => handleDownload("png")}
-                className="w-full px-4 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors rounded-t-lg flex items-center gap-2"
+                className="w-full px-4 py-2 text-left text-sm text-theme-secondary hover:bg-theme-tertiary hover:text-theme-primary transition-colors rounded-t-lg flex items-center gap-2"
               >
                 <Download className="w-3 h-3" />
                 Download as PNG
               </button>
               <button
                 onClick={() => handleDownload("jpg")}
-                className="w-full px-4 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors rounded-b-lg flex items-center gap-2"
+                className="w-full px-4 py-2 text-left text-sm text-theme-secondary hover:bg-theme-tertiary hover:text-theme-primary transition-colors rounded-b-lg flex items-center gap-2"
               >
                 <Download className="w-3 h-3" />
                 Download as JPG
@@ -89,10 +89,7 @@ export const ChartContainer: React.FC<ChartContainerProps> = ({
       </div>
 
       {/* Chart Content */}
-      <div
-        ref={chartRef}
-        className="bg-gradient-to-br from-gray-800 to-gray-900"
-      >
+      <div ref={chartRef} className="bg-theme-secondary rounded-lg">
         {children}
       </div>
     </div>

@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from "react";
 import { useNodes, useEdges, useViewport } from "reactflow";
+import { useTheme } from "@store/ThemeContext";
 
 // This component MUST be rendered as a child of <ReactFlow>
 const MiniMapCanvas: React.FC = () => {
@@ -11,6 +12,8 @@ const MiniMapCanvas: React.FC = () => {
 
   const MINIMAP_WIDTH = 240;
   const MINIMAP_HEIGHT = 160;
+
+  const { theme } = useTheme();
 
   useEffect(() => {
     // Safety check: ensure canvas is mounted
@@ -28,6 +31,13 @@ const MiniMapCanvas: React.FC = () => {
     }
 
     try {
+      // Theme-based colors
+      const isDark = theme === "dark";
+      const bgStart = isDark ? "#1f2937" : "#f1f5f9";
+      const bgEnd = isDark ? "#111827" : "#f8fafc";
+      const textColor = isDark ? "#6b7280" : "#64748b";
+      const edgeColor = isDark ? "#4b5563" : "#94a3b8";
+      
       // Clear canvas
       ctx.clearRect(0, 0, MINIMAP_WIDTH, MINIMAP_HEIGHT);
 
@@ -54,8 +64,8 @@ const MiniMapCanvas: React.FC = () => {
 
       // Background with gradient
       const gradient = ctx.createLinearGradient(0, 0, 0, MINIMAP_HEIGHT);
-      gradient.addColorStop(0, "#1f2937");
-      gradient.addColorStop(1, "#111827");
+      gradient.addColorStop(0, bgStart);
+      gradient.addColorStop(1, bgEnd);
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, MINIMAP_WIDTH, MINIMAP_HEIGHT);
 
@@ -63,7 +73,7 @@ const MiniMapCanvas: React.FC = () => {
 
       // Check if we have nodes
       if (!nodes || nodes.length === 0) {
-        ctx.fillStyle = "#6b7280";
+        ctx.fillStyle = textColor;
         ctx.font = "12px sans-serif";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
@@ -112,7 +122,7 @@ const MiniMapCanvas: React.FC = () => {
         (MINIMAP_HEIGHT - workflowHeight * scale) / 2 - minY * scale;
 
       // Draw edges with smooth lines
-      ctx.strokeStyle = "#4b5563";
+      ctx.strokeStyle = edgeColor;
       ctx.lineWidth = 1.5;
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
@@ -154,7 +164,7 @@ const MiniMapCanvas: React.FC = () => {
             ty - arrowSize * Math.sin(angle + Math.PI / 6),
           );
           ctx.closePath();
-          ctx.fillStyle = "#4b5563";
+          ctx.fillStyle = edgeColor;
           ctx.fill();
         });
       }
@@ -267,7 +277,7 @@ const MiniMapCanvas: React.FC = () => {
         ctx.fillText("Render Error", MINIMAP_WIDTH / 2, MINIMAP_HEIGHT / 2);
       }
     }
-  }, [nodes, edges, viewX, viewY, zoom]);
+  }, [nodes, edges, viewX, viewY, zoom, theme]);
 
   return (
     <canvas
@@ -290,18 +300,7 @@ export const CustomMiniMap: React.FC = () => {
       className="react-flow__panel react-flow__minimap bottom left"
       style={{ bottom: 16, left: 16 }}
     >
-      <div
-        style={{
-          background:
-            "linear-gradient(to bottom right, rgba(31, 41, 55, 0.95), rgba(17, 24, 39, 0.95))",
-          border: "2px solid #374151",
-          borderRadius: "12px",
-          padding: "8px",
-          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
-          backdropFilter: "blur(12px)",
-          overflow: "hidden",
-        }}
-      >
+      <div className="theme-panel p-2 rounded-xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] backdrop-blur-md overflow-hidden border">
         <MiniMapCanvas />
       </div>
     </div>

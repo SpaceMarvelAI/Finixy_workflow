@@ -8,6 +8,7 @@ import {
 } from "react-router-dom";
 import { WorkflowProvider, useWorkflow } from "@store/WorkflowContext";
 import { AuthProvider, useAuth } from "@store/AuthContext";
+import { ThemeProvider } from "@store/ThemeContext";
 import { Header } from "@components/layout/Header";
 import { Sidebar } from "@components/sidebar/Sidebar";
 import { ChatPanel } from "@components/chat/ChatPanel";
@@ -35,69 +36,43 @@ const MainLayout: React.FC = () => {
   const [currentReportFileName, setCurrentReportFileName] =
     useState<string>("report.xlsx");
   const [isWorkflowMounted, setIsWorkflowMounted] = useState(false);
-  const [reportChatId, setReportChatId] = useState<string | null>(null); // Track which chat the report belongs to
+  const [reportChatId, setReportChatId] = useState<string | null>(null);
 
-  // Mark workflow as mounted after first render
-  useEffect(() => {
-    setIsWorkflowMounted(true);
-  }, []);
+  useEffect(() => { setIsWorkflowMounted(true); }, []);
 
-  // Clear report when switching to a different chat OR when starting new chat
   useEffect(() => {
-    // Case 1: Switching to a different chat (both IDs exist but different)
     if (currentChatId && reportChatId && currentChatId !== reportChatId) {
       console.log("🔄 Switching chat - clearing old report");
       setCurrentReportId(null);
       setCurrentReportUrl(null);
       setCurrentReportFileName("report.xlsx");
       setReportChatId(null);
-      // Switch back to workflow tab if we were viewing a report
-      if (activeTab === "report") {
-        setActiveTab("workflow");
-      }
-    }
-    // Case 2: Starting new chat (currentChatId becomes null)
-    else if (!currentChatId && reportChatId) {
+      if (activeTab === "report") setActiveTab("workflow");
+    } else if (!currentChatId && reportChatId) {
       console.log("🆕 New chat - clearing old report");
       setCurrentReportId(null);
       setCurrentReportUrl(null);
       setCurrentReportFileName("report.xlsx");
       setReportChatId(null);
-      // Switch back to workflow tab if we were viewing a report
-      if (activeTab === "report") {
-        setActiveTab("workflow");
-      }
+      if (activeTab === "report") setActiveTab("workflow");
     }
   }, [currentChatId, reportChatId, activeTab]);
 
-  // Sync URL with currentChatId
   useEffect(() => {
     if (currentChatId && currentChatId !== chatId) {
-      console.log("🔗 Updating URL with chat ID:", currentChatId);
       navigate(`/chat/${currentChatId}`, { replace: true });
     } else if (!currentChatId && chatId) {
-      console.log("🔗 Loading chat from URL:", chatId);
       setCurrentChatId(chatId);
     }
   }, [currentChatId, chatId, navigate, setCurrentChatId]);
 
-  // Sync report from config if available AND we have a current chat
   useEffect(() => {
     if ((config.reportUrl || config.reportId) && currentChatId) {
-      console.log("Config updated with report:", {
-        reportId: config.reportId,
-        reportUrl: config.reportUrl,
-        reportFileName: config.reportFileName,
-        chatId: currentChatId,
-      });
       setCurrentReportId(config.reportId || null);
       setCurrentReportUrl(config.reportUrl || null);
       setCurrentReportFileName(config.reportFileName || "report.xlsx");
-      // Link report to current chat
       setReportChatId(currentChatId);
     } else if (!currentChatId && (config.reportId || config.reportUrl)) {
-      // If config has report but no current chat, clear it
-      console.log("⚠️ Config has report but no current chat - clearing");
       setCurrentReportId(null);
       setCurrentReportUrl(null);
       setCurrentReportFileName("report.xlsx");
@@ -106,23 +81,17 @@ const MainLayout: React.FC = () => {
   }, [config.reportId, config.reportUrl, config.reportFileName, currentChatId]);
 
   const handleSwitchToReport = (reportUrl: string, fileName: string) => {
-    console.log("Switching to report tab:", { reportUrl, fileName });
     setCurrentReportUrl(reportUrl);
     setCurrentReportFileName(fileName);
     setActiveTab("report");
   };
 
-  const handleGoBackToWorkflow = () => {
-    setActiveTab("workflow");
-  };
+  const handleGoBackToWorkflow = () => setActiveTab("workflow");
 
-  // Early return AFTER all hooks
-  if (!isAuthenticated) {
-    return <Login />;
-  }
+  if (!isAuthenticated) return <Login />;
 
   return (
-    <div className="h-screen flex flex-col bg-gray-900">
+    <div className="h-screen flex flex-col bg-theme-primary theme-transition">
       <Header
         activeTab={activeTab}
         onTabChange={setActiveTab}
@@ -135,9 +104,9 @@ const MainLayout: React.FC = () => {
           onToggleChat={() => setIsChatExpanded(!isChatExpanded)}
         />
 
-        {/* Chat Panel - Show on all tabs when expanded */}
+        {/* Chat Panel */}
         {isChatExpanded && (
-          <div className="w-96 bg-black border-r border-gray-800 flex flex-col transition-all duration-300 flex-shrink-0">
+          <div className="w-96 bg-gray-50 dark:bg-black border-r border-gray-200 dark:border-gray-800 flex flex-col transition-all duration-300 flex-shrink-0 theme-transition">
             <ChatPanel
               isExpanded={isChatExpanded}
               onSwitchToReport={handleSwitchToReport}
@@ -145,16 +114,14 @@ const MainLayout: React.FC = () => {
           </div>
         )}
 
-        {/* Main Content Area - Switch based on active tab */}
-        <div className="flex-1 flex flex-col transition-all duration-300 min-w-0">
-          {/* Workflow Tab - Always render, control visibility after mount */}
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col transition-all duration-300 min-w-0 bg-theme-secondary theme-transition">
+          {/* Workflow Tab */}
           <div
             className="flex flex-col flex-1"
             style={{
               display:
-                activeTab === "workflow" || !isWorkflowMounted
-                  ? "flex"
-                  : "none",
+                activeTab === "workflow" || !isWorkflowMounted ? "flex" : "none",
             }}
           >
             <NodePalette />
@@ -181,9 +148,9 @@ const MainLayout: React.FC = () => {
           )}
         </div>
 
-        {/* Config Panel - Only show on Workflow tab when node is selected */}
+        {/* Config Panel */}
         {activeTab === "workflow" && selectedNode && (
-          <div className="w-80 bg-white border-l flex-shrink-0 transition-all duration-300">
+          <div className="w-80 bg-theme-primary border-l border-theme-primary flex-shrink-0 transition-all duration-300 theme-transition">
             <ConfigPanel />
           </div>
         )}
@@ -196,14 +163,16 @@ const MainLayout: React.FC = () => {
 const App: React.FC = () => {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <WorkflowProvider>
-          <Routes>
-            <Route path="/" element={<MainLayout />} />
-            <Route path="/chat/:chatId" element={<MainLayout />} />
-          </Routes>
-        </WorkflowProvider>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <WorkflowProvider>
+            <Routes>
+              <Route path="/" element={<MainLayout />} />
+              <Route path="/chat/:chatId" element={<MainLayout />} />
+            </Routes>
+          </WorkflowProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </BrowserRouter>
   );
 };

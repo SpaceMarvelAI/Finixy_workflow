@@ -418,16 +418,16 @@ export const WorkflowCanvas: React.FC = () => {
 
   return (
     <div
-      className="h-full bg-gradient-to-br from-gray-900 via-black to-gray-900 relative"
+      className="h-full bg-theme-primary theme-transition relative"
       ref={reactFlowWrapper}
     >
       {/* Node Count & Run Button - Top Right */}
       {nodes.length > 0 && (
         <div className="absolute top-4 right-4 z-10 flex items-center gap-3">
           {/* Node Count */}
-          <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-lg px-4 py-2 shadow-xl backdrop-blur-md flex items-center gap-2">
-            <Layers className="w-4 h-4 text-blue-400" />
-            <span className="text-sm font-medium text-gray-100">
+          <div className="theme-panel border rounded-lg px-4 py-2 shadow-xl backdrop-blur-md flex items-center gap-2">
+            <Layers className="w-4 h-4 text-blue-500" />
+            <span className="text-sm font-medium text-theme-secondary">
               {nodes.length} {nodes.length === 1 ? "Node" : "Nodes"}
             </span>
           </div>
@@ -488,9 +488,9 @@ export const WorkflowCanvas: React.FC = () => {
           style={{ backgroundColor: "transparent" }}
         />
 
-        {/* Modern Dark Controls - Left Side */}
+        {/* Modern Controls - Left Side */}
         <Controls
-          className="!bg-gradient-to-br !from-gray-800 !to-gray-900 !border !border-gray-700 !rounded-lg !shadow-xl"
+          className="!theme-panel !border !rounded-lg !shadow-xl"
           position="top-left"
         />
 
@@ -550,9 +550,9 @@ export const WorkflowCanvas: React.FC = () => {
         </div>
       )}
 
-      {/* Custom Styles for Dark Theme */}
+      {/* Custom Styles for Theme */}
       <style>{`
-        /* React Flow Dark Theme Overrides */
+        /* React Flow Theme Overrides */
         .react-flow__node {
           font-family: inherit;
         }
@@ -567,14 +567,14 @@ export const WorkflowCanvas: React.FC = () => {
         }
         
         .react-flow__controls {
-          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+          box-shadow: var(--shadow-xl, 0 20px 25px -5px rgba(0, 0, 0, 0.5));
         }
         
         .react-flow__controls-button {
-          background: linear-gradient(to bottom right, #1f2937, #111827) !important;
+          background: var(--bg-secondary) !important;
           border: none !important;
-          border-bottom: 1px solid #374151 !important;
-          color: #9ca3af !important;
+          border-bottom: 1px solid var(--border-primary) !important;
+          color: var(--text-secondary) !important;
           transition: all 0.2s !important;
           width: 32px !important;
           height: 32px !important;
@@ -593,13 +593,13 @@ export const WorkflowCanvas: React.FC = () => {
         }
         
         .react-flow__controls-button:hover {
-          background: linear-gradient(to bottom right, #374151, #1f2937) !important;
-          color: #e5e7eb !important;
+          background: var(--bg-tertiary) !important;
+          color: var(--text-primary) !important;
           transform: scale(1.05);
         }
         
         .react-flow__controls-button:hover:enabled {
-          background: linear-gradient(to bottom right, #3b82f6, #2563eb) !important;
+          background: var(--accent-blue) !important;
           color: white !important;
         }
         

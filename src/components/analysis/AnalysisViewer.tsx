@@ -83,12 +83,12 @@ export const AnalysisViewer: React.FC = () => {
   const renderCharts = () => {
     if (!reportData || !reportMeta) {
       return (
-        <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-lg p-12 text-center">
-          <BarChart3 className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-          <p className="text-gray-400">
+        <div className="theme-panel border rounded-lg p-12 text-center">
+          <BarChart3 className="w-16 h-16 text-theme-tertiary mx-auto mb-4" />
+          <p className="text-theme-secondary">
             No report data available for visualization
           </p>
-          <p className="text-xs text-gray-500 mt-2">
+          <p className="text-xs text-theme-tertiary mt-2">
             Generate a report to see charts
           </p>
         </div>
@@ -340,9 +340,9 @@ export const AnalysisViewer: React.FC = () => {
     }
 
     return (
-      <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-lg p-12 text-center">
-        <BarChart3 className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-        <p className="text-gray-400">
+      <div className="theme-panel border rounded-lg p-12 text-center">
+        <BarChart3 className="w-16 h-16 text-theme-tertiary mx-auto mb-4" />
+        <p className="text-theme-secondary">
           Report type not supported for visualization
         </p>
       </div>
@@ -351,33 +351,28 @@ export const AnalysisViewer: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="h-full flex items-center justify-center bg-gradient-to-br from-gray-900 via-black to-gray-900">
+      <div className="h-full flex items-center justify-center bg-theme-primary theme-transition">
         <div className="text-center space-y-4">
-          <Loader2 className="w-12 h-12 text-blue-400 animate-spin mx-auto" />
-          <p className="text-gray-400">Loading analysis...</p>
+          <Loader2 className="w-12 h-12 text-blue-500 animate-spin mx-auto" />
+          <p className="text-theme-secondary">Loading analysis...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="h-full w-full flex flex-col bg-gradient-to-br from-gray-900 via-black to-gray-900 overflow-hidden">
-      <div className="bg-gradient-to-r from-gray-900 to-black border-b border-gray-800 p-6 backdrop-blur-md z-20 flex-shrink-0">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg flex items-center justify-center shadow-lg">
-              <BarChart3 className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-gray-100">
-                Analysis Dashboard
-              </h2>
-              <p className="text-sm text-gray-400 mt-1">
-                {reportMeta
-                  ? reportMeta.report_title
-                  : "Visual insights from report data"}
-              </p>
-            </div>
+    <div className="h-full w-full flex flex-col bg-theme-primary overflow-hidden theme-transition">
+      {/* Header */}
+      <div className="bg-theme-secondary border-b border-theme-primary p-6 z-20 flex-shrink-0 theme-transition">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg flex items-center justify-center shadow-lg">
+            <BarChart3 className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-theme-primary">Analysis Dashboard</h2>
+            <p className="text-sm text-theme-secondary mt-1">
+              {reportMeta ? reportMeta.report_title : "Visual insights from report data"}
+            </p>
           </div>
         </div>
       </div>
@@ -385,28 +380,6 @@ export const AnalysisViewer: React.FC = () => {
       <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 custom-scrollbar pb-32 min-h-0">
         <div className="max-w-7xl mx-auto">{renderCharts()}</div>
       </div>
-
-      <style>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 12px;
-          height: 12px;
-        }
-        
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: rgba(15, 23, 42, 0.4);
-          border-radius: 8px;
-        }
-        
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: linear-gradient(to bottom, #3b82f6, #1d4ed8);
-          border-radius: 8px;
-          border: 3px solid #0f172a;
-        }
-        
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: linear-gradient(to bottom, #60a5fa, #3b82f6);
-        }
-      `}</style>
     </div>
   );
 };
@@ -427,16 +400,16 @@ const StatCard: React.FC<{
   };
 
   return (
-    <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-lg p-6 shadow-xl hover:shadow-2xl transition-all">
+    <div className="theme-panel border rounded-lg p-6 shadow-md hover:shadow-lg transition-all">
       <div className="flex items-center justify-between mb-3">
-        <p className="text-sm text-gray-400 font-medium">{title}</p>
+        <p className="text-sm text-theme-secondary font-medium">{title}</p>
         <div
           className={`w-10 h-10 bg-gradient-to-br ${colorClasses[color]} rounded-lg flex items-center justify-center text-white`}
         >
           {icon}
         </div>
       </div>
-      <p className="text-2xl font-bold text-gray-100">{value}</p>
+      <p className="text-2xl font-bold text-theme-primary">{value}</p>
     </div>
   );
 };

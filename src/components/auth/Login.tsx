@@ -238,50 +238,50 @@ export const Login: React.FC = () => {
 
   if (showLogin) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-blue-900 to-black px-4">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 via-blue-50 to-gray-200 dark:from-gray-900 dark:via-blue-900 dark:to-black px-4 theme-transition">
         <div
           ref={loginFormRef}
-          className="max-w-md w-full bg-gray-900/80 backdrop-blur-xl p-8 rounded-2xl shadow-2xl border border-gray-800"
+          className="max-w-md w-full bg-white/90 dark:bg-gray-900/80 backdrop-blur-xl p-8 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 theme-transition"
         >
           <div className="flex flex-col items-center mb-8">
             <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-blue-500/50">
               <Lock className="w-8 h-8 text-white" />
             </div>
-            <h2 className="text-3xl font-bold text-white">Welcome Back</h2>
-            <p className="text-sm text-gray-400 mt-2">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Welcome Back</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
               Login to continue to Finixy
             </p>
           </div>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-500/10 text-red-400 text-sm rounded-lg border border-red-500/30">
+            <div className="mb-4 p-3 bg-red-500/10 text-red-600 dark:text-red-400 text-sm rounded-lg border border-red-500/30">
               {error}
             </div>
           )}
 
           <form onSubmit={handleLogin} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Email
               </label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-white placeholder-gray-500"
+                className="w-full px-4 py-3 theme-input border rounded-xl transition-all"
                 placeholder="Enter your email"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Password
               </label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-white placeholder-gray-500"
+                className="w-full px-4 py-3 theme-input border rounded-xl transition-all"
                 placeholder="Enter your password"
                 required
               />
