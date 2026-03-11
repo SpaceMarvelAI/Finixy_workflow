@@ -575,29 +575,31 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
       </div>
 
       {/* Dashboard Content */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 custom-scrollbar pb-32 min-h-0">
-        <div className="max-w-7xl mx-auto space-y-8">{renderDashboard()}</div>
+      <div className="flex-1 overflow-auto p-6 custom-scrollbar pb-32 min-h-0">
+        <div className="max-w-7xl mx-auto space-y-8 min-w-[1000px]">{renderDashboard()}</div>
       </div>
 
       <style>{`
         .custom-scrollbar::-webkit-scrollbar {
-          width: 12px;
-          height: 12px;
+          width: 8px;
+          height: 8px;
         }
         
         .custom-scrollbar::-webkit-scrollbar-track {
-          background: rgba(15, 23, 42, 0.4);
+          background: rgba(15, 23, 42, 0.1);
           border-radius: 10px;
         }
         
         .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: linear-gradient(to bottom, #3b82f6, #1d4ed8);
+          background: rgba(59, 130, 246, 0.5);
           border-radius: 10px;
-          border: 3px solid #0f172a;
+          border: 2px solid transparent;
+          background-clip: padding-box;
         }
         
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: linear-gradient(to bottom, #60a5fa, #3b82f6);
+          background: rgba(59, 130, 246, 0.8);
+          background-clip: padding-box;
         }
 
         /* Prevent nested scrollbars but allow horizontal on tables */

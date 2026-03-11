@@ -137,7 +137,7 @@ const MainLayout: React.FC = () => {
 
         {/* Chat Panel - Show on all tabs when expanded */}
         {isChatExpanded && (
-          <div className="w-96 bg-black border-r border-gray-800 flex flex-col transition-all duration-300">
+          <div className="w-96 bg-black border-r border-gray-800 flex flex-col transition-all duration-300 flex-shrink-0">
             <ChatPanel
               isExpanded={isChatExpanded}
               onSwitchToReport={handleSwitchToReport}
@@ -146,7 +146,7 @@ const MainLayout: React.FC = () => {
         )}
 
         {/* Main Content Area - Switch based on active tab */}
-        <div className="flex-1 flex flex-col transition-all duration-300">
+        <div className="flex-1 flex flex-col transition-all duration-300 min-w-0">
           {/* Workflow Tab - Always render, control visibility after mount */}
           <div
             className="flex flex-col flex-1"
@@ -170,7 +170,7 @@ const MainLayout: React.FC = () => {
           )}
 
           {isWorkflowMounted && activeTab === "report" && (
-            <div className="flex-1 flex flex-col overflow-hidden">
+            <div className="flex-1 flex flex-col overflow-hidden min-w-0">
               <ReportViewer
                 reportId={currentReportId}
                 reportUrl={currentReportUrl}
