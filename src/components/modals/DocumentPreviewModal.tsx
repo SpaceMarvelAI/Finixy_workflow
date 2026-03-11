@@ -17,8 +17,9 @@ import {
   Loader2,
   Plus,
   Trash2,
+  AlertCircle,
 } from "lucide-react";
-import { documentService } from "../services/api";
+import { documentService } from "../../services/api";
 
 interface DocumentPreviewModalProps {
   previewData: any;
@@ -35,6 +36,7 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
   const [editedData, setEditedData] = useState<any>(null);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   // Initialize editedData when previewData changes or when starting edit
   useEffect(() => {
@@ -99,9 +101,39 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
     );
   };
 
+  const getDisplayValue = (field: string) => {
+    const d = isEditing ? editedData : previewData;
+    if (!d) return null;
+
+    const canonical = d.canonical_data || {};
+    
+    // We prioritize canonical fields because they are what we successfully save to the backend
+    switch (field) {
+      case "grand_total": return canonical.totals?.grand_total ?? d.grand_total;
+      case "tax_total": return canonical.totals?.tax_total ?? d.tax_total;
+      case "paid_amount": return canonical.totals?.amount_paid ?? d.paid_amount;
+      case "outstanding": return canonical.totals?.balance_due ?? d.outstanding;
+      case "vendor_name": return canonical.vendor?.name ?? d.vendor_name;
+      case "customer_name": return canonical.customer?.name ?? d.customer_name;
+      case "document_number": return canonical.document_metadata?.document_number ?? (d.document_number || d.document_metadata?.document_number);
+      default: return d[field];
+    }
+  };
+
   const handleInputChange = (field: string, value: any, isNested: boolean = false) => {
     setEditedData((prev: any) => {
       const next = { ...prev };
+      let sanitizedValue = value;
+
+      // Sanitize names to allow only letters and spaces
+      if (field === "vendor_name" || field === "customer_name" || field === "description") {
+        if (/[^a-zA-Z\s]/.test(value)) {
+          setValidationError("Special characters & numbers are not allowed in this field.");
+          setTimeout(() => setValidationError(null), 3000);
+        }
+        sanitizedValue = value.replace(/[^a-zA-Z\s]/g, "");
+      }
+
       if (isNested) {
         const parts = field.split(".");
         let current = next;
@@ -109,9 +141,9 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
           if (!current[parts[i]]) current[parts[i]] = {};
           current = current[parts[i]];
         }
-        current[parts[parts.length - 1]] = value;
+        current[parts[parts.length - 1]] = sanitizedValue;
       } else {
-        next[field] = value;
+        next[field] = sanitizedValue;
       }
       return next;
     });
@@ -122,22 +154,36 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
       if (!prev) return prev;
       
       const canonical_data = prev.canonical_data || {};
-      const extracted_fields = canonical_data.extracted_fields || {};
-      const line_items = [...(extracted_fields.line_items || [])];
+      const line_items = [...(canonical_data.line_items || canonical_data.extracted_fields?.line_items || [])];
       
       if (line_items[index]) {
-        line_items[index] = { ...line_items[index], [field]: value };
+        let finalValue = value;
+        
+        // Sanitize Description (Letters and spaces only)
+        if (field === "description") {
+          if (/[^a-zA-Z\s]/.test(value)) {
+            setValidationError("Special characters & numbers are not allowed in item names.");
+            setTimeout(() => setValidationError(null), 3000);
+          }
+          finalValue = value.replace(/[^a-zA-Z\s]/g, "");
+        }
+        // Clamp numeric values to 0
+        else if (field === "quantity" || field === "unit_price" || field === "amount") {
+          finalValue = Math.max(0, parseFloat(value) || 0);
+        }
+        
+        line_items[index] = { ...line_items[index], [field]: finalValue };
+      }
+      
+      const newCanonical = { ...canonical_data, line_items };
+      // Also update legacy location if it existed
+      if (newCanonical.extracted_fields) {
+        newCanonical.extracted_fields = { ...newCanonical.extracted_fields, line_items };
       }
       
       return {
         ...prev,
-        canonical_data: {
-          ...canonical_data,
-          extracted_fields: {
-            ...extracted_fields,
-            line_items
-          }
-        }
+        canonical_data: newCanonical
       };
     });
   };
@@ -197,23 +243,101 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
     });
   };
 
+  const validateInputs = () => {
+    const MAX_AMOUNT = 1000000000; // 100 Crore
+    const nameRegex = /^[a-zA-Z\s]*$/;
+
+    // Check Entity Names
+    if (editedData.vendor_name && !nameRegex.test(editedData.vendor_name)) {
+      return "Vendor name should only contain letters and spaces (no numbers or special characters allowed).";
+    }
+    if (editedData.customer_name && !nameRegex.test(editedData.customer_name)) {
+      return "Customer name should only contain letters and spaces (no numbers or special characters allowed).";
+    }
+
+    // Check Financial Amounts
+    const financialFields = [
+      { name: "Grand Total", val: editedData.grand_total },
+      { name: "Tax Total", val: editedData.tax_total },
+      { name: "Paid Amount", val: editedData.paid_amount },
+      { name: "Outstanding", val: editedData.outstanding }
+    ];
+
+    for (const field of financialFields) {
+      const num = parseFloat(field.val);
+      if (num < 0) return `${field.name} cannot be negative.`;
+      if (num > MAX_AMOUNT) return `${field.name} cannot exceed 100 Crore (₹100,00,00,000).`;
+    }
+
+    // Check Line Items
+    const lineItems = editedData.canonical_data?.extracted_fields?.line_items || [];
+    for (let i = 0; i < lineItems.length; i++) {
+      const item = lineItems[i];
+      const quantity = parseFloat(item.quantity);
+      const unitPrice = parseFloat(item.unit_price);
+      const amount = parseFloat(item.amount);
+
+      if (quantity < 0 || unitPrice < 0 || amount < 0) {
+        return `Line item ${i + 1} has negative values. All amounts must be positive.`;
+      }
+      if (amount > MAX_AMOUNT || unitPrice > MAX_AMOUNT) {
+        return `Line item ${i + 1} amount/rate exceeds 100 Crore limit.`;
+      }
+    }
+
+    return null;
+  };
+
   const handleSave = async () => {
     if (!previewData?.id) return;
+    
+    const error = validateInputs();
+    if (error) {
+      setValidationError(error);
+      setTimeout(() => setValidationError(null), 5000); // Clear after 5s
+      return;
+    }
+
+    setValidationError(null);
     setSaving(true);
     try {
-      // We send the entire edited canonical_data
-      // We also update top-level fields in canonical_data as the backend merges them
-      const dataToSave = { ...editedData.canonical_data };
+      // Map frontend fields back to CanonicalFinancialDocument schema
+      const canonical = editedData.canonical_data || {};
       
-      // Ensure top-level fields are also updated in canonical_data.extracted_fields for consistency
-      if (!dataToSave.extracted_fields) dataToSave.extracted_fields = {};
-      dataToSave.extracted_fields.vendor_name = editedData.vendor_name;
-      dataToSave.extracted_fields.customer_name = editedData.customer_name;
-      dataToSave.extracted_fields.invoice_number = editedData.document_number;
-      dataToSave.extracted_fields.total_amount = editedData.grand_total;
-      dataToSave.extracted_fields.tax_amount = editedData.tax_total;
-      dataToSave.extracted_fields.paid_amount = editedData.paid_amount;
-      
+      const dataToSave: any = {
+        ...canonical,
+        document_metadata: {
+          ...(canonical.document_metadata || {}),
+          document_number: editedData.document_number,
+          currency: editedData.currency || "INR",
+        },
+        totals: {
+          ...(canonical.totals || {}),
+          grand_total: parseFloat(editedData.grand_total) || 0,
+          tax_total: parseFloat(editedData.tax_total) || 0,
+          amount_paid: parseFloat(editedData.paid_amount) || 0,
+          balance_due: parseFloat(editedData.outstanding) || 0,
+        },
+        vendor: {
+          ...(canonical.vendor || {}),
+          name: editedData.vendor_name,
+        },
+        customer: {
+          ...(canonical.customer || {}),
+          name: editedData.customer_name,
+        },
+        line_items: (canonical.extracted_fields?.line_items || canonical.line_items || []).map((item: any) => ({
+          description: item.description,
+          quantity: parseFloat(item.quantity) || 0,
+          unit_price: parseFloat(item.unit_price) || 0,
+          line_total: parseFloat(item.amount || item.line_total) || 0,
+          tax_amount: parseFloat(item.tax_amount) || 0,
+        }))
+      };
+
+      // Clean up legacy fields if they exist to avoid confusion
+      delete dataToSave.extracted_fields;
+
       const response = await documentService.updateDocumentData(previewData.id, dataToSave);
       
       if (response.data.document_id) {
@@ -232,16 +356,24 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
     }
   };
 
-  const renderLineItems = (dataObj: any, isEditMode: boolean) => {
-    if (!dataObj || !dataObj.extracted_fields) {
+  const renderLineItems = (canonicalData: any, isEditMode: boolean) => {
+    if (!canonicalData) {
+      return (
+        <div className="p-8 text-center text-gray-500 italic">
+          No records found.
+        </div>
+      );
+    }
+
+    const items = canonicalData.line_items || canonicalData.extracted_fields?.line_items || [];
+
+    if (items.length === 0) {
       return (
         <div className="p-8 text-center text-gray-500 italic">
           No itemized records detected.
         </div>
       );
     }
-
-    const items = dataObj.extracted_fields.line_items || [];
 
     return (
       <div className="overflow-hidden border border-gray-700 rounded-xl bg-gray-800 shadow-lg">
@@ -282,8 +414,9 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                   {isEditMode ? (
                     <input
                       type="number"
-                      value={item.quantity || ""}
-                      onChange={(e) => handleLineItemChange(i, "quantity", parseFloat(e.target.value))}
+                      min="0"
+                      value={item.quantity || "0"}
+                      onChange={(e) => handleLineItemChange(i, "quantity", e.target.value)}
                       className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm text-right outline-none focus:ring-1 focus:ring-blue-500"
                     />
                   ) : (
@@ -294,8 +427,9 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                   {isEditMode ? (
                     <input
                       type="number"
-                      value={item.unit_price || ""}
-                      onChange={(e) => handleLineItemChange(i, "unit_price", parseFloat(e.target.value))}
+                      min="0"
+                      value={item.unit_price || "0"}
+                      onChange={(e) => handleLineItemChange(i, "unit_price", e.target.value)}
                       className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm text-right outline-none focus:ring-1 focus:ring-blue-500"
                     />
                   ) : (
@@ -306,12 +440,13 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                   {isEditMode ? (
                     <input
                       type="number"
-                      value={item.amount || ""}
-                      onChange={(e) => handleLineItemChange(i, "amount", parseFloat(e.target.value))}
+                      min="0"
+                      value={item.amount || item.line_total || "0"}
+                      onChange={(e) => handleLineItemChange(i, "amount", e.target.value)}
                       className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm text-right outline-none focus:ring-1 focus:ring-blue-500"
                     />
                   ) : (
-                    formatOriginalCurrency(item.amount, item.currency || previewData.currency)
+                    formatOriginalCurrency(item.amount || item.line_total, item.currency || previewData.currency)
                   )}
                 </td>
                 {isEditMode && (
@@ -381,6 +516,13 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
             </div>
           </div>
           
+          {validationError && (
+            <div className="mx-6 mt-4 p-4 bg-red-500/10 border border-red-500/30 rounded-xl flex items-center gap-3 animate-in slide-in-from-top-2">
+              <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
+              <p className="text-sm font-bold text-red-400">{validationError}</p>
+            </div>
+          )}
+          
           <div className="flex items-center gap-3">
             {!isEditing ? (
               <button
@@ -448,13 +590,17 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                   {isEditing ? (
                     <input
                       type="number"
-                      value={data[item.field] || 0}
-                      onChange={(e) => handleInputChange(item.field, parseFloat(e.target.value))}
+                      min="0"
+                      value={editedData[item.field] || 0}
+                      onChange={(e) => {
+                        const val = Math.max(0, parseFloat(e.target.value) || 0);
+                        handleInputChange(item.field, val);
+                      }}
                       className="w-full bg-gray-800 border-none text-xl font-black text-gray-100 outline-none p-0 focus:ring-0"
                     />
                   ) : (
                     <p className="text-2xl font-black text-gray-100">
-                      {formatCurrency(data[item.field])}
+                      {formatCurrency(getDisplayValue(item.field))}
                     </p>
                   )}
                 </div>
@@ -482,13 +628,13 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                     {isEditing ? (
                       <input
                         type="text"
-                        value={data[item.field] || ""}
+                        value={editedData[item.field] || ""}
                         onChange={(e) => handleInputChange(item.field, e.target.value)}
                         className={`bg-gray-800 border border-gray-700 rounded px-3 py-1 text-sm font-bold text-gray-200 outline-none focus:ring-1 focus:ring-blue-500 text-right`}
                       />
                     ) : (
                       <span className={`text-sm font-bold ${item.mono ? 'font-mono text-blue-400' : 'text-gray-200'}`}>
-                        {data[item.field] || "N/A"}
+                        {getDisplayValue(item.field) || "N/A"}
                       </span>
                     )}
                   </div>

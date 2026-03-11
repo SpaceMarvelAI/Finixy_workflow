@@ -15,9 +15,9 @@ import {
   Clock,
   AlertTriangle,
 } from "lucide-react";
-import { useWorkflow } from "../store/WorkflowContext";
-import { reportService, chatService } from "../services/api";
-import { generateExcelFromReportData } from "../utils/excelGenerator";
+import { useWorkflow } from "../../store/WorkflowContext";
+import { reportService, chatService } from "../../services/api";
+import { generateExcelFromReportData } from "../../utils/excelGenerator";
 
 interface ReportViewerProps {
   reportId?: string | null;

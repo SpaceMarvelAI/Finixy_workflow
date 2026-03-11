@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useAuth } from "../store/AuthContext";
-import { authService } from "../services/api";
+import { useAuth } from "../../store/AuthContext";
+import { authService } from "../../services/api";
 import { Loader2, Lock, Sparkles, Zap, TrendingUp } from "lucide-react";
 import gsap from "gsap";
 

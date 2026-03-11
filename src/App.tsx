@@ -8,15 +8,15 @@ import {
 } from "react-router-dom";
 import { WorkflowProvider, useWorkflow } from "@store/WorkflowContext";
 import { AuthProvider, useAuth } from "@store/AuthContext";
-import { Header } from "@components/Header";
-import { Sidebar } from "@components/Sidebar";
-import { ChatPanel } from "@components/ChatPanel";
-import { WorkflowCanvas } from "@components/WorkflowCanvas";
-import { ConfigPanel } from "@components/ConfigPanel";
-import { NodePalette } from "@components/NodePalette";
-import { ReportViewer } from "@components/ReportViewer";
-import { AnalysisViewer } from "@components/AnalysisViewer";
-import { Login } from "@components/Login";
+import { Header } from "@components/layout/Header";
+import { Sidebar } from "@components/sidebar/Sidebar";
+import { ChatPanel } from "@components/chat/ChatPanel";
+import { WorkflowCanvas } from "@components/workflow/WorkflowCanvas";
+import { ConfigPanel } from "@components/workflow/ConfigPanel";
+import { NodePalette } from "@components/workflow/NodePalette";
+import { ReportViewer } from "@components/report/ReportViewer";
+import { AnalysisViewer } from "@components/analysis/AnalysisViewer";
+import { Login } from "@components/auth/Login";
 
 type Tab = "workflow" | "analysis" | "report";
 

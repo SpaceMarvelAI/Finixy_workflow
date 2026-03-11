@@ -15,13 +15,13 @@ import {
   MessageSquare,
   FileText,
 } from "lucide-react";
-import { chatService } from "../services/api";
-import { useWorkflow } from "../store/WorkflowContext";
-import { INITIAL_CHAT_MESSAGE } from "../utils/constants";
+import { chatService } from "../../services/api";
+import { useWorkflow } from "../../store/WorkflowContext";
+import { INITIAL_CHAT_MESSAGE } from "../../utils/constants";
 import {
   mapBackendNodesToFrontend,
   mapBackendEdgesToFrontend,
-} from "../utils/workflowMapper";
+} from "../../utils/workflowMapper";
 
 // ============================================================================
 // TYPES

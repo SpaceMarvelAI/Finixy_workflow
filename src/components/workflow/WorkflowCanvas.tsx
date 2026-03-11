@@ -11,13 +11,13 @@ import ReactFlow, {
   ReactFlowInstance,
 } from "reactflow";
 import "reactflow/dist/style.css";
-import { CustomNode } from "@components/CustomNode";
-import { CustomEdge } from "@components/CustomEdge";
-import { CustomMiniMap } from "@components/CustomMiniMap";
+import { CustomNode } from "@components/workflow/CustomNode";
+import { CustomEdge } from "@components/workflow/CustomEdge";
+import { CustomMiniMap } from "@components/workflow/CustomMiniMap";
 import { useWorkflow } from "@store/WorkflowContext";
 import { WorkflowNode, NodeType } from "@/types/index";
 import { Layers, Play, Loader2 } from "lucide-react";
-import { chatService } from "../services/api";
+import { chatService } from "../../services/api";
 
 const nodeTypes: NodeTypes = {
   custom: CustomNode,

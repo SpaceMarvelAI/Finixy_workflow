@@ -10,12 +10,12 @@ import {
   PieChart as PieChartIcon,
   TrendingUp,
 } from "lucide-react";
-import { useWorkflow } from "../store/WorkflowContext";
-import { chatService, reportService } from "../services/api";
-import { BarChart } from "./charts/BarChart";
-import { DonutChart } from "./charts/DonutChart";
-import { PieChart } from "./charts/PieChart";
-import { ChartContainer } from "./ChartContainer";
+import { useWorkflow } from "../../store/WorkflowContext";
+import { chatService, reportService } from "../../services/api";
+import { BarChart } from "../charts/BarChart";
+import { DonutChart } from "../charts/DonutChart";
+import { PieChart } from "../charts/PieChart";
+import { ChartContainer } from "../charts/ChartContainer";
 
 export const AnalysisViewer: React.FC = () => {
   const { currentChatId } = useWorkflow();

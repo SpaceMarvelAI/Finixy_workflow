@@ -3,15 +3,15 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Send, Loader2, Paperclip, Eye, FileText } from "lucide-react";
 import { ChatMessage } from "@/types/index";
-import { useWorkflow } from "../store/WorkflowContext";
-import { INITIAL_CHAT_MESSAGE } from "../utils/constants";
-import { chatService, documentService } from "../services/api";
+import { useWorkflow } from "../../store/WorkflowContext";
+import { INITIAL_CHAT_MESSAGE } from "../../utils/constants";
+import { chatService, documentService } from "../../services/api";
 import {
   mapBackendNodesToFrontend,
   mapBackendEdgesToFrontend,
-} from "../utils/workflowMapper";
-import { DocumentPreviewModal } from "./DocumentPreviewModal";
-import { OriginalFilePreviewModal } from "./OriginalFilePreviewModal";
+} from "../../utils/workflowMapper";
+import { DocumentPreviewModal } from "../modals/DocumentPreviewModal";
+import { OriginalFilePreviewModal } from "../modals/OriginalFilePreviewModal";
 
 interface ExtendedChatMessage extends ChatMessage {
   documentId?: string;
