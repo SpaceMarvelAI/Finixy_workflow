@@ -294,7 +294,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
     setMessages((prev) => [...prev, uploadMessage]);
 
     try {
-      // Pass current chat_id to upload if available
+      // ALWAYS pass the current chat_id so the backend attaches the document to this session
       const response = await documentService.upload(
         file,
         currentChatId || undefined,
@@ -309,13 +309,33 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
           s3_key,
           category,
           party,
-          chat_id,
+          chat_id: backendChatId,
         } = response.data;
-        
+
+        // CRITICAL: If we already have an active chat, NEVER switch to a new one.
+        // Only use the backend's chat_id when this is the very first message.
+        const activeChatId = currentChatId || backendChatId;
+
+        if (!currentChatId && backendChatId) {
+          // This is a brand-new session — adopt the backend's chat_id and refresh sidebar
+          console.log("💬 New chat started from file upload, chat_id:", backendChatId);
+          setCurrentChatId(backendChatId);
+          setTimeout(() => {
+            console.log("🔄 Triggering sidebar refresh for new chat");
+            refreshSidebar();
+          }, 500);
+        } else if (currentChatId && backendChatId && backendChatId !== currentChatId) {
+          // Backend returned a DIFFERENT chat_id — this is the bug. Ignore it and stay in current chat.
+          console.warn(
+            "⚠️ Backend returned a different chat_id for file upload. Staying in current chat.",
+            { currentChatId, backendChatId }
+          );
+        } else {
+          console.log("✅ Continuing existing chat after upload:", activeChatId);
+        }
+
         let fileUrlToUse = backendFileUrl;
-        
-        // If backend didn't return a file_url (presigned s3), let's fetch it specifically
-        // to ensure the preview comes from S3 as per user request.
+
         if (!fileUrlToUse && document_id) {
           try {
             console.log("📥 Fetching S3 presigned URL for new upload...");
@@ -325,7 +345,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
               console.log("✅ Got S3 presigned URL:", fileUrlToUse);
             }
           } catch (fetchErr) {
-            console.warn("⚠️ Failed to fetch S3 URL immediately, fallback to blob:", fetchErr);
+            console.warn("⚠️ Failed to fetch S3 URL, fallback to blob:", fetchErr);
             fileUrlToUse = URL.createObjectURL(file);
           }
         } else if (!fileUrlToUse) {
@@ -347,51 +367,25 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
 
         setMessages((prev) => [...prev, successMessage]);
 
-        // Update chat_id if returned from backend
-        // IMPORTANT: Always update to ensure we continue the same conversation
-        if (chat_id) {
-          if (chat_id !== currentChatId) {
-            console.log("💬 Updating chat_id from file upload:", {
-              old: currentChatId,
-              new: chat_id,
-            });
-            setCurrentChatId(chat_id);
-
-            // Only trigger sidebar refresh if this is a NEW chat
-            if (!currentChatId) {
-              setTimeout(() => {
-                console.log("🔄 Triggering sidebar refresh after file upload");
-                refreshSidebar();
-              }, 500);
-            }
-          } else {
-            console.log("✅ Continuing existing chat after upload:", chat_id);
-          }
-        }
-
-        // Save messages to backend chat if chat_id exists
-        const activeChatId = chat_id || currentChatId;
+        // Save messages to backend — always use the ACTIVE chat (not the backend's new one)
         if (activeChatId) {
           try {
             console.log("💾 Saving upload messages to chat:", activeChatId);
 
-            // Save user upload message
             await chatService.addMessage(
               activeChatId,
               "user",
               uploadMessage.content,
             );
 
-            // Save assistant success message with metadata
-            // IMPORTANT: Save S3 key (permanent) instead of presigned URL (expires)
             await chatService.addMessage(
               activeChatId,
               "assistant",
               successMessage.content,
               {
                 document_id,
-                s3_key: s3_key || undefined, // Store S3 key for long-term access
-                file_url: fileUrlToUse || undefined, // Also store current URL for immediate use
+                s3_key: s3_key || undefined,
+                file_url: fileUrlToUse || undefined,
                 file_type: file.type,
                 vendor,
                 category,
@@ -403,9 +397,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
             console.error("❌ Error saving messages to chat:", saveError);
           }
         } else {
-          console.log(
-            "⚠️ No chat_id available, messages not persisted to backend",
-          );
+          console.log("⚠️ No chat_id available, messages not persisted to backend");
         }
       }
     } catch (error) {
@@ -419,6 +411,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
+
 
   const handleSend = async () => {
     if (!input.trim() || loading || uploading) return;
