@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
+
   Plus,
   History,
   Settings,
@@ -14,6 +15,7 @@ import {
   Loader2,
   MessageSquare,
   FileText,
+  FolderOpen,
 } from "lucide-react";
 import { chatService } from "../../services/api";
 import { useWorkflow } from "../../store/WorkflowContext";
@@ -22,6 +24,7 @@ import {
   mapBackendNodesToFrontend,
   mapBackendEdgesToFrontend,
 } from "../../utils/workflowMapper";
+import { DocumentsPanel } from "./DocumentsPanel";
 
 // ============================================================================
 // TYPES
@@ -66,6 +69,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   // State
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isDocumentsOpen, setIsDocumentsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [chatItems, setChatItems] = useState<ChatItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -460,7 +464,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* HISTORY */}
         <button
-          onClick={() => setIsHistoryOpen(!isHistoryOpen)}
+          onClick={() => {
+            setIsHistoryOpen(!isHistoryOpen);
+            setIsDocumentsOpen(false);
+          }}
           className="w-full px-2 py-2.5 flex items-center gap-3 hover:bg-gray-800/50 rounded-lg transition-all group"
           title="History"
         >
@@ -476,6 +483,31 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {isHovered && (
             <span className="text-sm font-medium text-gray-200 whitespace-nowrap">
               History
+            </span>
+          )}
+        </button>
+
+        {/* MY DOCUMENTS */}
+        <button
+          onClick={() => {
+            setIsDocumentsOpen(!isDocumentsOpen);
+            setIsHistoryOpen(false);
+          }}
+          className="w-full px-2 py-2.5 flex items-center gap-3 hover:bg-gray-800/50 rounded-lg transition-all group"
+          title="My Documents"
+        >
+          <div
+            className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg transition-all ${
+              isDocumentsOpen
+                ? "bg-gradient-to-br from-indigo-600 to-purple-700 group-hover:from-indigo-500 group-hover:to-purple-600 group-hover:shadow-indigo-500/50"
+                : "bg-gradient-to-br from-gray-700 to-gray-800 group-hover:from-gray-600 group-hover:to-gray-700"
+            }`}
+          >
+            <FolderOpen className="w-4 h-4 text-white" />
+          </div>
+          {isHovered && (
+            <span className="text-sm font-medium text-gray-200 whitespace-nowrap">
+              My Documents
             </span>
           )}
         </button>
@@ -618,6 +650,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
               )}
             </div>
           </div>
+        )}
+
+        {/* DOCUMENTS PANEL */}
+        {isDocumentsOpen && (
+          <DocumentsPanel onClose={() => setIsDocumentsOpen(false)} />
         )}
       </div>
 

@@ -108,6 +108,11 @@ export const documentService = {
     });
   },
   
+  // Get all documents uploaded by the current user
+  getAllDocuments: () => {
+    return api.get('/documents/all-document-data-by-user-id');
+  },
+
   // Fetches the list of uploaded documents
   list: (limit: number = 100) => {
     return api.get(`/documents?limit=${limit}`);
@@ -118,22 +123,34 @@ export const documentService = {
     return api.get(`/documents/${id}`);
   },
 
+  // Delete a document from storage and S3
+  deleteDocument: (id: string) => {
+    return api.delete(`/documents/${id}`);
+  },
+
   // Updates the parsed data
   updateDocumentData: (id: string, data: any) => {
     return api.put(`/documents/${id}/canonical-data`, { canonical_data: data });
   },
 
-  // Download original file
+  // Download original file - returns a URL string (used for direct window.open)
   getFileUrl: (id: string) => {
-    return `${API_URL}/documents/download/${id}`;
+    return `${API_URL}/documents/${id}/download`;
   },
 
-  // Download original file as blob (to handle authentication)
+  // Download original file as blob (authenticated) — primary pattern
   downloadFile: (id: string) => {
+    return api.get(`/documents/${id}/download`, {
+      responseType: 'blob',
+    });
+  },
+
+  // Fallback download pattern if primary returns 404
+  downloadFileAlt: (id: string) => {
     return api.get(`/documents/download/${id}`, {
       responseType: 'blob',
     });
-  }
+  },
 };
 
 // Report Service - Fetch reports from backend
