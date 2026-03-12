@@ -4,20 +4,17 @@ import {
   FileText,
   Loader2,
   AlertCircle,
-  ArrowLeft,
-  Table,
-  TrendingUp,
-  DollarSign,
   BarChart3,
-  PieChart,
   FileSpreadsheet,
-  CheckCircle,
-  Clock,
-  AlertTriangle,
+  Edit2,
+  Save,
+  X,
+  Check,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { useWorkflow } from "../../store/WorkflowContext";
 import { reportService, chatService } from "../../services/api";
-import { generateExcelFromReportData } from "../../utils/excelGenerator";
 
 interface ReportViewerProps {
   reportId?: string | null;
@@ -37,31 +34,31 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [reportData, setReportData] = useState<any>(null);
   const [reportMeta, setReportMeta] = useState<any>(null);
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
+  const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
+  const [savingRow, setSavingRow] = useState(false);
+  const [toast, setToast] = useState<{ msg: string; type: "success" | "error" } | null>(null);
+
+  // Row editing state
+  const [editingRowIdx, setEditingRowIdx] = useState<number | null>(null);
+  const [editingRowData, setEditingRowData] = useState<any>(null);
 
   const reportId = propReportId || config.reportId;
   const reportUrl = propReportUrl || config.reportUrl;
   const reportFileName =
     propReportFileName || config.reportFileName || "report.xlsx";
 
-  useEffect(() => {
-    console.log("🔍 ReportViewer mounted/updated");
-    console.log("  - reportId:", reportId);
-    console.log("  - reportUrl:", reportUrl);
-    console.log("  - reportFileName:", reportFileName);
-    console.log("  - currentChatId:", currentChatId);
+  const showToast = (msg: string, type: "success" | "error" = "success") => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3000);
+  };
 
+  useEffect(() => {
     if (reportId) {
-      console.log("✅ Report ID found, loading data...");
       loadReportData(reportId as string);
     } else if (currentChatId) {
-      console.log(
-        "🔄 No report ID, checking for latest report in current chat...",
-      );
       fetchLatestReportForChat(currentChatId);
-    } else if (reportUrl) {
-      console.log("⚠️ No report ID, but URL available - showing download only");
-    } else {
-      console.log("⚠️ No report ID, URL or currentChatId provided");
     }
   }, [reportId, currentChatId]);
 
@@ -74,18 +71,12 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
       if (chat.final_report_ids && chat.final_report_ids.length > 0) {
         const latestReportId =
           chat.final_report_ids[chat.final_report_ids.length - 1];
-        console.log("✅ Found latest report ID for chat:", latestReportId);
-
-        // Fetch report details to get URL and FileName
         const repResponse = await reportService.getReport(latestReportId);
         const report =
           repResponse.data.report ||
           (repResponse.data.report_id ? repResponse.data : null);
 
         if (report) {
-          console.log("✅ Found report metadata:", report);
-
-          // Update global config so this report is "active"
           updateConfig({
             ...config,
             reportId: latestReportId,
@@ -97,15 +88,10 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
               ? `${report.report_title}.xlsx`
               : "report.xlsx",
           });
-
-          // loadReportData will be triggered by reportId change
         }
-      } else {
-        console.log("⚠️ No reports found for this chat");
       }
     } catch (err) {
       console.error("❌ Failed to fetch chat reports:", err);
-      // Don't set global error here to allow "No Report Generated Yet" screen
     } finally {
       setLoading(false);
     }
@@ -119,18 +105,12 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
     setError(null);
 
     try {
-      console.log("📊 Loading report data for ID:", idToLoad);
       const response = await reportService.getReport(idToLoad);
-      console.log("📦 Full API Response:", response.data);
-
       const report =
         response.data.report ||
         (response.data.report_id ? response.data : null);
 
       if (report) {
-        console.log("📊 Report object identified:", report);
-
-        // Extract metadata
         setReportMeta({
           report_id: report.report_id,
           report_type: report.report_type,
@@ -140,41 +120,47 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
           status: report.status,
         });
 
-        // Extract report data - handle multiple possible structures
         let finalReportData = null;
-
-        // Check for final_report in multiple locations
         if (report.report_data?.final_report) {
           finalReportData = report.report_data.final_report;
-          console.log("✅ Found final_report in report_data");
         } else if (report.report_data) {
           finalReportData = report.report_data;
-          console.log("✅ Using report_data directly");
         } else if (report.final_report) {
           finalReportData = report.final_report;
-          console.log("✅ Found final_report in report object");
         }
 
         if (finalReportData) {
-          console.log(
-            "📊 Final Report Data Structure:",
-            Object.keys(finalReportData),
-          );
           setReportData(finalReportData);
         } else {
-          console.warn("⚠️ No report data found in response");
           setError("Report data not available");
         }
       } else {
-        console.error("❌ Invalid response structure:", response.data);
         setError("Invalid report response");
       }
     } catch (err: any) {
-      console.error("❌ Failed to load report:", err);
-      console.error("Error details:", err.response?.data);
       setError(
         err.response?.data?.detail || err.message || "Failed to load report",
       );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRename = async () => {
+    if (!reportId || !newTitle.trim()) return;
+    setLoading(true);
+    try {
+      await reportService.updateReport(reportId as string, {
+        report_title: newTitle.trim(),
+      });
+      setReportMeta((prev: any) => ({
+        ...prev,
+        report_title: newTitle.trim(),
+      }));
+      setIsRenaming(false);
+      showToast("Report renamed successfully!");
+    } catch (err: any) {
+      showToast(err.response?.data?.detail || "Failed to rename report", "error");
     } finally {
       setLoading(false);
     }
@@ -187,254 +173,117 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
     }
 
     if (reportData) {
-      console.log("📥 Generating client-side Excel...");
-      let columns: any[] = [];
-      let dataToExport: any[] = [];
-      let summary: any = {};
-      const title = reportMeta?.report_title || "Report Export";
-      const reportType = reportMeta?.report_type?.toLowerCase() || "";
-
-      const findKey = (data: any, possibleKeys: string[]): string => {
-        if (!data || data.length === 0) return possibleKeys[0];
-        return (
-          possibleKeys.find((key) => data[0].hasOwnProperty(key)) ||
-          possibleKeys[0]
-        );
-      };
-
-      if (reportType.includes("aging")) {
-        dataToExport = reportData.invoices || reportData.data || [];
-        const reportSummary = reportData.summary || {};
-
-        if (dataToExport.length > 0) {
-          columns = [
-            {
-              key: findKey(dataToExport, [
-                "invoice_number",
-                "invoice_no",
-                "invoiceNumber",
-              ]),
-              label: "Invoice #",
-            },
-            {
-              key: findKey(dataToExport, [
-                "vendor_name",
-                "customer_name",
-                "vendorName",
-                "name",
-              ]),
-              label: "Vendor",
-            },
-            {
-              key: findKey(dataToExport, [
-                "invoice_date",
-                "date",
-                "invoiceDate",
-              ]),
-              label: "Date",
-              format: "date",
-            },
-            {
-              key: findKey(dataToExport, ["due_date", "dueDate"]),
-              label: "Due Date",
-              format: "date",
-            },
-            {
-              key: findKey(dataToExport, ["amount", "invoice_amount"]),
-              label: "Amount",
-              format: "currency",
-            },
-            {
-              key: findKey(dataToExport, ["tax", "tax_amount", "taxAmount"]),
-              label: "Tax",
-              format: "currency",
-            },
-            {
-              key: findKey(dataToExport, [
-                "total",
-                "total_amount",
-                "totalAmount",
-              ]),
-              label: "Total",
-              format: "currency",
-            },
-            {
-              key: findKey(dataToExport, ["outstanding", "outstanding_amount"]),
-              label: "Outstanding",
-              format: "currency",
-            },
-            {
-              key: findKey(dataToExport, [
-                "days_outstanding",
-                "daysOutstanding",
-                "days",
-              ]),
-              label: "Days",
-            },
-            {
-              key: findKey(dataToExport, ["status", "payment_status"]),
-              label: "Status",
-            },
-          ];
-
-          summary = {
-            totalInvoices: reportSummary.total_invoices || dataToExport.length,
-            totalAmount:
-              reportSummary.total_amount ||
-              dataToExport.reduce(
-                (sum: number, inv: any) => sum + (inv.amount || inv.total || 0),
-                0,
-              ),
-            paidAmount: reportSummary.paid_amount || 0,
-            outstanding:
-              reportSummary.total_outstanding ||
-              reportSummary.outstanding ||
-              dataToExport.reduce(
-                (sum: number, inv: any) => sum + (inv.outstanding || 0),
-                0,
-              ),
-          };
-        }
-      } else if (
-        reportType.includes("register") ||
-        reportType.includes("ar") ||
-        reportType.includes("ap")
-      ) {
-        dataToExport =
-          reportData.invoices ||
-          reportData.data ||
-          reportData.records ||
-          Object.values(reportData).find((v) => Array.isArray(v)) ||
-          [];
-        const reportSummary =
-          reportData.summary || reportData.metadata?.summary || {};
-
-        if (dataToExport.length > 0) {
-          columns = [
-            {
-              key: findKey(dataToExport, [
-                "invoice_number",
-                "invoice_no",
-                "invoiceNumber",
-              ]),
-              label: "Invoice #",
-            },
-            {
-              key: findKey(dataToExport, [
-                "vendor_name",
-                "customer_name",
-                "vendorName",
-                "name",
-              ]),
-              label: "Vendor/Customer",
-            },
-            {
-              key: findKey(dataToExport, [
-                "invoice_date",
-                "date",
-                "invoiceDate",
-              ]),
-              label: "Date",
-              format: "date",
-            },
-            {
-              key: findKey(dataToExport, ["amount", "invoice_amount"]),
-              label: "Amount",
-              format: "currency",
-            },
-            {
-              key: findKey(dataToExport, ["tax", "tax_amount", "taxAmount"]),
-              label: "Tax",
-              format: "currency",
-            },
-            {
-              key: findKey(dataToExport, [
-                "total",
-                "total_amount",
-                "totalAmount",
-              ]),
-              label: "Total",
-              format: "currency",
-            },
-            {
-              key: findKey(dataToExport, ["paid", "paid_amount", "paidAmount"]),
-              label: "Paid",
-              format: "currency",
-            },
-            {
-              key: findKey(dataToExport, ["outstanding", "outstanding_amount"]),
-              label: "Outstanding",
-              format: "currency",
-            },
-            {
-              key: findKey(dataToExport, ["status", "payment_status"]),
-              label: "Status",
-            },
-          ];
-
-          const totalAmount =
-            reportSummary.total_amount ||
-            dataToExport.reduce(
-              (sum: number, inv: any) => sum + (inv.amount || inv.total || 0),
-              0,
-            );
-          const paidAmount =
-            reportSummary.paid_amount ||
-            dataToExport.reduce(
-              (sum: number, inv: any) =>
-                sum + (inv.paid || inv.paid_amount || 0),
-              0,
-            );
-
-          summary = {
-            totalInvoices: dataToExport.length,
-            totalAmount: totalAmount,
-            paidAmount: paidAmount,
-            outstanding: reportSummary.outstanding || totalAmount - paidAmount,
-          };
-        }
-      } else {
-        dataToExport = Array.isArray(reportData)
-          ? reportData
-          : Object.values(reportData).find((v) => Array.isArray(v)) || [];
-        if (dataToExport.length > 0) {
-          columns = Object.keys(dataToExport[0]).map((k) => ({
-            key: k,
-            label: k.replace(/_/g, " ").toUpperCase(),
-            format:
-              k.toLowerCase().includes("amount") ||
-              k.toLowerCase().includes("total") ||
-              k.toLowerCase().includes("tax") ||
-              k.toLowerCase().includes("paid") ||
-              k.toLowerCase().includes("outstanding")
-                ? "currency"
-                : k.toLowerCase().includes("date")
-                  ? "date"
-                  : undefined,
+      try {
+        const items = getItems();
+        if (Array.isArray(items) && items.length > 0) {
+          const { generateExcelFromReportData } = await import("../../utils/excelGenerator");
+          const columns = Object.keys(items[0]).map((key) => ({
+            key,
+            label: key.replace(/_/g, " ").replace(/\b\w/g, (l: string) => l.toUpperCase()),
           }));
+          await generateExcelFromReportData(
+            reportMeta?.report_title || "Report",
+            items,
+            columns
+          );
+        } else {
+          alert("No tabular data available to export.");
         }
-      }
-
-      console.log("📥 Excel columns:", columns);
-      console.log("📥 Excel summary:", summary);
-
-      if (dataToExport.length > 0) {
-        await generateExcelFromReportData(
-          title,
-          dataToExport,
-          columns,
-          summary,
-        );
-      } else {
-        alert("No tabular data found to export.");
+      } catch (err) {
+        console.error("Excel generation failed:", err);
+        alert("Failed to generate Excel file.");
       }
     }
   };
 
-  // Render different dashboard layouts based on report type
+  /** Helper to extract the array of items from reportData */
+  const getItems = (): any[] => {
+    if (!reportData) return [];
+    if (Array.isArray(reportData)) return reportData;
+    if (reportData.invoices) return reportData.invoices;
+    if (reportData.data) return reportData.data;
+    if (reportData.records) return reportData.records;
+    const arrayKey = Object.keys(reportData).find((k) => Array.isArray(reportData[k]));
+    if (arrayKey) return reportData[arrayKey];
+    return [];
+  };
+
+  /** Build updated full reportData with the new items array */
+  const buildUpdatedReportData = (newItems: any[]): any => {
+    if (Array.isArray(reportData)) return newItems;
+    if (reportData.invoices) return { ...reportData, invoices: newItems };
+    if (reportData.data) return { ...reportData, data: newItems };
+    if (reportData.records) return { ...reportData, records: newItems };
+    const arrayKey = Object.keys(reportData).find((k) => Array.isArray(reportData[k]));
+    if (arrayKey) return { ...reportData, [arrayKey]: newItems };
+    return newItems;
+  };
+
+  /** Save updated items to backend via PATCH */
+  const saveUpdatedItems = async (newItems: any[]) => {
+    if (!reportId) return;
+    setSavingRow(true);
+    try {
+      const updatedData = buildUpdatedReportData(newItems);
+      await reportService.updateReport(reportId as string, {
+        report_data: updatedData,
+      });
+      setReportData(updatedData);
+      showToast("Changes saved successfully!");
+    } catch (err: any) {
+      console.error("❌ Failed to update report data:", err);
+      showToast(err.response?.data?.detail || "Failed to save changes", "error");
+    } finally {
+      setSavingRow(false);
+    }
+  };
+
+  /** Start editing a row */
+  const startEditRow = (rowIdx: number, row: any) => {
+    setEditingRowIdx(rowIdx);
+    setEditingRowData({ ...row });
+  };
+
+  /** Cancel row editing */
+  const cancelEditRow = () => {
+    setEditingRowIdx(null);
+    setEditingRowData(null);
+  };
+
+  /** Save the edited row */
+  const saveEditRow = async () => {
+    if (editingRowIdx === null || !editingRowData) return;
+    const items = getItems();
+    const newItems = [...items];
+    newItems[editingRowIdx] = editingRowData;
+    await saveUpdatedItems(newItems);
+    setEditingRowIdx(null);
+    setEditingRowData(null);
+  };
+
+  /** Delete a row */
+  const deleteRow = async (rowIdx: number) => {
+    const items = getItems();
+    const newItems = [...items];
+    newItems.splice(rowIdx, 1);
+    await saveUpdatedItems(newItems);
+  };
+
+  /** Update a field in the currently editing row */
+  const updateEditField = (col: string, value: string) => {
+    if (!editingRowData) return;
+    // Try to preserve number types
+    const originalValue = editingRowData[col];
+    let parsedValue: any = value;
+    if (typeof originalValue === "number") {
+      const num = Number(value);
+      if (!isNaN(num)) parsedValue = num;
+    }
+    setEditingRowData({ ...editingRowData, [col]: parsedValue });
+  };
+
   const renderDashboard = () => {
     if (!reportData) {
-      console.log("⚠️ No report data to render");
       return (
         <div className="theme-panel border rounded-lg p-12 text-center">
           <FileSpreadsheet className="w-16 h-16 text-theme-tertiary mx-auto mb-4" />
@@ -443,32 +292,180 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
       );
     }
 
-    console.log("🎨 Rendering dashboard with data:", reportData);
-    const reportType = reportMeta?.report_type?.toLowerCase() || "";
-    console.log("📊 Report type:", reportType);
+    const items = getItems();
 
-    // AP Aging Report Dashboard
-    if (reportType.includes("aging")) {
-      return <AgingReportDashboard data={reportData} meta={reportMeta} />;
+    if (!Array.isArray(items) || items.length === 0) {
+      return (
+        <div className="theme-panel border rounded-lg p-12 text-center">
+          <FileSpreadsheet className="w-16 h-16 text-theme-tertiary mx-auto mb-4" />
+          <p className="text-theme-secondary">Report data has no tabular records to display</p>
+        </div>
+      );
     }
 
-    // AP/AR Register Dashboard
-    if (
-      reportType.includes("register") ||
-      reportType.includes("ap_register") ||
-      reportType.includes("ar_register")
-    ) {
-      return <RegisterDashboard data={reportData} meta={reportMeta} />;
-    }
+    const columns = Object.keys(items[0]).filter(col => col.toLowerCase() !== 'trans_id');
 
-    // DSO Dashboard
-    if (reportType.includes("dso")) {
-      return <DSODashboard data={reportData} meta={reportMeta} />;
-    }
+    return (
+      <div className="space-y-6">
+        {/* Summary Bar */}
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-theme-secondary">
+            Showing <span className="font-semibold text-theme-primary">{items.length}</span> records
+          </p>
+        </div>
 
-    // Generic Table Dashboard (fallback)
-    console.log("📋 Using generic table dashboard");
-    return <GenericTableDashboard data={reportData} meta={reportMeta} />;
+        {/* Rename UI */}
+        {isRenaming && (
+          <div className="flex items-center gap-2 p-3 bg-theme-tertiary rounded-lg border border-theme-primary">
+            <input
+              type="text"
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              className="flex-1 bg-theme-primary text-theme-primary border border-theme-primary rounded px-3 py-1.5 text-sm outline-none focus:border-blue-500"
+              placeholder="Enter new report title..."
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleRename();
+                if (e.key === "Escape") setIsRenaming(false);
+              }}
+            />
+            <button onClick={handleRename} className="p-1.5 text-emerald-500 hover:bg-emerald-500/10 rounded">
+              <Save className="w-4 h-4" />
+            </button>
+            <button onClick={() => setIsRenaming(false)} className="p-1.5 text-red-500 hover:bg-red-500/10 rounded">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {/* Data Table */}
+        <div className="theme-panel border rounded-lg overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-theme-tertiary border-b border-theme-primary">
+                  {/* Edit column header - show when in maintenance mode */}
+                  {isMaintenanceMode && (
+                    <th className="px-2 py-3 text-center text-xs font-bold uppercase tracking-wider text-theme-secondary w-20 sticky left-0 bg-theme-tertiary z-10">
+                      Edit
+                    </th>
+                  )}
+                  {columns.map((col) => (
+                    <th
+                      key={col}
+                      className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-theme-secondary"
+                    >
+                      {col.replace(/_/g, " ")}
+                    </th>
+                  ))}
+                  {/* Delete column - only in maintenance mode */}
+                  {isMaintenanceMode && (
+                    <th className="px-2 py-3 text-center text-xs font-bold uppercase tracking-wider text-theme-secondary w-16">
+                      Del
+                    </th>
+                  )}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-theme-primary">
+                {items.map((row: any, rowIdx: number) => {
+                  const isEditing = editingRowIdx === rowIdx;
+
+                  return (
+                    <tr
+                      key={rowIdx}
+                      className={`transition-colors ${
+                        isEditing
+                          ? "bg-blue-500/5 ring-1 ring-blue-500/20"
+                          : "hover:bg-theme-tertiary/50"
+                      }`}
+                    >
+                      {/* Edit icon column */}
+                      {isMaintenanceMode && (
+                        <td className="px-2 py-3 text-center sticky left-0 bg-theme-primary z-10">
+                          {isEditing ? (
+                            <div className="flex items-center justify-center gap-1">
+                              <button
+                                onClick={saveEditRow}
+                                disabled={savingRow}
+                                className="p-1 text-emerald-500 hover:bg-emerald-500/10 rounded transition-all disabled:opacity-50"
+                                title="Save changes"
+                              >
+                                {savingRow ? (
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                ) : (
+                                  <Check className="w-3.5 h-3.5" />
+                                )}
+                              </button>
+                              <button
+                                onClick={cancelEditRow}
+                                className="p-1 text-red-500 hover:bg-red-500/10 rounded transition-all"
+                                title="Cancel"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => startEditRow(rowIdx, row)}
+                              className="p-1 text-theme-tertiary hover:text-blue-500 hover:bg-blue-500/10 rounded transition-all"
+                              title="Edit this row"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </td>
+                      )}
+
+                      {/* Data columns */}
+                      {columns.map((col) => (
+                        <td key={col} className="px-4 py-3 text-theme-primary whitespace-nowrap">
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              value={
+                                editingRowData[col] !== null && editingRowData[col] !== undefined
+                                  ? String(editingRowData[col])
+                                  : ""
+                              }
+                              onChange={(e) => updateEditField(col, e.target.value)}
+                              className="w-full bg-theme-tertiary text-theme-primary border border-blue-500/30 rounded px-2 py-1 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 min-w-[80px]"
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") saveEditRow();
+                                if (e.key === "Escape") cancelEditRow();
+                              }}
+                            />
+                          ) : typeof row[col] === "number" ? (
+                            row[col].toLocaleString()
+                          ) : row[col] !== null && row[col] !== undefined ? (
+                            String(row[col])
+                          ) : (
+                            "-"
+                          )}
+                        </td>
+                      ))}
+
+                      {/* Delete button column */}
+                      {isMaintenanceMode && (
+                        <td className="px-2 py-3 text-center">
+                          <button
+                            onClick={() => deleteRow(rowIdx)}
+                            disabled={savingRow}
+                            className="p-1 text-red-500/60 hover:text-red-500 hover:bg-red-500/10 rounded transition-all disabled:opacity-30"
+                            title="Delete row"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   if (!reportId && !reportUrl) {
@@ -483,19 +480,9 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
               No Report Generated Yet
             </h3>
             <p className="text-theme-secondary text-sm leading-relaxed">
-              Run a workflow query to generate a report. Once complete, it will
-              appear here with an interactive dashboard.
+              Run a workflow query to generate a report.
             </p>
           </div>
-          {onGoBack && (
-            <button
-              onClick={onGoBack}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white rounded-lg transition-all font-medium text-sm shadow-lg hover:shadow-blue-500/30"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Go to Workflow
-            </button>
-          )}
         </div>
       </div>
     );
@@ -504,10 +491,7 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
   if (loading) {
     return (
       <div className="h-full flex items-center justify-center bg-theme-primary theme-transition">
-        <div className="text-center space-y-4">
-          <Loader2 className="w-12 h-12 text-blue-500 animate-spin mx-auto" />
-          <p className="text-theme-secondary">Loading report dashboard...</p>
-        </div>
+        <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
       </div>
     );
   }
@@ -515,25 +499,10 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
   if (error) {
     return (
       <div className="h-full flex items-center justify-center bg-theme-primary theme-transition">
-        <div className="text-center space-y-6 max-w-md p-8">
-          <div className="w-24 h-24 mx-auto bg-red-500/10 rounded-lg flex items-center justify-center border border-red-500/20 shadow-xl">
-            <AlertCircle className="w-12 h-12 text-red-500" />
-          </div>
-          <div className="space-y-2">
-            <h3 className="text-2xl font-bold text-theme-primary">
-              Error Loading Report
-            </h3>
-            <p className="text-theme-secondary text-sm">{error}</p>
-          </div>
-          {onGoBack && (
-            <button
-              onClick={onGoBack}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white rounded-lg transition-all font-medium text-sm shadow-lg"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Go Back
-            </button>
-          )}
+        <div className="text-center space-y-4">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto" />
+          <p className="text-theme-secondary">{error}</p>
+          <button onClick={() => setError(null)} className="text-blue-500 underline">Dismiss</button>
         </div>
       </div>
     );
@@ -541,17 +510,36 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
 
   return (
     <div className="h-full w-full flex flex-col bg-theme-primary overflow-hidden theme-transition">
-      {/* Header - Fixed in flex layout */}
       <div className="bg-theme-secondary border-b border-theme-primary p-6 z-20 flex-shrink-0 theme-transition">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
+            {onGoBack && (
+              <button
+                onClick={onGoBack}
+                className="p-2 rounded-lg text-theme-tertiary hover:text-theme-primary hover:bg-theme-tertiary transition-all"
+              >
+                ←
+              </button>
+            )}
             <div className="w-12 h-12 bg-gradient-to-br from-green-600 to-emerald-600 rounded-lg flex items-center justify-center shadow-lg">
               <BarChart3 className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-theme-primary">
-                {reportMeta?.report_title || "Report Dashboard"}
-              </h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-bold text-theme-primary">
+                  {reportMeta?.report_title || "Report Dashboard"}
+                </h2>
+                <button
+                  onClick={() => {
+                    setNewTitle(reportMeta?.report_title || "");
+                    setIsRenaming(!isRenaming);
+                  }}
+                  className="p-1 text-theme-tertiary hover:text-blue-500 transition-all"
+                  title="Rename report"
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
               <p className="text-sm text-theme-secondary mt-1">
                 {reportMeta?.generated_at
                   ? new Date(reportMeta.generated_at).toLocaleString()
@@ -561,575 +549,55 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
           </div>
 
           <div className="flex gap-3">
-            {(reportUrl || reportData) && (
-              <button
-                onClick={handleDownload}
-                className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white rounded-lg transition-all font-medium text-sm shadow-lg hover:shadow-green-500/30"
-              >
-                <Download className="w-4 h-4" />
-                Download Excel
-              </button>
-            )}
+            <button
+              onClick={() => {
+                setIsMaintenanceMode(!isMaintenanceMode);
+                // Cancel any active row editing when toggling off
+                if (isMaintenanceMode) {
+                  cancelEditRow();
+                }
+              }}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all font-medium text-sm border ${
+                isMaintenanceMode
+                  ? "bg-blue-600 text-white border-blue-600"
+                  : "bg-theme-tertiary text-theme-primary border-theme-primary"
+              }`}
+            >
+              <Edit2 className="w-4 h-4" />
+              {isMaintenanceMode ? "Done" : "Edit"}
+            </button>
+            <button
+              onClick={handleDownload}
+              className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg transition-all font-medium text-sm shadow-lg"
+            >
+              <Download className="w-4 h-4" />
+              Download Excel
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Dashboard Content */}
       <div className="flex-1 overflow-auto p-6 custom-scrollbar pb-32 min-h-0">
         <div className="max-w-7xl mx-auto space-y-8 min-w-[1000px]">{renderDashboard()}</div>
       </div>
 
-      <style>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 8px;
-          height: 8px;
-        }
-        
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: rgba(15, 23, 42, 0.1);
-          border-radius: 8px;
-        }
-        
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(59, 130, 246, 0.5);
-          border-radius: 8px;
-          border: 2px solid transparent;
-          background-clip: padding-box;
-        }
-        
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(59, 130, 246, 0.8);
-          background-clip: padding-box;
-        }
-
-        /* Prevent nested scrollbars but allow horizontal on tables */
-        .report-table-container {
-          max-height: none !important;
-        }
-      `}</style>
-    </div>
-  );
-};
-
-// Aging Report Dashboard Component
-const AgingReportDashboard: React.FC<{ data: any; meta: any }> = ({ data }) => {
-  const summary = data?.summary || {};
-  const aging_buckets = data?.aging_buckets || [];
-  const invoices = data?.invoices || data?.data || [];
-
-  return (
-    <div className="space-y-6">
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Total Outstanding"
-          value={`₹${(summary.total_outstanding || 0).toLocaleString()}`}
-          icon={<DollarSign className="w-5 h-5" />}
-          color="blue"
-        />
-        <StatCard
-          title="Total Invoices"
-          value={(summary.total_invoices || invoices.length).toString()}
-          icon={<FileText className="w-5 h-5" />}
-          color="purple"
-        />
-        <StatCard
-          title="Overdue Amount"
-          value={`₹${(summary.overdue_amount || 0).toLocaleString()}`}
-          icon={<AlertTriangle className="w-5 h-5" />}
-          color="red"
-        />
-        <StatCard
-          title="Avg Days Outstanding"
-          value={`${Math.round(summary.average_days || 0)} days`}
-          icon={<Clock className="w-5 h-5" />}
-          color="green"
-        />
-      </div>
-
-      {/* Aging Buckets */}
-      {aging_buckets.length > 0 && (
-        <div className="theme-panel rounded-lg p-6 shadow-xl border">
-          <h3 className="text-lg font-bold text-theme-primary mb-4 flex items-center gap-2">
-            <PieChart className="w-5 h-5 text-blue-400" />
-            Aging Buckets
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            {aging_buckets.map((bucket: any, idx: number) => (
-              <div
-                key={idx}
-                className="bg-theme-tertiary border border-theme-primary rounded-lg p-4"
-              >
-                <p className="text-xs text-theme-tertiary mb-1">
-                  {bucket.bucket || bucket.range}
-                </p>
-                <p className="text-2xl font-bold text-theme-primary">
-                  ₹{(bucket.amount || 0).toLocaleString()}
-                </p>
-                <p className="text-xs text-theme-secondary mt-1">
-                  {bucket.count || 0} invoices
-                </p>
-              </div>
-            ))}
+      {/* Toast */}
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-[300]">
+          <div
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-2xl border text-sm font-medium text-white ${
+              toast.type === "error" ? "bg-red-700 border-red-600" : "bg-emerald-700 border-emerald-600"
+            }`}
+          >
+            {toast.type === "error" ? (
+              <AlertCircle className="w-4 h-4 text-red-300" />
+            ) : (
+              <Check className="w-4 h-4 text-emerald-300" />
+            )}
+            {toast.msg}
           </div>
         </div>
       )}
-
-      {/* Invoices Table */}
-      {invoices.length > 0 && (
-        <SmartDataTable
-          title="Invoice Details"
-          data={invoices}
-          preferredColumns={[
-            {
-              keys: ["invoice_number", "invoice_no", "invoiceNumber"],
-              label: "Invoice #",
-            },
-            {
-              keys: [
-                "vendor_name",
-                "customer_name",
-                "vendorName",
-                "customerName",
-                "name",
-              ],
-              label: "Vendor",
-            },
-            {
-              keys: ["invoice_date", "date", "invoiceDate"],
-              label: "Date",
-              format: "date",
-            },
-            {
-              keys: ["due_date", "dueDate"],
-              label: "Due Date",
-              format: "date",
-            },
-            {
-              keys: ["amount", "invoice_amount", "invoiceAmount"],
-              label: "Amount",
-              format: "currency",
-            },
-            {
-              keys: ["outstanding", "outstanding_amount", "outstandingAmount"],
-              label: "Outstanding",
-              format: "currency",
-            },
-            {
-              keys: ["days_outstanding", "daysOutstanding", "days"],
-              label: "Days",
-              format: "number",
-            },
-            {
-              keys: ["aging_bucket", "agingBucket", "bucket"],
-              label: "Bucket",
-            },
-          ]}
-        />
-      )}
     </div>
   );
-};
-
-// Register Dashboard Component
-const RegisterDashboard: React.FC<{ data: any; meta: any }> = ({ data }) => {
-  console.log("📊 RegisterDashboard received data:", data);
-
-  // Extract summary and invoices from multiple possible structures
-  const summary = data?.summary || data?.metadata?.summary || {};
-  const invoices = data?.invoices || data?.data || data?.records || [];
-
-  console.log("📊 Summary:", summary);
-  console.log("📊 Invoices count:", invoices.length);
-  console.log("📊 Sample invoice:", invoices[0]);
-
-  // Calculate totals if not provided in summary
-  const totalAmount =
-    summary.total_amount ||
-    invoices.reduce(
-      (sum: number, inv: any) => sum + (inv.amount || inv.total || 0),
-      0,
-    );
-  const paidAmount =
-    summary.paid_amount ||
-    invoices.reduce(
-      (sum: number, inv: any) => sum + (inv.paid || inv.paid_amount || 0),
-      0,
-    );
-  const outstanding = summary.outstanding || totalAmount - paidAmount;
-
-  return (
-    <div className="space-y-6">
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Total Invoices"
-          value={invoices.length.toString()}
-          icon={<FileText className="w-5 h-5" />}
-          color="blue"
-        />
-        <StatCard
-          title="Total Amount"
-          value={`₹${totalAmount.toLocaleString()}`}
-          icon={<DollarSign className="w-5 h-5" />}
-          color="green"
-        />
-        <StatCard
-          title="Paid Amount"
-          value={`₹${paidAmount.toLocaleString()}`}
-          icon={<CheckCircle className="w-5 h-5" />}
-          color="emerald"
-        />
-        <StatCard
-          title="Outstanding"
-          value={`₹${outstanding.toLocaleString()}`}
-          icon={<AlertTriangle className="w-5 h-5" />}
-          color="orange"
-        />
-      </div>
-
-      {/* Invoices Table */}
-      {invoices.length > 0 && (
-        <SmartDataTable
-          title="Invoice Register"
-          data={invoices}
-          preferredColumns={[
-            {
-              keys: ["invoice_number", "invoice_no", "invoiceNumber"],
-              label: "Invoice #",
-            },
-            {
-              keys: [
-                "vendor_name",
-                "customer_name",
-                "vendorName",
-                "customerName",
-                "name",
-              ],
-              label: "Vendor/Customer",
-            },
-            {
-              keys: ["invoice_date", "date", "invoiceDate"],
-              label: "Date",
-              format: "date",
-            },
-            {
-              keys: ["amount", "invoice_amount"],
-              label: "Amount",
-              format: "currency",
-            },
-            {
-              keys: ["tax", "tax_amount", "taxAmount"],
-              label: "Tax",
-              format: "currency",
-            },
-            {
-              keys: ["total", "total_amount", "totalAmount"],
-              label: "Total",
-              format: "currency",
-            },
-            {
-              keys: ["paid", "paid_amount", "paidAmount"],
-              label: "Paid",
-              format: "currency",
-            },
-            {
-              keys: ["outstanding", "outstanding_amount", "outstandingAmount"],
-              label: "Outstanding",
-              format: "currency",
-            },
-            {
-              keys: ["status", "payment_status", "paymentStatus"],
-              label: "Status",
-            },
-          ]}
-        />
-      )}
-    </div>
-  );
-};
-
-// DSO Dashboard Component
-const DSODashboard: React.FC<{ data: any; meta: any }> = ({ data }) => {
-  const dso = data?.dso || data?.days_sales_outstanding || 0;
-  const summary = data?.summary || {};
-
-  return (
-    <div className="space-y-6">
-      {/* DSO Metric */}
-      <div className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg p-8 shadow-2xl text-center">
-        <p className="text-white/80 text-sm font-medium mb-2">
-          Days Sales Outstanding
-        </p>
-        <p className="text-6xl font-bold text-white mb-2">{Math.round(dso)}</p>
-        <p className="text-white/60 text-sm">days</p>
-      </div>
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <StatCard
-          title="Total Receivables"
-          value={`₹${(summary.total_receivables || 0).toLocaleString()}`}
-          icon={<DollarSign className="w-5 h-5" />}
-          color="green"
-        />
-        <StatCard
-          title="Total Sales"
-          value={`₹${(summary.total_sales || 0).toLocaleString()}`}
-          icon={<TrendingUp className="w-5 h-5" />}
-          color="blue"
-        />
-        <StatCard
-          title="Collection Efficiency"
-          value={`${Math.round(summary.collection_efficiency || 0)}%`}
-          icon={<BarChart3 className="w-5 h-5" />}
-          color="purple"
-        />
-      </div>
-    </div>
-  );
-};
-
-// Generic Table Dashboard (fallback)
-const GenericTableDashboard: React.FC<{ data: any; meta: any }> = ({
-  data,
-}) => {
-  console.log("📋 GenericTableDashboard received data:", data);
-
-  // Try to extract array data from multiple possible structures
-  let dataArray = [];
-
-  if (Array.isArray(data)) {
-    dataArray = data;
-  } else if (data?.data && Array.isArray(data.data)) {
-    dataArray = data.data;
-  } else if (data?.invoices && Array.isArray(data.invoices)) {
-    dataArray = data.invoices;
-  } else if (data?.records && Array.isArray(data.records)) {
-    dataArray = data.records;
-  } else if (data?.items && Array.isArray(data.items)) {
-    dataArray = data.items;
-  }
-
-  console.log("📋 Extracted array with", dataArray.length, "items");
-
-  if (dataArray.length === 0) {
-    // Show summary data if available but no array data
-    if (data?.summary || data?.metadata) {
-      const summaryData = data.summary || data.metadata;
-      console.log("📊 Showing summary data:", summaryData);
-
-      return (
-        <div className="space-y-6">
-          <div className="theme-panel rounded-lg p-8 shadow-xl border">
-            <h3 className="text-xl font-bold text-theme-primary mb-6 flex items-center gap-2">
-              <BarChart3 className="w-6 h-6 text-blue-400" />
-              Report Summary
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {Object.entries(summaryData).map(([key, value]) => (
-                <div
-                  key={key}
-                  className="bg-theme-tertiary border border-theme-primary rounded-lg p-4"
-                >
-                  <p className="text-xs text-theme-tertiary mb-1">
-                    {key
-                      .replace(/_/g, " ")
-                      .replace(/\b\w/g, (l) => l.toUpperCase())}
-                  </p>
-                  <p className="text-xl font-bold text-theme-primary">
-                    {typeof value === "number" &&
-                    key.toLowerCase().includes("amount")
-                      ? `₹${value.toLocaleString()}`
-                      : String(value)}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="theme-panel rounded-lg p-12 text-center border">
-        <FileSpreadsheet className="w-16 h-16 text-theme-tertiary mx-auto mb-4" />
-        <p className="text-theme-secondary">No tabular data available to display</p>
-        <p className="text-xs text-theme-tertiary mt-2">
-          The report may contain summary data only
-        </p>
-      </div>
-    );
-  }
-
-  // Auto-detect columns from first row
-  const columns = Object.keys(dataArray[0]).map((key) => ({
-    key,
-    label: key.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
-    format: (key.toLowerCase().includes("amount") ||
-    key.toLowerCase().includes("total") ||
-    key.toLowerCase().includes("paid") ||
-    key.toLowerCase().includes("outstanding") ||
-    key.toLowerCase().includes("tax")
-      ? "currency"
-      : key.toLowerCase().includes("date")
-        ? "date"
-        : undefined) as "number" | "currency" | "date" | undefined,
-  }));
-
-  console.log(
-    "📋 Auto-detected columns:",
-    columns.map((c) => c.key),
-  );
-
-  return <DataTable title="Report Data" data={dataArray} columns={columns} />;
-};
-
-// Reusable Stat Card Component
-const StatCard: React.FC<{
-  title: string;
-  value: string;
-  icon: React.ReactNode;
-  color: "blue" | "green" | "purple" | "red" | "orange" | "emerald";
-}> = ({ title, value, icon, color }) => {
-  const colorClasses = {
-    blue: "from-blue-600 to-blue-700",
-    green: "from-green-600 to-green-700",
-    purple: "from-purple-600 to-purple-700",
-    red: "from-red-600 to-red-700",
-    orange: "from-orange-600 to-orange-700",
-    emerald: "from-emerald-600 to-emerald-700",
-  };
-
-  return (
-    <div className="theme-panel rounded-lg p-6 shadow-xl hover:shadow-2xl transition-all border">
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-sm text-theme-secondary font-medium">{title}</p>
-        <div
-          className={`w-10 h-10 bg-gradient-to-br ${colorClasses[color]} rounded-lg flex items-center justify-center text-white`}
-        >
-          {icon}
-        </div>
-      </div>
-      <p className="text-2xl font-bold text-theme-primary">{value}</p>
-    </div>
-  );
-};
-
-// Reusable Data Table Component
-const DataTable: React.FC<{
-  title: string;
-  data: any[];
-  columns: Array<{
-    key: string;
-    label: string;
-    format?: "currency" | "date" | "number";
-  }>;
-}> = ({ title, data, columns }) => {
-  const formatValue = (value: any, format?: string) => {
-    if (value === null || value === undefined || value === "") return "-";
-
-    if (format === "currency") {
-      const numValue = Number(value);
-      return isNaN(numValue) ? "-" : `₹${numValue.toLocaleString()}`;
-    }
-    if (format === "date") {
-      try {
-        const date = new Date(value);
-        return isNaN(date.getTime())
-          ? String(value)
-          : date.toLocaleDateString();
-      } catch {
-        return String(value);
-      }
-    }
-    if (format === "number") {
-      const numValue = Number(value);
-      return isNaN(numValue) ? String(value) : numValue.toLocaleString();
-    }
-    return String(value);
-  };
-
-  // Debug: Log first row to see actual data structure
-  if (data.length > 0) {
-    console.log("📊 DataTable - First row data:", data[0]);
-    console.log("📊 DataTable - Available keys:", Object.keys(data[0]));
-    console.log(
-      "📊 DataTable - Expected columns:",
-      columns.map((c) => c.key),
-    );
-  }
-
-  return (
-    <div className="theme-panel rounded-lg shadow-xl overflow-hidden border">
-      <div className="bg-theme-tertiary border-b border-theme-primary px-6 py-4">
-        <h3 className="text-lg font-bold text-theme-primary flex items-center gap-2">
-          <Table className="w-5 h-5 text-blue-400" />
-          {title}
-        </h3>
-        <p className="text-xs text-theme-tertiary mt-1">{data.length} records</p>
-      </div>
-
-      <div className="overflow-x-auto report-table-container custom-scrollbar">
-        <table className="w-full text-sm">
-          <thead className="sticky top-0 z-10 theme-table-head border-b-2">
-            <tr>
-              {columns.map((col, idx) => (
-                <th
-                  key={idx}
-                  className="px-6 py-3 text-left text-xs font-bold text-theme-tertiary uppercase tracking-wider whitespace-nowrap"
-                >
-                  {col.label}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-theme-primary">
-            {data.map((row, rowIdx) => (
-              <tr
-                key={rowIdx}
-                className="hover:bg-theme-tertiary transition-colors"
-              >
-                {columns.map((col, colIdx) => (
-                  <td
-                    key={colIdx}
-                    className="px-6 py-4 text-theme-secondary whitespace-nowrap"
-                  >
-                    {formatValue(row[col.key], col.format)}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-};
-
-// Smart Data Table that auto-detects field names
-const SmartDataTable: React.FC<{
-  title: string;
-  data: any[];
-  preferredColumns: Array<{
-    keys: string[];
-    label: string;
-    format?: "currency" | "date" | "number";
-  }>;
-}> = ({ title, data, preferredColumns }) => {
-  if (data.length === 0) return null;
-
-  // Auto-detect which keys exist in the data
-  const actualColumns = preferredColumns.map((col) => {
-    const foundKey = col.keys.find((key) => data[0].hasOwnProperty(key));
-    return {
-      key: foundKey || col.keys[0],
-      label: col.label,
-      format: col.format,
-    };
-  });
-
-  console.log("📊 SmartDataTable - Detected columns:", actualColumns);
-
-  return <DataTable title={title} data={data} columns={actualColumns} />;
 };

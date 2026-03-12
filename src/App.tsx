@@ -102,6 +102,7 @@ const MainLayout: React.FC = () => {
         <Sidebar
           isChatExpanded={isChatExpanded}
           onToggleChat={() => setIsChatExpanded(!isChatExpanded)}
+          onTabChange={setActiveTab}
         />
 
         {/* Chat Panel */}

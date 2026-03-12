@@ -15,9 +15,10 @@ import {
   MessageSquare,
   FileText,
   FolderOpen,
+  BarChart3,
 } from "lucide-react";
 import { useTheme } from "../../store/ThemeContext";
-import { chatService } from "../../services/api";
+import { chatService, reportService } from "../../services/api";
 import { useWorkflow } from "../../store/WorkflowContext";
 import { INITIAL_CHAT_MESSAGE } from "../../utils/constants";
 import {
@@ -25,6 +26,7 @@ import {
   mapBackendEdgesToFrontend,
 } from "../../utils/workflowMapper";
 import { DocumentsPanel } from "./DocumentsPanel";
+import { ReportsPanel } from "./ReportsPanel";
 
 // ============================================================================
 // TYPES
@@ -50,6 +52,7 @@ interface ChatItem {
 interface SidebarProps {
   isChatExpanded: boolean;
   onToggleChat: () => void;
+  onTabChange?: (tab: "workflow" | "analysis" | "report") => void;
 }
 
 // ============================================================================
@@ -58,6 +61,7 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({
   isChatExpanded,
   onToggleChat,
+  onTabChange,
 }) => {
   const { theme } = useTheme();
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
@@ -71,6 +75,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isDocumentsOpen, setIsDocumentsOpen] = useState(false);
+  const [isReportsOpen, setIsReportsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [chatItems, setChatItems] = useState<ChatItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -192,6 +197,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
       }
     },
     [activeMenuId, editingId, showToast, setCurrentChatId, setChatHistory, loadWorkflow],
+  );
+
+  const handleViewReport = useCallback(
+    async (report_id: string) => {
+      try {
+        const response = await reportService.getReport(report_id);
+        const report = response.data.report || (response.data.report_id ? response.data : null);
+
+        if (report) {
+          loadWorkflow(
+            "Report Workflow",
+            [],
+            [],
+            report_id,
+            report.download_url || report.report_url,
+            report.report_title ? `${report.report_title}.xlsx` : "report.xlsx"
+          );
+          setIsReportsOpen(false);
+          if (onTabChange) onTabChange("report");
+          showToast("Viewing report", "success");
+        }
+      } catch {
+        showToast("Failed to load report details", "error");
+      }
+    },
+    [loadWorkflow, onTabChange, showToast]
   );
 
   // ============================================================================
@@ -433,6 +464,35 @@ export const Sidebar: React.FC<SidebarProps> = ({
           )}
         </button>
 
+        {/* MY REPORTS */}
+        <button
+          onClick={() => {
+            setIsReportsOpen(!isReportsOpen);
+            setIsDocumentsOpen(false);
+            setIsHistoryOpen(false);
+          }}
+          className={iconBtnBase}
+          title="My Reports"
+        >
+          <div
+            className={iconBox(
+              isReportsOpen,
+              theme === "light"
+                ? "bg-emerald-100 border border-emerald-200 shadow-sm"
+                : "bg-gradient-to-br from-emerald-600 to-green-700 group-hover:from-emerald-500 group-hover:to-green-600 group-hover:shadow-emerald-500/50"
+            )}
+          >
+            <BarChart3
+              className={`w-4 h-4 ${isReportsOpen && theme === "light" ? "text-emerald-600" : iconColor}`}
+            />
+          </div>
+          {isSidebarExpanded && (
+            <span className="text-sm font-medium text-theme-secondary whitespace-nowrap">
+              My Reports
+            </span>
+          )}
+        </button>
+
         {/* SETTINGS */}
         <button className={`${iconBtnBase} mt-auto`}>
           <div className="w-7 h-7 bg-theme-tertiary text-theme-primary rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg transition-all">
@@ -572,6 +632,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* DOCUMENTS PANEL */}
         {isDocumentsOpen && (
           <DocumentsPanel onClose={() => setIsDocumentsOpen(false)} />
+        )}
+
+        {/* REPORTS PANEL */}
+        {isReportsOpen && (
+          <ReportsPanel
+            onClose={() => setIsReportsOpen(false)}
+            onViewReport={handleViewReport}
+          />
         )}
       </div>
 

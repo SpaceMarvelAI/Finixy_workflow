@@ -165,6 +165,16 @@ export const reportService = {
     return api.get(`/reports?limit=${limit}&offset=${offset}`);
   },
 
+  // Update a report
+  updateReport: async (report_id: string, data: any) => {
+    return api.patch(`/reports/${report_id}`, data);
+  },
+
+  // Delete a report
+  deleteReport: async (report_id: string) => {
+    return api.delete(`/reports/${report_id}`);
+  },
+
   // Legacy: Generate AP Register directly
   generateAPRegisterDirect: async () => {
     const token = sessionStorage.getItem('access_token');
