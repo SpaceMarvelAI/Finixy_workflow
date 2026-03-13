@@ -20,6 +20,16 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { documentService } from "../../services/api";
+import {
+  sanitizeName,
+  sanitizeString,
+  validateAmount,
+  hasInvalidNameCharacters,
+  exceedsMaxAmount,
+  exceedsMaxLength,
+  getValidationError,
+  VALIDATION_RULES,
+} from "../../utils/dataValidation";
 
 interface DocumentPreviewModalProps {
   previewData: any;
@@ -54,10 +64,10 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
         ...canonical,
         totals: {
           ...totals,
-          grand_total:  totals.grand_total  || doc.grand_total  || 0,
-          tax_total:    totals.tax_total    || doc.tax_total    || 0,
-          amount_paid:  totals.amount_paid  || doc.paid_amount  || 0,
-          balance_due:  totals.balance_due  || doc.outstanding  || 0,
+          grand_total: totals.grand_total || doc.grand_total || 0,
+          tax_total: totals.tax_total || doc.tax_total || 0,
+          amount_paid: totals.amount_paid || doc.paid_amount || 0,
+          balance_due: totals.balance_due || doc.outstanding || 0,
         },
         vendor: {
           ...vendor,
@@ -79,7 +89,9 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
   // Initialize editedData when previewData changes or when starting edit
   useEffect(() => {
     if (previewData && !isEditing) {
-      setEditedData(normalizeDocumentData(JSON.parse(JSON.stringify(previewData))));
+      setEditedData(
+        normalizeDocumentData(JSON.parse(JSON.stringify(previewData))),
+      );
     }
   }, [previewData, isEditing]);
 
@@ -125,15 +137,37 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
     const statusLower = status?.toLowerCase() || "pending";
     const badges: Record<string, { bg: string; text: string; border: string }> =
       {
-        paid: { bg: "bg-emerald-500/20", text: "text-emerald-400", border: "border-emerald-500/30" },
-        pending: { bg: "bg-yellow-500/20", text: "text-yellow-400", border: "border-yellow-500/30" },
-        overdue: { bg: "bg-red-500/20", text: "text-red-400", border: "border-red-500/30" },
-        cancelled: { bg: "bg-gray-500/20", text: "text-gray-400", border: "border-gray-500/30" },
-        draft: { bg: "bg-blue-500/20", text: "text-blue-400", border: "border-blue-500/30" },
+        paid: {
+          bg: "bg-emerald-500/20",
+          text: "text-emerald-400",
+          border: "border-emerald-500/30",
+        },
+        pending: {
+          bg: "bg-yellow-500/20",
+          text: "text-yellow-400",
+          border: "border-yellow-500/30",
+        },
+        overdue: {
+          bg: "bg-red-500/20",
+          text: "text-red-400",
+          border: "border-red-500/30",
+        },
+        cancelled: {
+          bg: "bg-gray-500/20",
+          text: "text-gray-400",
+          border: "border-gray-500/30",
+        },
+        draft: {
+          bg: "bg-blue-500/20",
+          text: "text-blue-400",
+          border: "border-blue-500/30",
+        },
       };
     const badge = badges[statusLower] || badges["pending"];
     return (
-      <span className={`px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-lg ${badge.bg} ${badge.text} border ${badge.border}`}>
+      <span
+        className={`px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-lg ${badge.bg} ${badge.text} border ${badge.border}`}
+      >
         {status || "PENDING"}
       </span>
     );
@@ -144,14 +178,22 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
     if (!d) return null;
     const canonical = d.canonical_data || {};
     switch (field) {
-      case "grand_total":    return canonical.totals?.grand_total;
-      case "tax_total":      return canonical.totals?.tax_total;
-      case "paid_amount":    return canonical.totals?.amount_paid;
-      case "outstanding":    return canonical.totals?.balance_due;
-      case "vendor_name":    return canonical.vendor?.name;
-      case "customer_name":  return canonical.customer?.name;
-      case "document_number": return canonical.document_metadata?.document_number;
-      default: return d[field];
+      case "grand_total":
+        return canonical.totals?.grand_total;
+      case "tax_total":
+        return canonical.totals?.tax_total;
+      case "paid_amount":
+        return canonical.totals?.amount_paid;
+      case "outstanding":
+        return canonical.totals?.balance_due;
+      case "vendor_name":
+        return canonical.vendor?.name;
+      case "customer_name":
+        return canonical.customer?.name;
+      case "document_number":
+        return canonical.document_metadata?.document_number;
+      default:
+        return d[field];
     }
   };
 
@@ -159,14 +201,49 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
     setEditedData((prev: any) => {
       if (!prev) return prev;
       let sanitizedValue = value;
+      let errorMsg: string | null = null;
 
-      // Sanitize name fields
+      // Validate and sanitize based on field type
       if (field === "vendor_name" || field === "customer_name") {
-        if (/[^a-zA-Z\s]/.test(value)) {
-          setValidationError("Special characters & numbers are not allowed in this field.");
-          setTimeout(() => setValidationError(null), 3000);
+        // Names: Only letters and spaces, max 50 chars
+        if (hasInvalidNameCharacters(value)) {
+          errorMsg = getValidationError(
+            field === "vendor_name" ? "Vendor Name" : "Customer Name",
+            "invalid_name",
+          );
+        } else if (exceedsMaxLength(value)) {
+          errorMsg = getValidationError(
+            field === "vendor_name" ? "Vendor Name" : "Customer Name",
+            "max_length",
+          );
         }
-        sanitizedValue = value.replace(/[^a-zA-Z\s]/g, "");
+        sanitizedValue = sanitizeName(value);
+      } else if (field === "document_number") {
+        // Document number: Alphanumeric, max 50 chars
+        if (exceedsMaxLength(value)) {
+          errorMsg = getValidationError("Document Number", "max_length");
+        }
+        sanitizedValue = sanitizeString(value);
+      } else if (
+        ["grand_total", "tax_total", "paid_amount", "outstanding"].includes(
+          field,
+        )
+      ) {
+        // Amounts: Max 10 Crore
+        const numValue = parseFloat(value) || 0;
+        if (exceedsMaxAmount(numValue)) {
+          errorMsg = getValidationError(
+            field.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
+            "max_amount",
+          );
+        }
+        sanitizedValue = validateAmount(value);
+      }
+
+      // Show validation error if any
+      if (errorMsg) {
+        setValidationError(errorMsg);
+        setTimeout(() => setValidationError(null), 3000);
       }
 
       const canonical = prev.canonical_data || {};
@@ -174,19 +251,76 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
       // Map frontend field names directly into canonical_data structure
       switch (field) {
         case "grand_total":
-          return { ...prev, canonical_data: { ...canonical, totals: { ...(canonical.totals || {}), grand_total: parseFloat(sanitizedValue) || 0 } } };
+          return {
+            ...prev,
+            canonical_data: {
+              ...canonical,
+              totals: {
+                ...(canonical.totals || {}),
+                grand_total: sanitizedValue,
+              },
+            },
+          };
         case "tax_total":
-          return { ...prev, canonical_data: { ...canonical, totals: { ...(canonical.totals || {}), tax_total: parseFloat(sanitizedValue) || 0 } } };
+          return {
+            ...prev,
+            canonical_data: {
+              ...canonical,
+              totals: {
+                ...(canonical.totals || {}),
+                tax_total: sanitizedValue,
+              },
+            },
+          };
         case "paid_amount":
-          return { ...prev, canonical_data: { ...canonical, totals: { ...(canonical.totals || {}), amount_paid: parseFloat(sanitizedValue) || 0 } } };
+          return {
+            ...prev,
+            canonical_data: {
+              ...canonical,
+              totals: {
+                ...(canonical.totals || {}),
+                amount_paid: sanitizedValue,
+              },
+            },
+          };
         case "outstanding":
-          return { ...prev, canonical_data: { ...canonical, totals: { ...(canonical.totals || {}), balance_due: parseFloat(sanitizedValue) || 0 } } };
+          return {
+            ...prev,
+            canonical_data: {
+              ...canonical,
+              totals: {
+                ...(canonical.totals || {}),
+                balance_due: sanitizedValue,
+              },
+            },
+          };
         case "vendor_name":
-          return { ...prev, canonical_data: { ...canonical, vendor: { ...(canonical.vendor || {}), name: sanitizedValue } } };
+          return {
+            ...prev,
+            canonical_data: {
+              ...canonical,
+              vendor: { ...(canonical.vendor || {}), name: sanitizedValue },
+            },
+          };
         case "customer_name":
-          return { ...prev, canonical_data: { ...canonical, customer: { ...(canonical.customer || {}), name: sanitizedValue } } };
+          return {
+            ...prev,
+            canonical_data: {
+              ...canonical,
+              customer: { ...(canonical.customer || {}), name: sanitizedValue },
+            },
+          };
         case "document_number":
-          return { ...prev, canonical_data: { ...canonical, document_metadata: { ...(canonical.document_metadata || {}), document_number: sanitizedValue } } };
+          return {
+            ...prev,
+            canonical_data: {
+              ...canonical,
+              document_metadata: {
+                ...(canonical.document_metadata || {}),
+                document_number: sanitizedValue,
+              },
+            },
+          };
         default:
           return { ...prev, [field]: sanitizedValue };
       }
@@ -196,38 +330,67 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
   const handleLineItemChange = (index: number, field: string, value: any) => {
     setEditedData((prev: any) => {
       if (!prev) return prev;
-      
+
       const canonical_data = prev.canonical_data || {};
-      const line_items = [...(canonical_data.line_items || canonical_data.extracted_fields?.line_items || [])];
-      
+      const line_items = [
+        ...(canonical_data.line_items ||
+          canonical_data.extracted_fields?.line_items ||
+          []),
+      ];
+
       if (line_items[index]) {
         let finalValue = value;
-        
-        // Sanitize Description (Letters and spaces only)
+        let errorMsg: string | null = null;
+
+        // Sanitize Description (max 100 chars, alphanumeric + spaces)
         if (field === "description") {
-          if (/[^a-zA-Z\s]/.test(value)) {
-            setValidationError("Special characters & numbers are not allowed in item names.");
-            setTimeout(() => setValidationError(null), 3000);
+          if (
+            exceedsMaxLength(value, VALIDATION_RULES.MAX_DESCRIPTION_LENGTH)
+          ) {
+            errorMsg = `Item description: Maximum ${VALIDATION_RULES.MAX_DESCRIPTION_LENGTH} characters allowed`;
           }
-          finalValue = value.replace(/[^a-zA-Z\s]/g, "");
+          finalValue = sanitizeString(
+            value,
+            VALIDATION_RULES.MAX_DESCRIPTION_LENGTH,
+          );
         }
-        // Clamp numeric values to 0
-        else if (field === "quantity" || field === "unit_price" || field === "amount") {
-          finalValue = Math.max(0, parseFloat(value) || 0);
+        // Validate numeric values
+        else if (
+          field === "quantity" ||
+          field === "unit_price" ||
+          field === "amount"
+        ) {
+          const numValue = parseFloat(value) || 0;
+          if (exceedsMaxAmount(numValue)) {
+            errorMsg = getValidationError(
+              `Line Item ${index + 1} ${field}`,
+              "max_amount",
+            );
+          }
+          finalValue = validateAmount(value);
         }
-        
+
+        // Show validation error if any
+        if (errorMsg) {
+          setValidationError(errorMsg);
+          setTimeout(() => setValidationError(null), 3000);
+        }
+
         line_items[index] = { ...line_items[index], [field]: finalValue };
       }
-      
+
       const newCanonical = { ...canonical_data, line_items };
       // Also update legacy location if it existed
       if (newCanonical.extracted_fields) {
-        newCanonical.extracted_fields = { ...newCanonical.extracted_fields, line_items };
+        newCanonical.extracted_fields = {
+          ...newCanonical.extracted_fields,
+          line_items,
+        };
       }
-      
+
       return {
         ...prev,
-        canonical_data: newCanonical
+        canonical_data: newCanonical,
       };
     });
   };
@@ -237,26 +400,43 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
       e.preventDefault();
       e.stopPropagation();
     }
-    
+
     setEditedData((prev: any) => {
       if (!prev) return prev;
-      
+
       const canonical_data = prev.canonical_data || {};
-      const extracted_fields = canonical_data.extracted_fields || {};
-      const line_items = [...(extracted_fields.line_items || [])];
-      
+
+      // Get existing line items from either location
+      const existingItems =
+        canonical_data.line_items ||
+        canonical_data.extracted_fields?.line_items ||
+        [];
+
+      // Create new line item
+      const newItem = {
+        description: "",
+        quantity: 1,
+        unit_price: 0,
+        amount: 0,
+        line_total: 0,
+      };
+
+      // Add to line_items array
+      const updatedLineItems = [...existingItems, newItem];
+
       return {
         ...prev,
         canonical_data: {
           ...canonical_data,
-          extracted_fields: {
-            ...extracted_fields,
-            line_items: [
-              ...line_items,
-              { description: "", quantity: 1, unit_price: 0, amount: 0 }
-            ]
-          }
-        }
+          line_items: updatedLineItems,
+          // Also update extracted_fields if it exists
+          ...(canonical_data.extracted_fields && {
+            extracted_fields: {
+              ...canonical_data.extracted_fields,
+              line_items: updatedLineItems,
+            },
+          }),
+        },
       };
     });
   };
@@ -266,28 +446,39 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
       e.preventDefault();
       e.stopPropagation();
     }
-    
+
     setEditedData((prev: any) => {
       if (!prev) return prev;
-      
+
       const canonical_data = prev.canonical_data || {};
-      const extracted_fields = canonical_data.extracted_fields || {};
-      const line_items = (extracted_fields.line_items || []).filter((_: any, i: number) => i !== index);
-      
+
+      // Get existing line items
+      const existingItems =
+        canonical_data.line_items ||
+        canonical_data.extracted_fields?.line_items ||
+        [];
+
+      // Remove item at index
+      const updatedLineItems = existingItems.filter(
+        (_: any, i: number) => i !== index,
+      );
+
       return {
         ...prev,
         canonical_data: {
           ...canonical_data,
-          extracted_fields: {
-            ...extracted_fields,
-            line_items
-          }
-        }
+          line_items: updatedLineItems,
+          // Also update extracted_fields if it exists
+          ...(canonical_data.extracted_fields && {
+            extracted_fields: {
+              ...canonical_data.extracted_fields,
+              line_items: updatedLineItems,
+            },
+          }),
+        },
       };
     });
   };
-
-
 
   const handleSave = async () => {
     if (!previewData?.id) return;
@@ -299,7 +490,11 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
       const canonical = editedData.canonical_data || {};
 
       // Normalize line items (may be in canonical.line_items or canonical.extracted_fields.line_items)
-      const line_items = (canonical.line_items || canonical.extracted_fields?.line_items || []).map((item: any) => ({
+      const line_items = (
+        canonical.line_items ||
+        canonical.extracted_fields?.line_items ||
+        []
+      ).map((item: any) => ({
         description: item.description || "",
         quantity: parseFloat(item.quantity) || 0,
         unit_price: parseFloat(item.unit_price) || 0,
@@ -323,7 +518,10 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
       delete dataToSave.extracted_fields;
 
       console.log("💾 Saving to backend:", JSON.stringify(dataToSave, null, 2));
-      const response = await documentService.updateDocumentData(previewData.id, dataToSave);
+      const response = await documentService.updateDocumentData(
+        previewData.id,
+        dataToSave,
+      );
       console.log("✅ Save response:", response.data);
 
       if (response.data) {
@@ -336,7 +534,8 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
       }
     } catch (e: any) {
       console.error("Save failed:", e);
-      const errorDetail = e?.response?.data?.detail || e?.message || "Unknown error";
+      const errorDetail =
+        e?.response?.data?.detail || e?.message || "Unknown error";
       setValidationError(`Save failed: ${errorDetail}`);
       setTimeout(() => setValidationError(null), 6000);
     } finally {
@@ -344,22 +543,50 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
     }
   };
 
-
   const renderLineItems = (canonicalData: any, isEditMode: boolean) => {
     if (!canonicalData) {
       return (
-        <div className="p-8 text-center text-gray-500 italic">
-          No records found.
+        <div className="theme-panel rounded-lg border shadow-lg p-8">
+          <div className="text-center text-gray-500 italic mb-4">
+            No records found.
+          </div>
+          {isEditMode && (
+            <div className="flex justify-center">
+              <button
+                type="button"
+                onClick={(e) => addLineItem(e)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-lg transition-all shadow-lg"
+              >
+                <Plus className="w-4 h-4" /> Add First Line Item
+              </button>
+            </div>
+          )}
         </div>
       );
     }
 
-    const items = canonicalData.line_items || canonicalData.extracted_fields?.line_items || [];
+    const items =
+      canonicalData.line_items ||
+      canonicalData.extracted_fields?.line_items ||
+      [];
 
     if (items.length === 0) {
       return (
-        <div className="p-8 text-center text-gray-500 italic">
-          No itemized records detected.
+        <div className="theme-panel rounded-lg border shadow-lg p-8">
+          <div className="text-center text-gray-500 italic mb-4">
+            No itemized records detected.
+          </div>
+          {isEditMode && (
+            <div className="flex justify-center">
+              <button
+                type="button"
+                onClick={(e) => addLineItem(e)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-lg transition-all shadow-lg"
+              >
+                <Plus className="w-4 h-4" /> Add First Line Item
+              </button>
+            </div>
+          )}
         </div>
       );
     }
@@ -381,7 +608,9 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
               <th className="px-4 py-3 text-right text-[10px] font-bold text-theme-tertiary uppercase tracking-widest w-32">
                 Amount
               </th>
-              {isEditMode && <th className="px-4 py-3 text-right text-[10px] font-bold text-theme-tertiary uppercase tracking-widest w-16"></th>}
+              {isEditMode && (
+                <th className="px-4 py-3 text-right text-[10px] font-bold text-theme-tertiary uppercase tracking-widest w-16"></th>
+              )}
             </tr>
           </thead>
           <tbody className="divide-y divide-theme-primary bg-theme-secondary">
@@ -392,7 +621,9 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                     <input
                       type="text"
                       value={item.description || ""}
-                      onChange={(e) => handleLineItemChange(i, "description", e.target.value)}
+                      onChange={(e) =>
+                        handleLineItemChange(i, "description", e.target.value)
+                      }
                       className="w-full theme-input border rounded px-2 py-1 text-sm outline-none focus:ring-1 focus:ring-blue-500"
                     />
                   ) : (
@@ -405,7 +636,9 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                       type="number"
                       min="0"
                       value={item.quantity || "0"}
-                      onChange={(e) => handleLineItemChange(i, "quantity", e.target.value)}
+                      onChange={(e) =>
+                        handleLineItemChange(i, "quantity", e.target.value)
+                      }
                       className="w-full theme-input border rounded px-2 py-1 text-sm text-right outline-none focus:ring-1 focus:ring-blue-500"
                     />
                   ) : (
@@ -418,11 +651,16 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                       type="number"
                       min="0"
                       value={item.unit_price || "0"}
-                      onChange={(e) => handleLineItemChange(i, "unit_price", e.target.value)}
+                      onChange={(e) =>
+                        handleLineItemChange(i, "unit_price", e.target.value)
+                      }
                       className="w-full theme-input border rounded px-2 py-1 text-sm text-right outline-none focus:ring-1 focus:ring-blue-500"
                     />
                   ) : (
-                    formatOriginalCurrency(item.unit_price, item.currency || previewData.currency)
+                    formatOriginalCurrency(
+                      item.unit_price,
+                      item.currency || previewData.currency,
+                    )
                   )}
                 </td>
                 <td className="px-4 py-3 text-sm text-right text-theme-primary font-bold font-mono">
@@ -431,11 +669,16 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                       type="number"
                       min="0"
                       value={item.amount || item.line_total || "0"}
-                      onChange={(e) => handleLineItemChange(i, "amount", e.target.value)}
+                      onChange={(e) =>
+                        handleLineItemChange(i, "amount", e.target.value)
+                      }
                       className="w-full theme-input border rounded px-2 py-1 text-sm text-right outline-none focus:ring-1 focus:ring-blue-500"
                     />
                   ) : (
-                    formatOriginalCurrency(item.amount || item.line_total, item.currency || previewData.currency)
+                    formatOriginalCurrency(
+                      item.amount || item.line_total,
+                      item.currency || previewData.currency,
+                    )
                   )}
                 </td>
                 {isEditMode && (
@@ -504,14 +747,16 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
               </div>
             </div>
           </div>
-          
+
           {validationError && (
             <div className="mx-6 mt-4 p-4 bg-red-500/10 border border-red-500/30 rounded-lg flex items-center gap-3 animate-in slide-in-from-top-2">
               <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
-              <p className="text-sm font-bold text-red-400">{validationError}</p>
+              <p className="text-sm font-bold text-red-400">
+                {validationError}
+              </p>
             </div>
           )}
-          
+
           <div className="flex items-center gap-3">
             {!isEditing ? (
               <button
@@ -525,7 +770,7 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className={`flex items-center gap-2 px-4 py-2 ${saveSuccess ? 'bg-emerald-600' : 'bg-blue-600 hover:bg-blue-500'} text-white text-sm font-bold rounded-lg transition-all shadow-lg disabled:opacity-50`}
+                  className={`flex items-center gap-2 px-4 py-2 ${saveSuccess ? "bg-emerald-600" : "bg-blue-600 hover:bg-blue-500"} text-white text-sm font-bold rounded-lg transition-all shadow-lg disabled:opacity-50`}
                 >
                   {saving ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -534,7 +779,11 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                   ) : (
                     <Save className="w-4 h-4" />
                   )}
-                  {saveSuccess ? "Saved!" : saving ? "Saving..." : "Save Changes"}
+                  {saveSuccess
+                    ? "Saved!"
+                    : saving
+                      ? "Saving..."
+                      : "Save Changes"}
                 </button>
                 <button
                   onClick={() => setIsEditing(false)}
@@ -566,8 +815,12 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
               {[
                 { label: "Grand Total", field: "grand_total", color: "blue" },
                 { label: "Tax Total", field: "tax_total", color: "purple" },
-                { label: "Paid Amount", field: "paid_amount", color: "emerald" },
-                { label: "Outstanding", field: "outstanding", color: "amber" }
+                {
+                  label: "Paid Amount",
+                  field: "paid_amount",
+                  color: "emerald",
+                },
+                { label: "Outstanding", field: "outstanding", color: "amber" },
               ].map((item) => (
                 <div
                   key={item.field}
@@ -605,11 +858,27 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
               </h4>
               <div className="theme-panel rounded-lg border shadow-lg divide-y divide-theme-primary overflow-hidden">
                 {[
-                  { label: "Vendor Name", field: "vendor_name", icon: <Building className="w-3.5 h-3.5" /> },
-                  { label: "Customer Name", field: "customer_name", icon: <Users className="w-3.5 h-3.5" /> },
-                  { label: "Document Number", field: "document_number", icon: <Hash className="w-3.5 h-3.5" />, mono: true },
+                  {
+                    label: "Vendor Name",
+                    field: "vendor_name",
+                    icon: <Building className="w-3.5 h-3.5" />,
+                  },
+                  {
+                    label: "Customer Name",
+                    field: "customer_name",
+                    icon: <Users className="w-3.5 h-3.5" />,
+                  },
+                  {
+                    label: "Document Number",
+                    field: "document_number",
+                    icon: <Hash className="w-3.5 h-3.5" />,
+                    mono: true,
+                  },
                 ].map((item) => (
-                  <div key={item.field} className="p-4 flex justify-between items-center bg-transparent hover:bg-theme-tertiary transition-colors">
+                  <div
+                    key={item.field}
+                    className="p-4 flex justify-between items-center bg-transparent hover:bg-theme-tertiary transition-colors"
+                  >
                     <span className="text-xs text-theme-tertiary font-bold flex items-center gap-2">
                       {item.icon} {item.label}
                     </span>
@@ -617,11 +886,15 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                       <input
                         type="text"
                         value={getDisplayValue(item.field) ?? ""}
-                        onChange={(e) => handleInputChange(item.field, e.target.value)}
+                        onChange={(e) =>
+                          handleInputChange(item.field, e.target.value)
+                        }
                         className={`theme-input border rounded px-3 py-1 text-sm font-bold outline-none focus:ring-1 focus:ring-blue-500 text-right`}
                       />
                     ) : (
-                      <span className={`text-sm font-bold ${item.mono ? 'font-mono text-blue-400' : 'text-theme-primary'}`}>
+                      <span
+                        className={`text-sm font-bold ${item.mono ? "font-mono text-blue-400" : "text-theme-primary"}`}
+                      >
                         {getDisplayValue(item.field) || "N/A"}
                       </span>
                     )}
