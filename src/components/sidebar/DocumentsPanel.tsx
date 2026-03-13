@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   X,
   Download,
@@ -14,6 +14,7 @@ import {
   FileImage,
   File,
   ChevronDown,
+  Upload,
 } from "lucide-react";
 import { documentService } from "../../services/api";
 import { DocumentPreviewModal } from "../modals/DocumentPreviewModal";
@@ -89,14 +90,19 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
   const [search, setSearch] = useState("");
   const [selectedCompany, setSelectedCompany] = useState<string>("all");
   const [selectedType, setSelectedType] = useState<string>("all");
+  const [selectedYear, setSelectedYear] = useState<string>("all");
+  const [selectedMonth, setSelectedMonth] = useState<string>("all");
+  const [selectedDate, setSelectedDate] = useState<string>("all");
   const [previewData, setPreviewData] = useState<any>(null);
   const [loadingPreviewId, setLoadingPreviewId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [toast, setToast] = useState<{
     msg: string;
     type: "success" | "error";
   } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const showToast = (msg: string, type: "success" | "error" = "success") => {
     setToast({ msg, type });
@@ -311,6 +317,33 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
     }
   };
 
+  const handleFileUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const response = await documentService.upload(file);
+      if (response.data.status === "success") {
+        showToast(`File "${file.name}" uploaded successfully!`);
+        // Refresh the documents list
+        await fetchDocuments();
+      }
+    } catch (e: any) {
+      showToast(
+        `Upload failed: ${e?.response?.data?.detail || e?.message || "Unknown error"}`,
+        "error",
+      );
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
   const filtered = documents.filter((d) => {
     const matchesSearch =
       d.file_name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -325,7 +358,24 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
       selectedType === "all" ||
       d.category?.toLowerCase().includes(selectedType.toLowerCase());
 
-    return matchesSearch && matchesCompany && matchesType;
+    // Date filtering
+    let matchesDate = true;
+    if (d.uploaded_at) {
+      const docDate = new Date(d.uploaded_at);
+      const docYear = docDate.getFullYear().toString();
+      const docMonth = (docDate.getMonth() + 1).toString();
+      const docDay = docDate.getDate().toString();
+
+      if (selectedYear !== "all" && docYear !== selectedYear) {
+        matchesDate = false;
+      } else if (selectedMonth !== "all" && docMonth !== selectedMonth) {
+        matchesDate = false;
+      } else if (selectedDate !== "all" && docDay !== selectedDate) {
+        matchesDate = false;
+      }
+    }
+
+    return matchesSearch && matchesCompany && matchesType && matchesDate;
   });
 
   // Get unique company names for dropdown
@@ -336,6 +386,30 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
         .filter((name) => name && name.trim() !== ""),
     ),
   ).sort();
+
+  // Get unique years from documents
+  const years = Array.from({ length: 2050 - 1995 + 1 }, (_, i) =>
+    (2050 - i).toString(),
+  );
+
+  // Month names for display
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+
+  // All dates from 1 to 31
+  const dates = Array.from({ length: 31 }, (_, i) => (i + 1).toString());
 
   return (
     <>
@@ -361,6 +435,29 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              {/* Hidden File Input */}
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileUpload}
+                className="hidden"
+                accept=".pdf,.csv,.xlsx"
+              />
+
+              {/* Upload Button */}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading || loading}
+                title="Upload Document"
+                className="p-1.5 rounded-lg text-theme-tertiary hover:text-emerald-500 hover:bg-emerald-500/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {uploading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Upload className="w-4 h-4" />
+                )}
+              </button>
+
               {/* Company Filter Dropdown */}
               <div className="relative">
                 <select
@@ -390,6 +487,79 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
                 </select>
                 <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-theme-tertiary pointer-events-none" />
               </div>
+
+              {/* Year Filter Dropdown */}
+              <div className="relative">
+                <select
+                  value={selectedYear}
+                  onChange={(e) => {
+                    setSelectedYear(e.target.value);
+                    setSelectedMonth("all");
+                    setSelectedDate("all");
+                  }}
+                  className="appearance-none pl-3 pr-8 py-1.5 theme-input border rounded-lg text-xs font-medium text-theme-primary cursor-pointer hover:border-blue-500 transition-all [&::-webkit-scrollbar]:hidden"
+                  style={
+                    {
+                      scrollbarWidth: "none",
+                      msOverflowStyle: "none",
+                    } as React.CSSProperties
+                  }
+                >
+                  <option value="all">Years</option>
+                  {years.map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-theme-tertiary pointer-events-none" />
+              </div>
+
+              {/* Month Filter Dropdown */}
+              <div className="relative">
+                <select
+                  value={selectedMonth}
+                  onChange={(e) => {
+                    setSelectedMonth(e.target.value);
+                    setSelectedDate("all");
+                  }}
+                  disabled={selectedYear === "all"}
+                  className="appearance-none pl-3 pr-8 py-1.5 theme-input border rounded-lg text-xs font-medium text-theme-primary cursor-pointer hover:border-blue-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <option value="all">All Months</option>
+                  {monthNames.map((month, index) => (
+                    <option key={index + 1} value={(index + 1).toString()}>
+                      {month}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-theme-tertiary pointer-events-none" />
+              </div>
+
+              {/* Date Filter Dropdown */}
+              <div className="relative">
+                <select
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  disabled={selectedYear === "all" || selectedMonth === "all"}
+                  className="appearance-none pl-3 pr-8 py-1.5 theme-input border rounded-lg text-xs font-medium text-theme-primary cursor-pointer hover:border-blue-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed [&::-webkit-scrollbar]:hidden"
+                  style={
+                    {
+                      scrollbarWidth: "none",
+                      msOverflowStyle: "none",
+                    } as React.CSSProperties
+                  }
+                >
+                  <option value="all">All Dates</option>
+                  {dates.map((date) => (
+                    <option key={date} value={date}>
+                      {date}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-theme-tertiary pointer-events-none" />
+              </div>
+
               <button
                 onClick={fetchDocuments}
                 title="Refresh"
