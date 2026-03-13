@@ -298,7 +298,7 @@ export const ReportsPanel: React.FC<ReportsPanelProps> = ({
   return (
     <>
       <div
-        className="absolute left-full top-0 h-full theme-slide-panel border-r shadow-2xl flex flex-col z-[60]"
+        className="absolute left-full top-0 h-full theme-slide-panel border-r shadow-2xl flex flex-col z-[40]"
         style={{ width: "70vw" }}
       >
         {/* Header */}
@@ -493,7 +493,7 @@ export const ReportsPanel: React.FC<ReportsPanelProps> = ({
 
       {/* Toast */}
       {toast && (
-        <div className="fixed bottom-6 right-6 z-[300]">
+        <div className="fixed bottom-6 right-6 z-[95]">
           <div
             className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-2xl border text-sm font-medium text-white ${
               toast.type === "error"
@@ -513,7 +513,7 @@ export const ReportsPanel: React.FC<ReportsPanelProps> = ({
 
       {/* Delete Confirmation Modal */}
       {deleteConfirm && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[400]">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[90]">
           <div className="theme-card border rounded-xl shadow-2xl p-6 max-w-md w-full mx-4">
             <div className="flex items-start gap-4 mb-4">
               <div className="w-12 h-12 bg-red-500/10 rounded-full flex items-center justify-center flex-shrink-0">

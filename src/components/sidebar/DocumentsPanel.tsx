@@ -310,7 +310,7 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
   return (
     <>
       <div
-        className="absolute left-full top-0 h-full theme-slide-panel border-r shadow-2xl flex flex-col z-[60]"
+        className="absolute left-full top-0 h-full theme-slide-panel border-r shadow-2xl flex flex-col z-[40]"
         style={{ width: "70vw" }}
       >
         {/* Header */}
@@ -503,7 +503,7 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
 
       {/* Confirm Delete Modal */}
       {confirmDeleteId && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center theme-modal-overlay backdrop-blur-sm">
+        <div className="fixed inset-0 z-[80] flex items-center justify-center theme-modal-overlay backdrop-blur-sm">
           <div className="theme-modal border rounded-lg shadow-2xl w-80 p-6">
             <div className="flex flex-col items-center text-center gap-4">
               <div className="w-12 h-12 bg-red-500/20 rounded-lg flex items-center justify-center border-2 border-red-500/40">
@@ -560,7 +560,7 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
 
       {/* Toast */}
       {toast && (
-        <div className="fixed bottom-6 right-6 z-[300]">
+        <div className="fixed bottom-6 right-6 z-[95]">
           <div
             className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-2xl border text-sm font-medium text-white ${
               toast.type === "error"

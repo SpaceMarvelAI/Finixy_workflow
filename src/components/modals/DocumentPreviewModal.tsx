@@ -607,7 +607,7 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
         <table className="min-w-full divide-y divide-theme-primary">
           <thead className="theme-table-head">
             <tr>
-              <th className="px-4 py-3 text-left text-[10px] font-bold text-theme-tertiary uppercase tracking-widest">
+              <th className="px-3 py-2 text-left text-[10px] font-bold text-theme-tertiary uppercase tracking-widest">
                 Description
               </th>
               <th className="px-4 py-3 text-right text-[10px] font-bold text-theme-tertiary uppercase tracking-widest w-24">
@@ -627,7 +627,7 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
           <tbody className="divide-y divide-theme-primary bg-theme-secondary">
             {items.map((item: any, i: number) => (
               <tr key={i} className="hover:bg-theme-tertiary transition-colors">
-                <td className="px-4 py-3 text-sm font-medium text-theme-primary">
+                <td className="px-3 py-2 text-sm font-medium text-theme-primary">
                   {isEditMode ? (
                     <input
                       type="text"
@@ -641,7 +641,7 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                     item.description || "N/A"
                   )}
                 </td>
-                <td className="px-4 py-3 text-sm text-right text-theme-primary">
+                <td className="px-3 py-2 text-sm text-right text-theme-primary">
                   {isEditMode ? (
                     <input
                       type="number"
@@ -730,17 +730,18 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 md:p-8 animate-in fade-in duration-200"
+      className="fixed inset-0 z-[50] flex items-center justify-center bg-black/80 backdrop-blur-sm p-2 animate-in fade-in duration-200"
+      style={{ paddingTop: "80px" }}
       onClick={() => !isEditing && onClose()}
     >
       <div
-        className="bg-theme-secondary rounded-lg shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 border border-theme-primary"
+        className="bg-theme-secondary rounded-lg shadow-2xl w-full max-w-6xl max-h-[75vh] flex flex-col overflow-hidden animate-in zoom-in-95 border border-theme-primary"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className="px-6 py-5 border-b border-theme-primary flex justify-between items-center bg-theme-secondary sticky top-0 z-10">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-lg shadow-lg shadow-blue-500/20">
+        <div className="px-4 py-3 border-b border-theme-primary flex justify-between items-center bg-theme-secondary sticky top-0 z-10">
+          <div className="flex items-center gap-2">
+            <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-lg shadow-lg shadow-blue-500/20">
               <FileText className="w-6 h-6" />
             </div>
             <div>
@@ -760,7 +761,7 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
           </div>
 
           {validationError && (
-            <div className="mx-6 mt-4 p-4 bg-red-500/10 border border-red-500/30 rounded-lg flex items-center gap-3 animate-in slide-in-from-top-2">
+            <div className="mx-3 mt-2 p-3 bg-red-500/10 border border-red-500/30 rounded-lg flex items-center gap-3 animate-in slide-in-from-top-2">
               <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
               <p className="text-sm font-bold text-red-400">
                 {validationError}
@@ -816,13 +817,13 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
           </div>
         </div>
 
-        <div className="p-8 overflow-y-auto flex-1 bg-theme-primary space-y-8 custom-scrollbar">
+        <div className="p-3 overflow-y-auto flex-1 bg-theme-primary space-y-3 custom-scrollbar">
           {/* 1. Financial Overview Cards */}
           <div>
             <h4 className="text-xs font-black text-theme-tertiary uppercase tracking-widest mb-4 flex items-center gap-2">
               <DollarSign className="w-4 h-4" /> Financial Summary
             </h4>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {[
                 { label: "Grand Total", field: "grand_total", color: "blue" },
                 { label: "Tax Total", field: "tax_total", color: "purple" },
@@ -835,7 +836,7 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
               ].map((item) => (
                 <div
                   key={item.field}
-                  className={`theme-panel p-5 rounded-lg border-l-4 border-l-${item.color}-500 shadow-lg border transition-all`}
+                  className={`theme-panel p-3 rounded-lg border-l-4 border-l-${item.color}-500 shadow-lg border transition-all`}
                 >
                   <p className="text-[10px] text-theme-tertiary font-bold uppercase mb-1 tracking-tighter">
                     {item.label}
@@ -861,9 +862,9 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
           </div>
 
           {/* 2. Entity Details & System Metadata */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Entity Details Card */}
-            <div className="space-y-4">
+            <div className="space-y-2">
               <h4 className="text-xs font-black text-theme-tertiary uppercase tracking-widest flex items-center gap-2">
                 <Users className="w-4 h-4" /> Entities & Details
               </h4>
@@ -888,7 +889,7 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                 ].map((item) => (
                   <div
                     key={item.field}
-                    className="p-4 flex justify-between items-center bg-transparent hover:bg-theme-tertiary transition-colors"
+                    className="p-2 flex justify-between items-center bg-transparent hover:bg-theme-tertiary transition-colors"
                   >
                     <span className="text-xs text-theme-tertiary font-bold flex items-center gap-2">
                       {item.icon} {item.label}
@@ -911,7 +912,7 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                     )}
                   </div>
                 ))}
-                <div className="p-4 flex justify-between items-center bg-transparent hover:bg-theme-tertiary transition-colors">
+                <div className="p-2 flex justify-between items-center bg-transparent hover:bg-theme-tertiary transition-colors">
                   <span className="text-xs text-theme-tertiary font-bold flex items-center gap-2">
                     <FileCheck className="w-3.5 h-3.5" /> Status
                   </span>
@@ -921,17 +922,17 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
             </div>
 
             {/* System Analysis Card */}
-            <div className="space-y-4">
+            <div className="space-y-2">
               <h4 className="text-xs font-black text-theme-tertiary uppercase tracking-widest flex items-center gap-2">
                 <Activity className="w-4 h-4" /> Technical Analysis
               </h4>
-              <div className="theme-panel rounded-lg border shadow-lg p-5 space-y-6">
+              <div className="theme-panel rounded-lg border shadow-lg p-2 space-y-1 flex flex-col justify-between">
                 <div className="flex justify-between items-center">
                   <div>
                     <p className="text-[10px] text-theme-tertiary font-bold uppercase tracking-widest">
                       File Properties
                     </p>
-                    <p className="text-sm font-bold text-theme-primary uppercase mt-1">
+                    <p className="text-sm font-bold text-theme-primary uppercase mt-0.5">
                       {data.file_type?.replace(".", "") || "PDF"} /{" "}
                       {formatBytes(data.file_size)}
                     </p>
@@ -940,15 +941,15 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                     <p className="text-[10px] text-theme-tertiary font-bold uppercase tracking-widest">
                       AI Confidence
                     </p>
-                    <p className="text-sm font-bold text-emerald-400 mt-1">
+                    <p className="text-sm font-bold text-emerald-400 mt-0.5">
                       {data.confidence_score
                         ? `${(data.confidence_score * 100).toFixed(0)}%`
                         : "N/A"}
                     </p>
                   </div>
                 </div>
-                <div className="pt-4 border-t border-theme-primary">
-                  <p className="text-[10px] text-theme-tertiary font-bold uppercase tracking-widest mb-1">
+                <div className="pt-2 border-t border-theme-primary">
+                  <p className="text-[10px] text-theme-tertiary font-bold uppercase tracking-widest mb-0.5">
                     Processing Result
                   </p>
                   <span className="inline-block px-3 py-1 bg-blue-500/20 text-blue-400 text-[10px] font-black rounded-lg uppercase tracking-tighter border border-blue-500/30">

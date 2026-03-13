@@ -589,22 +589,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           )}
         </button>
 
-        {/* SETTINGS */}
-        <button className={`${iconBtnBase} mt-auto`}>
-          <div className="w-7 h-7 bg-theme-tertiary text-theme-primary rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg transition-all">
-            <Settings className="w-4 h-4 text-theme-secondary" />
-          </div>
-          {isSidebarExpanded && (
-            <span className="text-sm font-medium text-theme-secondary whitespace-nowrap">
-              Settings
-            </span>
-          )}
-        </button>
-
         {/* HISTORY PANEL */}
         {isHistoryOpen && (
           <div
-            className="absolute left-full top-0 h-full theme-slide-panel border-r shadow-2xl flex flex-col z-[60]"
+            className="absolute left-full top-0 h-full theme-slide-panel border-r shadow-2xl flex flex-col z-[40]"
             style={{ width: "500px" }}
           >
             {/* Header */}
@@ -751,7 +739,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* DELETE MODAL */}
       {showDeleteModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center theme-modal-overlay backdrop-blur-sm">
+        <div className="fixed inset-0 z-[70] flex items-center justify-center theme-modal-overlay backdrop-blur-sm">
           <div className="theme-modal border rounded-lg shadow-2xl w-96 p-6">
             <div className="flex flex-col items-center text-center">
               <div className="w-14 h-14 bg-red-500/20 rounded-lg flex items-center justify-center mb-4 border-2 border-red-500/40">
@@ -783,7 +771,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       )}
 
       {/* TOASTS */}
-      <div className="fixed bottom-4 right-4 z-[110] flex flex-col gap-2">
+      <div className="fixed bottom-4 right-4 z-[95] flex flex-col gap-2">
         {toasts.map((toast) => (
           <div
             key={toast.id}

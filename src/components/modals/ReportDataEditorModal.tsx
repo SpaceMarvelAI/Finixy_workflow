@@ -62,23 +62,24 @@ export const ReportDataEditorModal: React.FC<ReportDataEditorModalProps> = ({
       // Since we extracted it in ReportViewer, we'll try to update both to be safe or just use a generic update
       // Based on common patterns, we update 'report_data'
       await reportService.updateReport(reportId, {
-        report_data: updatedData
+        report_data: updatedData,
       });
 
       setSuccess(true);
       onSave(updatedData);
-      
+
       // Close after a brief delay to show success
       setTimeout(() => {
         onClose();
       }, 1000);
-
     } catch (e: any) {
       console.error("❌ Failed to save report data:", e);
       if (e instanceof SyntaxError) {
         setError(`Invalid JSON format: ${e.message}`);
       } else {
-        setError(e.response?.data?.detail || e.message || "Failed to save data");
+        setError(
+          e.response?.data?.detail || e.message || "Failed to save data",
+        );
       }
     } finally {
       setSaving(false);
@@ -86,11 +87,11 @@ export const ReportDataEditorModal: React.FC<ReportDataEditorModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[150] flex items-center justify-center theme-modal-overlay backdrop-blur-md p-4 animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-[250] flex items-center justify-center theme-modal-overlay backdrop-blur-md p-4 animate-in fade-in duration-300">
       <div className="theme-modal border border-theme-primary rounded-xl shadow-2xl w-full max-w-5xl h-[85vh] flex flex-col overflow-hidden relative theme-transition">
         {/* Top Decorative Border */}
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600" />
-        
+
         {/* Header */}
         <div className="p-5 border-b border-theme-primary flex items-center justify-between bg-theme-secondary/50 flex-shrink-0">
           <div className="flex items-center gap-4">
@@ -98,7 +99,9 @@ export const ReportDataEditorModal: React.FC<ReportDataEditorModalProps> = ({
               <Database className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-theme-primary">Maintain Report Data</h3>
+              <h3 className="text-xl font-bold text-theme-primary">
+                Maintain Report Data
+              </h3>
               <p className="text-xs text-theme-tertiary mt-0.5 font-medium tracking-wide uppercase">
                 Direct JSON Maintenance Mode
               </p>
@@ -152,11 +155,14 @@ export const ReportDataEditorModal: React.FC<ReportDataEditorModalProps> = ({
             ) : (
               <div className="text-theme-tertiary text-xs bg-theme-tertiary/30 px-3 py-2 rounded-lg border border-theme-primary inline-flex items-center gap-2">
                 <AlertTriangle className="w-3.5 h-3.5 text-yellow-500/70" />
-                <span>Modifying JSON will directly affect report dashboards and exports. Use caution.</span>
+                <span>
+                  Modifying JSON will directly affect report dashboards and
+                  exports. Use caution.
+                </span>
               </div>
             )}
           </div>
-          
+
           <div className="flex gap-4 w-full md:w-auto">
             <button
               onClick={onClose}

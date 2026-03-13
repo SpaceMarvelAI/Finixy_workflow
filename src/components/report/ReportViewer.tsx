@@ -713,7 +713,7 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
 
       {/* Toast */}
       {toast && (
-        <div className="fixed bottom-6 right-6 z-[300]">
+        <div className="fixed bottom-6 right-6 z-[95]">
           <div
             className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-2xl border text-sm font-medium text-white ${
               toast.type === "error"
