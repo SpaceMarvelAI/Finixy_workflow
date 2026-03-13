@@ -1,5 +1,5 @@
-import React, { useRef } from "react";
-import { Send, Paperclip } from "lucide-react";
+import React, { useRef, useState } from "react";
+import { Send, Plus, ChevronDown } from "lucide-react";
 
 interface ChatInputProps {
   input: string;
@@ -8,6 +8,9 @@ interface ChatInputProps {
   onInputChange: (value: string) => void;
   onSend: () => void;
   onFileUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  companies?: string[];
+  selectedCompany?: string;
+  onCompanyChange?: (company: string) => void;
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
@@ -17,44 +20,118 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   onInputChange,
   onSend,
   onFileUpload,
+  companies = [],
+  selectedCompany = "all",
+  onCompanyChange,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   return (
-    <div className="p-3 border-t border-theme-primary bg-theme-secondary theme-transition">
-      <div className="flex flex-col gap-3">
+    <div className="p-2 border-t border-theme-primary bg-theme-secondary theme-transition">
+      <div className="relative">
         <input
-          type="text"
+          type="file"
+          ref={fileInputRef}
+          onChange={onFileUpload}
+          className="hidden"
+          accept=".pdf,.csv,.xlsx"
+        />
+
+        {/* Text Input - Textarea for multi-line */}
+        <textarea
           value={input}
           onChange={(e) => onInputChange(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && onSend()}
-          placeholder="Type your query here..."
-          className="w-full px-4 py-3 theme-input border rounded-lg text-sm shadow-sm"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              onSend();
+            }
+          }}
+          placeholder="Describe your workflow..."
+          className="w-full pl-4 pr-24 pt-2 pb-4 theme-input border rounded-md text-base shadow-sm resize-none min-h-[120px]"
           disabled={loading || uploading}
+          rows={4}
         />
-        <div className="flex gap-3 items-center">
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={onFileUpload}
-            className="hidden"
-            accept=".pdf,.csv,.xlsx"
-          />
+
+        {/* Action Buttons Container - Bottom Right */}
+        <div className="absolute right-3 bottom-3 flex items-center gap-2">
+          {/* Company Dropdown - Opens Upward */}
+          <div className="relative">
+            <button
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              disabled={loading || uploading}
+              className="flex-shrink-0 h-7 px-3 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 shadow-md"
+            >
+              <span className="whitespace-nowrap">
+                {selectedCompany === "all" ? "All Companies" : selectedCompany}
+              </span>
+              <ChevronDown className="w-3 h-3" />
+            </button>
+
+            {/* Dropdown Menu - Opens Upward */}
+            {isDropdownOpen && (
+              <>
+                {/* Backdrop to close dropdown */}
+                <div
+                  className="fixed inset-0 z-10"
+                  onClick={() => setIsDropdownOpen(false)}
+                />
+
+                {/* Dropdown List */}
+                <div className="absolute bottom-full right-0 mb-1 w-48 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-20 max-h-60 overflow-y-auto">
+                  <button
+                    onClick={() => {
+                      onCompanyChange?.("all");
+                      setIsDropdownOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 text-xs hover:bg-gray-700 transition-colors ${
+                      selectedCompany === "all"
+                        ? "bg-gray-700 text-blue-400"
+                        : "text-gray-300"
+                    }`}
+                  >
+                    All Companies
+                  </button>
+                  {companies.map((company) => (
+                    <button
+                      key={company}
+                      onClick={() => {
+                        onCompanyChange?.(company);
+                        setIsDropdownOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-2 text-xs hover:bg-gray-700 transition-colors ${
+                        selectedCompany === company
+                          ? "bg-gray-700 text-blue-400"
+                          : "text-gray-300"
+                      }`}
+                    >
+                      {company}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* File Upload Button - Plus Icon */}
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading || loading}
-            className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm shadow-md flex items-center justify-center gap-2"
+            title="Upload Invoice"
+            className="flex-shrink-0 w-7 h-7 bg-gray-700 hover:bg-gray-600 text-white rounded-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shadow-md"
           >
-            <Paperclip className="w-4 h-4" />
-            Upload Invoice
+            <Plus className="w-5 h-5" />
           </button>
+
+          {/* Send Button - Send Icon */}
           <button
             onClick={onSend}
             disabled={!input.trim() || loading || uploading}
-            className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white rounded-lg transition-all font-medium text-sm shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            title="Send Message"
+            className="flex-shrink-0 w-7 h-7 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shadow-lg"
           >
             <Send className="w-4 h-4" />
-            {loading ? "Processing..." : "Send Query"}
           </button>
         </div>
       </div>
