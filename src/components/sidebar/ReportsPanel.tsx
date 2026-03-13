@@ -111,6 +111,178 @@ export const ReportsPanel: React.FC<ReportsPanelProps> = ({
     }
   };
 
+  const handleDownloadExcel = async (reportId: string, reportTitle: string) => {
+    console.log("📥 [DOWNLOAD] Starting Excel download for report:", reportId);
+    try {
+      // Fetch full report data
+      const response = await reportService.getReport(reportId);
+      const reportData = response.data;
+
+      console.log("📊 [DOWNLOAD] Full response:", response);
+      console.log("📊 [DOWNLOAD] Report data:", reportData);
+      console.log(
+        "📊 [DOWNLOAD] Report data keys:",
+        Object.keys(reportData || {}),
+      );
+      console.log("📊 [DOWNLOAD] report_data:", reportData?.report_data);
+      console.log(
+        "📊 [DOWNLOAD] report_data type:",
+        typeof reportData?.report_data,
+      );
+      console.log(
+        "📊 [DOWNLOAD] report_data keys:",
+        reportData?.report_data ? Object.keys(reportData.report_data) : "N/A",
+      );
+
+      if (!reportData?.report_data) {
+        console.error("❌ [DOWNLOAD] No report_data found");
+        showToast("No data available for download", "error");
+        return;
+      }
+
+      // Import the Excel generator
+      const { generateExcelFromReportData } =
+        await import("../../utils/excelGenerator");
+
+      // Extract data and columns from report_data
+      let items: any[] = [];
+      let columns: any[] = [];
+
+      // Handle different report data structures
+      console.log(
+        "🔍 [DOWNLOAD] Checking report_data.data:",
+        reportData.report_data.data,
+      );
+      console.log(
+        "🔍 [DOWNLOAD] Checking report_data.items:",
+        reportData.report_data.items,
+      );
+      console.log(
+        "🔍 [DOWNLOAD] Checking report_data.invoices:",
+        reportData.report_data.invoices,
+      );
+      console.log(
+        "🔍 [DOWNLOAD] Checking report_data.records:",
+        reportData.report_data.records,
+      );
+      console.log(
+        "🔍 [DOWNLOAD] Is report_data array?:",
+        Array.isArray(reportData.report_data),
+      );
+
+      if (
+        reportData.report_data.data &&
+        Array.isArray(reportData.report_data.data)
+      ) {
+        items = reportData.report_data.data;
+        console.log(
+          "✅ [DOWNLOAD] Found data in report_data.data:",
+          items.length,
+        );
+      } else if (
+        reportData.report_data.items &&
+        Array.isArray(reportData.report_data.items)
+      ) {
+        items = reportData.report_data.items;
+        console.log(
+          "✅ [DOWNLOAD] Found data in report_data.items:",
+          items.length,
+        );
+      } else if (
+        reportData.report_data.invoices &&
+        Array.isArray(reportData.report_data.invoices)
+      ) {
+        items = reportData.report_data.invoices;
+        console.log(
+          "✅ [DOWNLOAD] Found data in report_data.invoices:",
+          items.length,
+        );
+      } else if (
+        reportData.report_data.records &&
+        Array.isArray(reportData.report_data.records)
+      ) {
+        items = reportData.report_data.records;
+        console.log(
+          "✅ [DOWNLOAD] Found data in report_data.records:",
+          items.length,
+        );
+      } else if (Array.isArray(reportData.report_data)) {
+        items = reportData.report_data;
+        console.log("✅ [DOWNLOAD] report_data is array:", items.length);
+      } else {
+        console.warn(
+          "⚠️ [DOWNLOAD] Could not find array data, checking all keys...",
+        );
+        // Try to find any array in report_data
+        for (const key of Object.keys(reportData.report_data)) {
+          if (
+            Array.isArray(reportData.report_data[key]) &&
+            reportData.report_data[key].length > 0
+          ) {
+            items = reportData.report_data[key];
+            console.log(
+              `✅ [DOWNLOAD] Found data in report_data.${key}:`,
+              items.length,
+            );
+            break;
+          }
+        }
+      }
+
+      if (items.length === 0) {
+        console.error("❌ [DOWNLOAD] No items found in report data");
+        showToast("No data rows found in report", "error");
+        return;
+      }
+
+      console.log("📊 [DOWNLOAD] First item sample:", items[0]);
+
+      // Generate columns from first item
+      if (items.length > 0) {
+        columns = Object.keys(items[0]).map((key) => ({
+          key,
+          label: key
+            .replace(/_/g, " ")
+            .replace(/\b\w/g, (l: string) => l.toUpperCase()),
+          format:
+            key.toLowerCase().includes("amount") ||
+            key.toLowerCase().includes("total") ||
+            key.toLowerCase().includes("paid") ||
+            key.toLowerCase().includes("outstanding")
+              ? "currency"
+              : key.toLowerCase().includes("date")
+                ? "date"
+                : undefined,
+        }));
+      }
+
+      // Extract summary if available
+      const summary =
+        reportData.report_data.summary || reportData.report_meta?.summary;
+
+      console.log("📊 [DOWNLOAD] Generating Excel with:", {
+        items: items.length,
+        columns: columns.length,
+        columnNames: columns.map((c) => c.key),
+        summary,
+      });
+
+      // Generate Excel
+      await generateExcelFromReportData(
+        reportTitle || "Report",
+        items,
+        columns,
+        summary,
+      );
+
+      console.log("✅ [DOWNLOAD] Excel generated successfully");
+      showToast("Excel downloaded successfully!");
+    } catch (error) {
+      console.error("❌ [DOWNLOAD] Failed to download Excel:", error);
+      showToast("Failed to download Excel", "error");
+    }
+  };
+
   const filtered = reports.filter(
     (r) =>
       r.report_title?.toLowerCase().includes(search.toLowerCase()) ||
@@ -279,12 +451,13 @@ export const ReportsPanel: React.FC<ReportsPanelProps> = ({
                         </button>
                         <button
                           onClick={() =>
-                            report.download_url &&
-                            window.open(report.download_url, "_blank")
+                            handleDownloadExcel(
+                              report.report_id,
+                              report.report_title,
+                            )
                           }
                           title="Download Excel"
-                          disabled={!report.download_url}
-                          className="p-1.5 rounded-lg text-theme-tertiary hover:text-blue-500 hover:bg-blue-500/10 transition-all disabled:opacity-30"
+                          className="p-1.5 rounded-lg text-theme-tertiary hover:text-blue-500 hover:bg-blue-500/10 transition-all"
                         >
                           <Download className="w-3.5 h-3.5" />
                         </button>
