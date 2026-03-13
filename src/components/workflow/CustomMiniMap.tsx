@@ -37,39 +37,16 @@ const MiniMapCanvas: React.FC = () => {
       const bgEnd = isDark ? "#111827" : "#f8fafc";
       const textColor = isDark ? "#6b7280" : "#64748b";
       const edgeColor = isDark ? "#4b5563" : "#94a3b8";
-      
+
       // Clear canvas
       ctx.clearRect(0, 0, MINIMAP_WIDTH, MINIMAP_HEIGHT);
 
-      // Create rounded rectangle path for clipping
-      const cornerRadius = 8;
-      ctx.save();
-      ctx.beginPath();
-      ctx.moveTo(cornerRadius, 0);
-      ctx.lineTo(MINIMAP_WIDTH - cornerRadius, 0);
-      ctx.quadraticCurveTo(MINIMAP_WIDTH, 0, MINIMAP_WIDTH, cornerRadius);
-      ctx.lineTo(MINIMAP_WIDTH, MINIMAP_HEIGHT - cornerRadius);
-      ctx.quadraticCurveTo(
-        MINIMAP_WIDTH,
-        MINIMAP_HEIGHT,
-        MINIMAP_WIDTH - cornerRadius,
-        MINIMAP_HEIGHT,
-      );
-      ctx.lineTo(cornerRadius, MINIMAP_HEIGHT);
-      ctx.quadraticCurveTo(0, MINIMAP_HEIGHT, 0, MINIMAP_HEIGHT - cornerRadius);
-      ctx.lineTo(0, cornerRadius);
-      ctx.quadraticCurveTo(0, 0, cornerRadius, 0);
-      ctx.closePath();
-      ctx.clip();
-
-      // Background with gradient
+      // Background with gradient (no clipping, no rounded corners)
       const gradient = ctx.createLinearGradient(0, 0, 0, MINIMAP_HEIGHT);
       gradient.addColorStop(0, bgStart);
       gradient.addColorStop(1, bgEnd);
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, MINIMAP_WIDTH, MINIMAP_HEIGHT);
-
-      ctx.restore();
 
       // Check if we have nodes
       if (!nodes || nodes.length === 0) {
@@ -286,7 +263,6 @@ const MiniMapCanvas: React.FC = () => {
       height={MINIMAP_HEIGHT}
       style={{
         display: "block",
-        borderRadius: "8px",
         backgroundColor: "transparent",
       }}
     />
@@ -300,7 +276,7 @@ export const CustomMiniMap: React.FC = () => {
       className="react-flow__panel react-flow__minimap bottom left"
       style={{ bottom: 16, left: 16 }}
     >
-      <div className="theme-panel p-2 rounded-xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] backdrop-blur-md overflow-hidden border">
+      <div className="theme-panel p-2 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] backdrop-blur-md overflow-hidden border">
         <MiniMapCanvas />
       </div>
     </div>
