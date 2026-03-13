@@ -41,13 +41,21 @@ const formatDate = (dateStr?: string) => {
   });
 };
 
-export const ReportsPanel: React.FC<ReportsPanelProps> = ({ onClose, onViewReport }) => {
+export const ReportsPanel: React.FC<ReportsPanelProps> = ({
+  onClose,
+  onViewReport,
+}) => {
   const [reports, setReports] = useState<ReportItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
-  const [toast, setToast] = useState<{ msg: string; type: "success" | "error" } | null>(null);
+  const [toast, setToast] = useState<{
+    msg: string;
+    type: "success" | "error";
+  } | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const showToast = (msg: string, type: "success" | "error" = "success") => {
     setToast({ msg, type });
@@ -66,14 +74,18 @@ export const ReportsPanel: React.FC<ReportsPanelProps> = ({ onClose, onViewRepor
     }
   }, []);
 
-  useEffect(() => { fetchReports(); }, [fetchReports]);
+  useEffect(() => {
+    fetchReports();
+  }, [fetchReports]);
 
   const handleRename = async (id: string) => {
     if (!editValue.trim()) return;
     try {
       await reportService.updateReport(id, { report_title: editValue.trim() });
       setReports((prev) =>
-        prev.map((r) => (r.report_id === id ? { ...r, report_title: editValue.trim() } : r))
+        prev.map((r) =>
+          r.report_id === id ? { ...r, report_title: editValue.trim() } : r,
+        ),
       );
       setEditingId(null);
       showToast("Report renamed successfully!");
@@ -82,11 +94,27 @@ export const ReportsPanel: React.FC<ReportsPanelProps> = ({ onClose, onViewRepor
     }
   };
 
+  const handleDelete = async (id: string) => {
+    console.log("🗑️ [DELETE] Starting delete for report:", id);
+    setDeleting(true);
+    try {
+      await reportService.deleteReport(id);
+      console.log("✅ [DELETE] Report deleted successfully:", id);
+      setReports((prev) => prev.filter((r) => r.report_id !== id));
+      setDeleteConfirm(null);
+      showToast("Report deleted successfully!");
+    } catch (error) {
+      console.error("❌ [DELETE] Failed to delete report:", error);
+      showToast("Failed to delete report", "error");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const filtered = reports.filter(
     (r) =>
       r.report_title?.toLowerCase().includes(search.toLowerCase()) ||
-      r.report_type?.toLowerCase().includes(search.toLowerCase())
+      r.report_type?.toLowerCase().includes(search.toLowerCase()),
   );
 
   return (
@@ -103,9 +131,12 @@ export const ReportsPanel: React.FC<ReportsPanelProps> = ({ onClose, onViewRepor
                 <BarChart3 className="w-4 h-4 text-emerald-500" />
               </div>
               <div>
-                <h3 className="font-bold text-theme-primary text-sm">Finixy Reports</h3>
+                <h3 className="font-bold text-theme-primary text-sm">
+                  Finixy Reports
+                </h3>
                 <p className="text-[10px] text-theme-tertiary">
-                  {reports.length} report{reports.length !== 1 ? "s" : ""} generated
+                  {reports.length} report{reports.length !== 1 ? "s" : ""}{" "}
+                  generated
                 </p>
               </div>
             </div>
@@ -115,7 +146,9 @@ export const ReportsPanel: React.FC<ReportsPanelProps> = ({ onClose, onViewRepor
                 title="Refresh"
                 className="p-1.5 rounded-lg text-theme-tertiary hover:text-theme-primary hover:bg-theme-tertiary transition-all"
               >
-                <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+                <RefreshCw
+                  className={`w-4 h-4 ${loading ? "animate-spin" : ""}`}
+                />
               </button>
               <button
                 onClick={onClose}
@@ -150,22 +183,35 @@ export const ReportsPanel: React.FC<ReportsPanelProps> = ({ onClose, onViewRepor
             <div className="flex flex-col items-center justify-center h-40 gap-3 text-theme-tertiary">
               <BarChart3 className="w-10 h-10 opacity-30" />
               <p className="text-sm">
-                {search ? "No reports match your search" : "No reports generated yet"}
+                {search
+                  ? "No reports match your search"
+                  : "No reports generated yet"}
               </p>
             </div>
           ) : (
             <table className="w-full text-xs">
               <thead className="sticky top-0 theme-table-head border-b z-10">
                 <tr>
-                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest">Report Title</th>
-                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest w-24">Type</th>
-                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest w-32">Generated</th>
-                  <th className="px-3 py-3 text-center text-[10px] font-bold uppercase tracking-widest w-28">Actions</th>
+                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest">
+                    Report Title
+                  </th>
+                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest w-24">
+                    Type
+                  </th>
+                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest w-32">
+                    Generated
+                  </th>
+                  <th className="px-3 py-3 text-center text-[10px] font-bold uppercase tracking-widest w-28">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-theme-primary">
                 {filtered.map((report) => (
-                  <tr key={report.report_id} className="theme-table-row transition-colors group">
+                  <tr
+                    key={report.report_id}
+                    className="theme-table-row transition-colors group"
+                  >
                     <td className="px-3 py-3">
                       {editingId === report.report_id ? (
                         <div className="flex items-center gap-2">
@@ -176,14 +222,21 @@ export const ReportsPanel: React.FC<ReportsPanelProps> = ({ onClose, onViewRepor
                             className="bg-theme-tertiary border border-blue-500 rounded px-2 py-1 outline-none text-xs w-full"
                             autoFocus
                             onKeyDown={(e) => {
-                              if (e.key === "Enter") handleRename(report.report_id);
+                              if (e.key === "Enter")
+                                handleRename(report.report_id);
                               if (e.key === "Escape") setEditingId(null);
                             }}
                           />
-                          <button onClick={() => handleRename(report.report_id)} className="text-emerald-500">
+                          <button
+                            onClick={() => handleRename(report.report_id)}
+                            className="text-emerald-500"
+                          >
                             <Save className="w-3.5 h-3.5" />
                           </button>
-                          <button onClick={() => setEditingId(null)} className="text-red-500">
+                          <button
+                            onClick={() => setEditingId(null)}
+                            className="text-red-500"
+                          >
                             <X className="w-3.5 h-3.5" />
                           </button>
                         </div>
@@ -196,7 +249,10 @@ export const ReportsPanel: React.FC<ReportsPanelProps> = ({ onClose, onViewRepor
                             {report.report_title || "Untitled Report"}
                           </span>
                           <button
-                            onClick={() => { setEditingId(report.report_id); setEditValue(report.report_title); }}
+                            onClick={() => {
+                              setEditingId(report.report_id);
+                              setEditValue(report.report_title);
+                            }}
                             className="opacity-0 group-hover:opacity-100 p-1 text-theme-tertiary hover:text-blue-500 transition-all"
                           >
                             <Edit2 className="w-3 h-3" />
@@ -222,12 +278,22 @@ export const ReportsPanel: React.FC<ReportsPanelProps> = ({ onClose, onViewRepor
                           <Eye className="w-3.5 h-3.5" />
                         </button>
                         <button
-                          onClick={() => report.download_url && window.open(report.download_url, "_blank")}
+                          onClick={() =>
+                            report.download_url &&
+                            window.open(report.download_url, "_blank")
+                          }
                           title="Download Excel"
                           disabled={!report.download_url}
                           className="p-1.5 rounded-lg text-theme-tertiary hover:text-blue-500 hover:bg-blue-500/10 transition-all disabled:opacity-30"
                         >
                           <Download className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => setDeleteConfirm(report.report_id)}
+                          title="Delete Report"
+                          className="p-1.5 rounded-lg text-theme-tertiary hover:text-red-500 hover:bg-red-500/10 transition-all"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </td>
@@ -251,7 +317,9 @@ export const ReportsPanel: React.FC<ReportsPanelProps> = ({ onClose, onViewRepor
         <div className="fixed bottom-6 right-6 z-[300]">
           <div
             className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-2xl border text-sm font-medium text-white ${
-              toast.type === "error" ? "bg-red-700 border-red-600" : "bg-theme-secondary border-theme-primary"
+              toast.type === "error"
+                ? "bg-red-700 border-red-600"
+                : "bg-theme-secondary border-theme-primary"
             }`}
           >
             {toast.type === "error" ? (
@@ -260,6 +328,54 @@ export const ReportsPanel: React.FC<ReportsPanelProps> = ({ onClose, onViewRepor
               <CheckCircle className="w-4 h-4 text-emerald-400" />
             )}
             {toast.msg}
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[400]">
+          <div className="theme-card border rounded-xl shadow-2xl p-6 max-w-md w-full mx-4">
+            <div className="flex items-start gap-4 mb-4">
+              <div className="w-12 h-12 bg-red-500/10 rounded-full flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-6 h-6 text-red-500" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-theme-primary mb-1">
+                  Delete Report?
+                </h3>
+                <p className="text-sm text-theme-tertiary">
+                  This action cannot be undone. The report will be permanently
+                  deleted from the system.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                disabled={deleting}
+                className="px-4 py-2 rounded-lg text-sm font-medium text-theme-primary hover:bg-theme-tertiary transition-all disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDelete(deleteConfirm)}
+                disabled={deleting}
+                className="px-4 py-2 rounded-lg text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition-all disabled:opacity-50 flex items-center gap-2"
+              >
+                {deleting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    Delete Report
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}
