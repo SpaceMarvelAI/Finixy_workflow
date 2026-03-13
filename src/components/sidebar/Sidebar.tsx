@@ -507,6 +507,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           onClick={() => {
             setIsHistoryOpen(!isHistoryOpen);
             setIsDocumentsOpen(false);
+            setIsReportsOpen(false);
           }}
           className={iconBtnBase}
           title="History"
@@ -535,6 +536,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           onClick={() => {
             setIsDocumentsOpen(!isDocumentsOpen);
             setIsHistoryOpen(false);
+            setIsReportsOpen(false);
           }}
           className={iconBtnBase}
           title="My Documents"
