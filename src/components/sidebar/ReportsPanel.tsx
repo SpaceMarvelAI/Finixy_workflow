@@ -52,6 +52,9 @@ export const ReportsPanel: React.FC<ReportsPanelProps> = ({
   const [search, setSearch] = useState("");
   const [selectedCompany, setSelectedCompany] = useState<string>("all");
   const [selectedType, setSelectedType] = useState<string>("all");
+  const [selectedYear, setSelectedYear] = useState<string>("all");
+  const [selectedMonth, setSelectedMonth] = useState<string>("all");
+  const [selectedDate, setSelectedDate] = useState<string>("all");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const [toast, setToast] = useState<{
@@ -306,7 +309,25 @@ export const ReportsPanel: React.FC<ReportsPanelProps> = ({
       selectedType === "all" ||
       r.report_type?.toLowerCase().includes(selectedType.toLowerCase());
 
-    return matchesSearch && matchesCompany && matchesType;
+    // Date filtering
+    let matchesDate = true;
+    const dateStr = r.generated_at || r.created_at;
+    if (dateStr) {
+      const reportDate = new Date(dateStr);
+      const reportYear = reportDate.getFullYear().toString();
+      const reportMonth = (reportDate.getMonth() + 1).toString();
+      const reportDay = reportDate.getDate().toString();
+
+      if (selectedYear !== "all" && reportYear !== selectedYear) {
+        matchesDate = false;
+      } else if (selectedMonth !== "all" && reportMonth !== selectedMonth) {
+        matchesDate = false;
+      } else if (selectedDate !== "all" && reportDay !== selectedDate) {
+        matchesDate = false;
+      }
+    }
+
+    return matchesSearch && matchesCompany && matchesType && matchesDate;
   });
 
   // Get unique company names for dropdown
@@ -317,6 +338,30 @@ export const ReportsPanel: React.FC<ReportsPanelProps> = ({
         .filter((name) => name && name.trim() !== ""),
     ),
   ).sort();
+
+  // Get unique years from 1995 to 2050
+  const years = Array.from({ length: 2050 - 1995 + 1 }, (_, i) =>
+    (2050 - i).toString(),
+  );
+
+  // Month names for display
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+
+  // All dates from 1 to 31
+  const dates = Array.from({ length: 31 }, (_, i) => (i + 1).toString());
 
   return (
     <>
@@ -363,7 +408,7 @@ export const ReportsPanel: React.FC<ReportsPanelProps> = ({
                 <select
                   value={selectedType}
                   onChange={(e) => setSelectedType(e.target.value)}
-                  className="appearance-none pl-3 pr-8 py-1.5 theme-input border rounded-lg text-xs font-medium text-theme-primary cursor-pointer hover:border-blue-500 transition-all"
+                  className="appearance-none pl-3 pr-6  py-1.5 theme-input border rounded-lg text-xs font-medium text-theme-primary cursor-pointer hover:border-blue-500 transition-all"
                 >
                   <option value="all">All Types</option>
                   <option value="ap">Account Payable</option>
@@ -372,6 +417,79 @@ export const ReportsPanel: React.FC<ReportsPanelProps> = ({
                 </select>
                 <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-theme-tertiary pointer-events-none" />
               </div>
+
+              {/* Year Filter Dropdown */}
+              <div className="relative">
+                <select
+                  value={selectedYear}
+                  onChange={(e) => {
+                    setSelectedYear(e.target.value);
+                    setSelectedMonth("all");
+                    setSelectedDate("all");
+                  }}
+                  className="appearance-none pl-3 pr-8 py-1.5 theme-input border rounded-lg text-xs font-medium text-theme-primary cursor-pointer hover:border-blue-500 transition-all [&::-webkit-scrollbar]:hidden"
+                  style={
+                    {
+                      scrollbarWidth: "none",
+                      msOverflowStyle: "none",
+                    } as React.CSSProperties
+                  }
+                >
+                  <option value="all">Years</option>
+                  {years.map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-theme-tertiary pointer-events-none" />
+              </div>
+
+              {/* Month Filter Dropdown */}
+              <div className="relative">
+                <select
+                  value={selectedMonth}
+                  onChange={(e) => {
+                    setSelectedMonth(e.target.value);
+                    setSelectedDate("all");
+                  }}
+                  disabled={selectedYear === "all"}
+                  className="appearance-none pl-3 pr-4 py-1.5 theme-input border rounded-lg text-xs font-medium text-theme-primary cursor-pointer hover:border-blue-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <option value="all">Months</option>
+                  {monthNames.map((month, index) => (
+                    <option key={index + 1} value={(index + 1).toString()}>
+                      {month}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-theme-tertiary pointer-events-none" />
+              </div>
+
+              {/* Date Filter Dropdown */}
+              <div className="relative">
+                <select
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  disabled={selectedYear === "all" || selectedMonth === "all"}
+                  className="appearance-none pl-3 pr-8 py-1.5 theme-input border rounded-lg text-xs font-medium text-theme-primary cursor-pointer hover:border-blue-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed [&::-webkit-scrollbar]:hidden"
+                  style={
+                    {
+                      scrollbarWidth: "none",
+                      msOverflowStyle: "none",
+                    } as React.CSSProperties
+                  }
+                >
+                  <option value="all">Dates</option>
+                  {dates.map((date) => (
+                    <option key={date} value={date}>
+                      {date}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-theme-tertiary pointer-events-none" />
+              </div>
+
               <button
                 onClick={fetchReports}
                 title="Refresh"
