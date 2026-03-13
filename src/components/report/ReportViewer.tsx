@@ -38,7 +38,10 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
   const [newTitle, setNewTitle] = useState("");
   const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
   const [savingRow, setSavingRow] = useState(false);
-  const [toast, setToast] = useState<{ msg: string; type: "success" | "error" } | null>(null);
+  const [toast, setToast] = useState<{
+    msg: string;
+    type: "success" | "error";
+  } | null>(null);
 
   // Row editing state
   const [editingRowIdx, setEditingRowIdx] = useState<number | null>(null);
@@ -160,7 +163,10 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
       setIsRenaming(false);
       showToast("Report renamed successfully!");
     } catch (err: any) {
-      showToast(err.response?.data?.detail || "Failed to rename report", "error");
+      showToast(
+        err.response?.data?.detail || "Failed to rename report",
+        "error",
+      );
     } finally {
       setLoading(false);
     }
@@ -176,15 +182,18 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
       try {
         const items = getItems();
         if (Array.isArray(items) && items.length > 0) {
-          const { generateExcelFromReportData } = await import("../../utils/excelGenerator");
+          const { generateExcelFromReportData } =
+            await import("../../utils/excelGenerator");
           const columns = Object.keys(items[0]).map((key) => ({
             key,
-            label: key.replace(/_/g, " ").replace(/\b\w/g, (l: string) => l.toUpperCase()),
+            label: key
+              .replace(/_/g, " ")
+              .replace(/\b\w/g, (l: string) => l.toUpperCase()),
           }));
           await generateExcelFromReportData(
             reportMeta?.report_title || "Report",
             items,
-            columns
+            columns,
           );
         } else {
           alert("No tabular data available to export.");
@@ -203,7 +212,9 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
     if (reportData.invoices) return reportData.invoices;
     if (reportData.data) return reportData.data;
     if (reportData.records) return reportData.records;
-    const arrayKey = Object.keys(reportData).find((k) => Array.isArray(reportData[k]));
+    const arrayKey = Object.keys(reportData).find((k) =>
+      Array.isArray(reportData[k]),
+    );
     if (arrayKey) return reportData[arrayKey];
     return [];
   };
@@ -214,7 +225,9 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
     if (reportData.invoices) return { ...reportData, invoices: newItems };
     if (reportData.data) return { ...reportData, data: newItems };
     if (reportData.records) return { ...reportData, records: newItems };
-    const arrayKey = Object.keys(reportData).find((k) => Array.isArray(reportData[k]));
+    const arrayKey = Object.keys(reportData).find((k) =>
+      Array.isArray(reportData[k]),
+    );
     if (arrayKey) return { ...reportData, [arrayKey]: newItems };
     return newItems;
   };
@@ -232,7 +245,10 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
       showToast("Changes saved successfully!");
     } catch (err: any) {
       console.error("❌ Failed to update report data:", err);
-      showToast(err.response?.data?.detail || "Failed to save changes", "error");
+      showToast(
+        err.response?.data?.detail || "Failed to save changes",
+        "error",
+      );
     } finally {
       setSavingRow(false);
     }
@@ -272,13 +288,98 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
   /** Update a field in the currently editing row */
   const updateEditField = (col: string, value: string) => {
     if (!editingRowData) return;
+
+    const colLower = col.toLowerCase();
+    let sanitizedValue = value;
+
+    // 1. Character limit validation (50 characters max)
+    if (sanitizedValue.length > 50) {
+      console.warn("⚠️ [VALIDATION] Value exceeds 50 characters, truncating");
+      sanitizedValue = sanitizedValue.substring(0, 50);
+      showToast("Maximum 50 characters allowed", "error");
+    }
+
+    // 2. Check if this is an amount/currency/rate field (must be positive)
+    const isAmountField =
+      colLower.includes("amount") ||
+      colLower.includes("total") ||
+      colLower.includes("paid") ||
+      colLower.includes("outstanding") ||
+      colLower.includes("price") ||
+      colLower.includes("cost") ||
+      colLower.includes("rate") ||
+      colLower.includes("exchange");
+
+    // 3. Check if this is a name/text field
+    const isNameField =
+      colLower.includes("name") ||
+      colLower.includes("vendor") ||
+      colLower.includes("customer") ||
+      colLower.includes("description");
+
     // Try to preserve number types
     const originalValue = editingRowData[col];
-    let parsedValue: any = value;
-    if (typeof originalValue === "number") {
-      const num = Number(value);
-      if (!isNaN(num)) parsedValue = num;
+    let parsedValue: any = sanitizedValue;
+
+    if (typeof originalValue === "number" || isAmountField) {
+      // Handle numeric fields
+
+      // Allow empty string (user deleted everything)
+      if (sanitizedValue === "") {
+        parsedValue = ""; // Keep as empty string, not 0
+      } else {
+        const num = Number(sanitizedValue);
+
+        if (!isNaN(num)) {
+          // Validate: no negative amounts/rates
+          if (num < 0) {
+            console.warn(
+              "⚠️ [VALIDATION] Negative value not allowed for:",
+              col,
+            );
+            showToast("Negative values not allowed", "error");
+            return; // Don't update
+          }
+
+          // Validate: max amount 10 Crore (for amount fields, not rates)
+          if (
+            !colLower.includes("rate") &&
+            !colLower.includes("exchange") &&
+            num > 100000000
+          ) {
+            console.warn("⚠️ [VALIDATION] Amount exceeds ₹10 Crore");
+            showToast("Amount cannot exceed ₹10 Crore", "error");
+            return; // Don't update
+          }
+
+          parsedValue = num;
+        }
+      }
+    } else if (isNameField) {
+      // For name fields: remove special characters, allow only letters, numbers, and spaces
+      const cleaned = sanitizedValue.replace(/[^a-zA-Z0-9\s]/g, "");
+      if (cleaned !== sanitizedValue) {
+        console.warn(
+          "⚠️ [VALIDATION] Special characters removed from name field",
+        );
+        showToast("Special characters not allowed", "error");
+        sanitizedValue = cleaned;
+        parsedValue = cleaned;
+      } else {
+        parsedValue = sanitizedValue;
+      }
+    } else {
+      // For other text fields: remove special characters except common punctuation
+      const cleaned = sanitizedValue.replace(/[^a-zA-Z0-9\s.,\-/()]/g, "");
+      if (cleaned !== sanitizedValue) {
+        console.warn("⚠️ [VALIDATION] Invalid special characters removed");
+        sanitizedValue = cleaned;
+        parsedValue = cleaned;
+      } else {
+        parsedValue = sanitizedValue;
+      }
     }
+
     setEditingRowData({ ...editingRowData, [col]: parsedValue });
   };
 
@@ -298,19 +399,29 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
       return (
         <div className="theme-panel border rounded-lg p-12 text-center">
           <FileSpreadsheet className="w-16 h-16 text-theme-tertiary mx-auto mb-4" />
-          <p className="text-theme-secondary">Report data has no tabular records to display</p>
+          <p className="text-theme-secondary">
+            Report data has no tabular records to display
+          </p>
         </div>
       );
     }
 
-    const columns = Object.keys(items[0]).filter(col => col.toLowerCase() !== 'trans_id');
+    const columns = Object.keys(items[0]).filter((col) => {
+      const colLower = col.toLowerCase();
+      // Filter out any ID columns (trans_id, vendor_id, customer_id, user_id, company_id, etc.)
+      return !colLower.endsWith("_id") && colLower !== "id";
+    });
 
     return (
       <div className="space-y-6">
         {/* Summary Bar */}
         <div className="flex items-center justify-between">
           <p className="text-sm text-theme-secondary">
-            Showing <span className="font-semibold text-theme-primary">{items.length}</span> records
+            Showing{" "}
+            <span className="font-semibold text-theme-primary">
+              {items.length}
+            </span>{" "}
+            records
           </p>
         </div>
 
@@ -329,10 +440,16 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
                 if (e.key === "Escape") setIsRenaming(false);
               }}
             />
-            <button onClick={handleRename} className="p-1.5 text-emerald-500 hover:bg-emerald-500/10 rounded">
+            <button
+              onClick={handleRename}
+              className="p-1.5 text-emerald-500 hover:bg-emerald-500/10 rounded"
+            >
               <Save className="w-4 h-4" />
             </button>
-            <button onClick={() => setIsRenaming(false)} className="p-1.5 text-red-500 hover:bg-red-500/10 rounded">
+            <button
+              onClick={() => setIsRenaming(false)}
+              className="p-1.5 text-red-500 hover:bg-red-500/10 rounded"
+            >
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -418,16 +535,22 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
 
                       {/* Data columns */}
                       {columns.map((col) => (
-                        <td key={col} className="px-4 py-3 text-theme-primary whitespace-nowrap">
+                        <td
+                          key={col}
+                          className="px-4 py-3 text-theme-primary whitespace-nowrap"
+                        >
                           {isEditing ? (
                             <input
                               type="text"
                               value={
-                                editingRowData[col] !== null && editingRowData[col] !== undefined
+                                editingRowData[col] !== null &&
+                                editingRowData[col] !== undefined
                                   ? String(editingRowData[col])
                                   : ""
                               }
-                              onChange={(e) => updateEditField(col, e.target.value)}
+                              onChange={(e) =>
+                                updateEditField(col, e.target.value)
+                              }
                               className="w-full bg-theme-tertiary text-theme-primary border border-blue-500/30 rounded px-2 py-1 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 min-w-[80px]"
                               onKeyDown={(e) => {
                                 if (e.key === "Enter") saveEditRow();
@@ -502,7 +625,12 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
         <div className="text-center space-y-4">
           <AlertCircle className="w-12 h-12 text-red-500 mx-auto" />
           <p className="text-theme-secondary">{error}</p>
-          <button onClick={() => setError(null)} className="text-blue-500 underline">Dismiss</button>
+          <button
+            onClick={() => setError(null)}
+            className="text-blue-500 underline"
+          >
+            Dismiss
+          </button>
         </div>
       </div>
     );
@@ -578,7 +706,9 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
       </div>
 
       <div className="flex-1 overflow-auto p-6 custom-scrollbar pb-32 min-h-0">
-        <div className="max-w-7xl mx-auto space-y-8 min-w-[1000px]">{renderDashboard()}</div>
+        <div className="max-w-7xl mx-auto space-y-8 min-w-[1000px]">
+          {renderDashboard()}
+        </div>
       </div>
 
       {/* Toast */}
@@ -586,7 +716,9 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
         <div className="fixed bottom-6 right-6 z-[300]">
           <div
             className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-2xl border text-sm font-medium text-white ${
-              toast.type === "error" ? "bg-red-700 border-red-600" : "bg-emerald-700 border-emerald-600"
+              toast.type === "error"
+                ? "bg-red-700 border-red-600"
+                : "bg-emerald-700 border-emerald-600"
             }`}
           >
             {toast.type === "error" ? (

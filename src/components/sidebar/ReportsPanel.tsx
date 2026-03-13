@@ -237,23 +237,29 @@ export const ReportsPanel: React.FC<ReportsPanelProps> = ({
 
       console.log("📊 [DOWNLOAD] First item sample:", items[0]);
 
-      // Generate columns from first item
+      // Generate columns from first item (filter out ID columns)
       if (items.length > 0) {
-        columns = Object.keys(items[0]).map((key) => ({
-          key,
-          label: key
-            .replace(/_/g, " ")
-            .replace(/\b\w/g, (l: string) => l.toUpperCase()),
-          format:
-            key.toLowerCase().includes("amount") ||
-            key.toLowerCase().includes("total") ||
-            key.toLowerCase().includes("paid") ||
-            key.toLowerCase().includes("outstanding")
-              ? "currency"
-              : key.toLowerCase().includes("date")
-                ? "date"
-                : undefined,
-        }));
+        columns = Object.keys(items[0])
+          .filter((key) => {
+            const keyLower = key.toLowerCase();
+            // Filter out any ID columns
+            return !keyLower.endsWith("_id") && keyLower !== "id";
+          })
+          .map((key) => ({
+            key,
+            label: key
+              .replace(/_/g, " ")
+              .replace(/\b\w/g, (l: string) => l.toUpperCase()),
+            format:
+              key.toLowerCase().includes("amount") ||
+              key.toLowerCase().includes("total") ||
+              key.toLowerCase().includes("paid") ||
+              key.toLowerCase().includes("outstanding")
+                ? "currency"
+                : key.toLowerCase().includes("date")
+                  ? "date"
+                  : undefined,
+          }));
       }
 
       // Extract summary if available
