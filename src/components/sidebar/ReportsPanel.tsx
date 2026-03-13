@@ -12,6 +12,7 @@ import {
   BarChart3,
   Edit2,
   Save,
+  ChevronDown,
 } from "lucide-react";
 import { reportService } from "../../services/api";
 
@@ -19,6 +20,7 @@ interface ReportItem {
   report_id: string;
   report_title: string;
   report_type: string;
+  company_name?: string;
   status: string;
   generated_at?: string;
   created_at?: string;
@@ -48,6 +50,8 @@ export const ReportsPanel: React.FC<ReportsPanelProps> = ({
   const [reports, setReports] = useState<ReportItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
+  const [selectedCompany, setSelectedCompany] = useState<string>("all");
+  const [selectedType, setSelectedType] = useState<string>("all");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const [toast, setToast] = useState<{
@@ -289,11 +293,30 @@ export const ReportsPanel: React.FC<ReportsPanelProps> = ({
     }
   };
 
-  const filtered = reports.filter(
-    (r) =>
+  const filtered = reports.filter((r) => {
+    const matchesSearch =
       r.report_title?.toLowerCase().includes(search.toLowerCase()) ||
-      r.report_type?.toLowerCase().includes(search.toLowerCase()),
-  );
+      r.report_type?.toLowerCase().includes(search.toLowerCase());
+
+    const matchesCompany =
+      selectedCompany === "all" ||
+      r.company_name?.toLowerCase() === selectedCompany.toLowerCase();
+
+    const matchesType =
+      selectedType === "all" ||
+      r.report_type?.toLowerCase().includes(selectedType.toLowerCase());
+
+    return matchesSearch && matchesCompany && matchesType;
+  });
+
+  // Get unique company names for dropdown
+  const companies = Array.from(
+    new Set(
+      reports
+        .map((r) => r.company_name)
+        .filter((name) => name && name.trim() !== ""),
+    ),
+  ).sort();
 
   return (
     <>
@@ -319,6 +342,36 @@ export const ReportsPanel: React.FC<ReportsPanelProps> = ({
               </div>
             </div>
             <div className="flex items-center gap-2">
+              {/* Company Filter Dropdown */}
+              <div className="relative">
+                <select
+                  value={selectedCompany}
+                  onChange={(e) => setSelectedCompany(e.target.value)}
+                  className="appearance-none pl-3 pr-8 py-1.5 theme-input border rounded-lg text-xs font-medium text-theme-primary cursor-pointer hover:border-blue-500 transition-all"
+                >
+                  <option value="all">All Companies</option>
+                  {companies.map((company) => (
+                    <option key={company} value={company}>
+                      {company}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-theme-tertiary pointer-events-none" />
+              </div>
+              {/* Type Filter Dropdown */}
+              <div className="relative">
+                <select
+                  value={selectedType}
+                  onChange={(e) => setSelectedType(e.target.value)}
+                  className="appearance-none pl-3 pr-8 py-1.5 theme-input border rounded-lg text-xs font-medium text-theme-primary cursor-pointer hover:border-blue-500 transition-all"
+                >
+                  <option value="all">All Types</option>
+                  <option value="ap">Account Payable</option>
+                  <option value="ar">Account Receivable</option>
+                  <option value="dr">Data Reconciliation</option>
+                </select>
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-theme-tertiary pointer-events-none" />
+              </div>
               <button
                 onClick={fetchReports}
                 title="Refresh"
