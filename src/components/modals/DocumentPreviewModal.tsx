@@ -1,15 +1,8 @@
 import React, { useState, useEffect } from "react";
 import {
   X,
-  Table,
-  DollarSign,
   FileText,
   Calendar,
-  Building,
-  Users,
-  Activity,
-  Hash,
-  FileCheck,
   Edit2,
   Save,
   RotateCcw,
@@ -166,7 +159,7 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
     const badge = badges[statusLower] || badges["pending"];
     return (
       <span
-        className={`px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-lg ${badge.bg} ${badge.text} border ${badge.border}`}
+        className={`px-3 py-1 text-xs font-bold uppercase tracking-wider rounded ${badge.bg} ${badge.text} border ${badge.border}`}
       >
         {status || "PENDING"}
       </span>
@@ -557,7 +550,7 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
   const renderLineItems = (canonicalData: any, isEditMode: boolean) => {
     if (!canonicalData) {
       return (
-        <div className="theme-panel rounded-lg border shadow-lg p-8">
+        <div className="theme-panel rounded border shadow-lg p-8">
           <div className="text-center text-gray-500 italic mb-4">
             No records found.
           </div>
@@ -566,7 +559,7 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
               <button
                 type="button"
                 onClick={(e) => addLineItem(e)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-lg transition-all shadow-lg"
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded transition-all shadow-lg"
               >
                 <Plus className="w-4 h-4" /> Add First Line Item
               </button>
@@ -583,7 +576,7 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
 
     if (items.length === 0) {
       return (
-        <div className="theme-panel rounded-lg border shadow-lg p-8">
+        <div className="theme-panel rounded border shadow-lg p-8">
           <div className="text-center text-gray-500 italic mb-4">
             No itemized records detected.
           </div>
@@ -592,7 +585,7 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
               <button
                 type="button"
                 onClick={(e) => addLineItem(e)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-lg transition-all shadow-lg"
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded transition-all shadow-lg"
               >
                 <Plus className="w-4 h-4" /> Add First Line Item
               </button>
@@ -603,7 +596,7 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
     }
 
     return (
-      <div className="overflow-hidden theme-panel rounded-lg shadow-lg border">
+      <div className="overflow-hidden theme-panel rounded shadow-lg border">
         <table className="min-w-full divide-y divide-theme-primary">
           <thead className="theme-table-head">
             <tr>
@@ -735,13 +728,13 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
       onClick={() => !isEditing && onClose()}
     >
       <div
-        className="bg-theme-secondary rounded-lg shadow-2xl w-full max-w-6xl max-h-[75vh] flex flex-col overflow-hidden animate-in zoom-in-95 border border-theme-primary"
+        className="bg-theme-secondary rounded shadow-2xl w-full max-w-6xl max-h-[75vh] flex flex-col overflow-hidden animate-in zoom-in-95 border border-theme-primary"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
         <div className="px-4 py-3 border-b border-theme-primary flex justify-between items-center bg-theme-secondary sticky top-0 z-10">
           <div className="flex items-center gap-2">
-            <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-lg shadow-lg shadow-blue-500/20">
+            <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded shadow-lg shadow-blue-500/20">
               <FileText className="w-6 h-6" />
             </div>
             <div>
@@ -749,9 +742,6 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                 {data.file_name || "Document Preview"}
               </h3>
               <div className="flex items-center gap-2 mt-1">
-                <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                  {isEditing ? "EDITING" : "VERIFIED"}
-                </span>
                 <span className="text-xs text-theme-tertiary flex items-center gap-1 font-medium">
                   <Calendar className="w-3 h-3" /> Upload Date:{" "}
                   {formatDate(data.uploaded_at)}
@@ -761,7 +751,7 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
           </div>
 
           {validationError && (
-            <div className="mx-3 mt-2 p-3 bg-red-500/10 border border-red-500/30 rounded-lg flex items-center gap-3 animate-in slide-in-from-top-2">
+            <div className="mx-3 mt-2 p-3 bg-red-500/10 border border-red-500/30 rounded flex items-center gap-3 animate-in slide-in-from-top-2">
               <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
               <p className="text-sm font-bold text-red-400">
                 {validationError}
@@ -773,7 +763,7 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
             {!isEditing ? (
               <button
                 onClick={() => setIsEditing(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-lg transition-all shadow-lg shadow-blue-500/20"
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded transition-all shadow-lg shadow-blue-500/20"
               >
                 <Edit2 className="w-4 h-4" /> Edit Data
               </button>
@@ -782,7 +772,7 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className={`flex items-center gap-2 px-4 py-2 ${saveSuccess ? "bg-emerald-600" : "bg-blue-600 hover:bg-blue-500"} text-white text-sm font-bold rounded-lg transition-all shadow-lg disabled:opacity-50`}
+                  className={`flex items-center gap-2 px-4 py-2 ${saveSuccess ? "bg-emerald-600" : "bg-blue-600 hover:bg-blue-500"} text-white text-sm font-bold rounded transition-all shadow-lg disabled:opacity-50`}
                 >
                   {saving ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -800,7 +790,7 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                 <button
                   onClick={() => setIsEditing(false)}
                   disabled={saving}
-                  className="flex items-center gap-2 px-4 py-2 bg-theme-tertiary hover:bg-theme-secondary text-theme-primary text-sm font-bold rounded-lg transition-all border border-theme-primary"
+                  className="flex items-center gap-2 px-4 py-2 bg-theme-tertiary hover:bg-theme-secondary text-theme-primary text-sm font-bold rounded transition-all border border-theme-primary"
                 >
                   <RotateCcw className="w-4 h-4" /> Cancel
                 </button>
@@ -809,7 +799,7 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
             {!isEditing && (
               <button
                 onClick={onClose}
-                className="p-2 text-theme-tertiary hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                className="p-2 text-theme-tertiary hover:text-red-400 hover:bg-red-500/10 rounded transition-all"
               >
                 <X className="w-6 h-6" />
               </button>
@@ -820,8 +810,8 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
         <div className="p-3 overflow-y-auto flex-1 bg-theme-primary space-y-3 custom-scrollbar">
           {/* 1. Financial Overview Cards */}
           <div>
-            <h4 className="text-xs font-black text-theme-tertiary uppercase tracking-widest mb-4 flex items-center gap-2">
-              <DollarSign className="w-4 h-4" /> Financial Summary
+            <h4 className="text-xs font-black text-theme-tertiary uppercase tracking-widest mb-2">
+              Financial Summary
             </h4>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {[
@@ -836,7 +826,7 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
               ].map((item) => (
                 <div
                   key={item.field}
-                  className={`theme-panel p-3 rounded-lg border-l-4 border-l-${item.color}-500 shadow-lg border transition-all`}
+                  className={`theme-panel p-3 rounded border-l-4 border-l-${item.color}-500 shadow-lg border transition-all`}
                 >
                   <p className="text-[10px] text-theme-tertiary font-bold uppercase mb-1 tracking-tighter">
                     {item.label}
@@ -865,25 +855,22 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Entity Details Card */}
             <div className="space-y-2">
-              <h4 className="text-xs font-black text-theme-tertiary uppercase tracking-widest flex items-center gap-2">
-                <Users className="w-4 h-4" /> Entities & Details
+              <h4 className="text-xs font-black text-theme-tertiary uppercase tracking-widest">
+                Entities & Details
               </h4>
-              <div className="theme-panel rounded-lg border shadow-lg divide-y divide-theme-primary overflow-hidden">
+              <div className="theme-panel rounded border shadow-lg divide-y divide-theme-primary overflow-hidden min-h-[180px] flex flex-col">
                 {[
                   {
                     label: "Vendor Name",
                     field: "vendor_name",
-                    icon: <Building className="w-3.5 h-3.5" />,
                   },
                   {
                     label: "Customer Name",
                     field: "customer_name",
-                    icon: <Users className="w-3.5 h-3.5" />,
                   },
                   {
                     label: "Document Number",
                     field: "document_number",
-                    icon: <Hash className="w-3.5 h-3.5" />,
                     mono: true,
                   },
                 ].map((item) => (
@@ -891,8 +878,8 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                     key={item.field}
                     className="p-2 flex justify-between items-center bg-transparent hover:bg-theme-tertiary transition-colors"
                   >
-                    <span className="text-xs text-theme-tertiary font-bold flex items-center gap-2">
-                      {item.icon} {item.label}
+                    <span className="text-xs text-theme-tertiary font-bold">
+                      {item.label}
                     </span>
                     {isEditing ? (
                       <input
@@ -913,8 +900,8 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                   </div>
                 ))}
                 <div className="p-2 flex justify-between items-center bg-transparent hover:bg-theme-tertiary transition-colors">
-                  <span className="text-xs text-theme-tertiary font-bold flex items-center gap-2">
-                    <FileCheck className="w-3.5 h-3.5" /> Status
+                  <span className="text-xs text-theme-tertiary font-bold">
+                    Status
                   </span>
                   <div>{getStatusBadge(data.status)}</div>
                 </div>
@@ -923,10 +910,10 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
 
             {/* System Analysis Card */}
             <div className="space-y-2">
-              <h4 className="text-xs font-black text-theme-tertiary uppercase tracking-widest flex items-center gap-2">
-                <Activity className="w-4 h-4" /> Technical Analysis
+              <h4 className="text-xs font-black text-theme-tertiary uppercase tracking-widest">
+                Technical Analysis
               </h4>
-              <div className="theme-panel rounded-lg border shadow-lg p-2 space-y-1 flex flex-col justify-between">
+              <div className="theme-panel rounded border shadow-lg p-2 min-h-[180px] flex flex-col justify-between">
                 <div className="flex justify-between items-center">
                   <div>
                     <p className="text-[10px] text-theme-tertiary font-bold uppercase tracking-widest">
@@ -948,11 +935,11 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
                     </p>
                   </div>
                 </div>
-                <div className="pt-2 border-t border-theme-primary">
+                <div className="pt-2 border-t border-theme-primary mt-2">
                   <p className="text-[10px] text-theme-tertiary font-bold uppercase tracking-widest mb-0.5">
                     Processing Result
                   </p>
-                  <span className="inline-block px-3 py-1 bg-blue-500/20 text-blue-400 text-[10px] font-black rounded-lg uppercase tracking-tighter border border-blue-500/30">
+                  <span className="inline-block px-3 py-1 bg-blue-500/20 text-blue-400 text-[10px] font-black rounded uppercase tracking-tighter border border-blue-500/30">
                     Itemized Records Extracted Successfully
                   </span>
                 </div>
@@ -962,8 +949,8 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
 
           {/* 3. Itemized Records Table */}
           <div>
-            <h4 className="text-xs font-black text-theme-tertiary uppercase tracking-widest mb-4 flex items-center gap-2">
-              <Table className="w-4 h-4" /> Itemized Records
+            <h4 className="text-xs font-black text-theme-tertiary uppercase tracking-widest mb-2">
+              Itemized Records
             </h4>
             {renderLineItems(data.canonical_data, isEditing)}
           </div>
@@ -977,8 +964,11 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
           background: rgba(0, 0, 0, 0.3);
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #3b82f6;
+          background: #6b7280;
           border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #9ca3af;
         }
       `}</style>
     </div>
