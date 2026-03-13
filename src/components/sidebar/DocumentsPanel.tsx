@@ -13,6 +13,7 @@ import {
   FileSpreadsheet,
   FileImage,
   File,
+  ChevronDown,
 } from "lucide-react";
 import { documentService } from "../../services/api";
 import { DocumentPreviewModal } from "../modals/DocumentPreviewModal";
@@ -26,6 +27,7 @@ interface DocumentItem {
   status: string;
   vendor_name?: string;
   customer_name?: string;
+  company_name?: string;
   category?: string;
   grand_total?: number;
   currency?: string;
@@ -85,6 +87,8 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
+  const [selectedCompany, setSelectedCompany] = useState<string>("all");
+  const [selectedType, setSelectedType] = useState<string>("all");
   const [previewData, setPreviewData] = useState<any>(null);
   const [loadingPreviewId, setLoadingPreviewId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -140,6 +144,12 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
       canonical.customer?.name ||
       canonical.extracted_fields?.customer_name ||
       "";
+    const company_name =
+      raw.company_name ||
+      raw.company ||
+      canonical.company?.name ||
+      canonical.extracted_fields?.company_name ||
+      "";
     const category = raw.category || raw.document_type || raw.doc_type || "";
     return {
       id,
@@ -150,6 +160,7 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
       status,
       vendor_name,
       customer_name,
+      company_name,
       category,
       canonical_data: raw.canonical_data,
     };
@@ -300,12 +311,31 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
     }
   };
 
-  const filtered = documents.filter(
-    (d) =>
+  const filtered = documents.filter((d) => {
+    const matchesSearch =
       d.file_name?.toLowerCase().includes(search.toLowerCase()) ||
       d.vendor_name?.toLowerCase().includes(search.toLowerCase()) ||
-      d.category?.toLowerCase().includes(search.toLowerCase()),
-  );
+      d.category?.toLowerCase().includes(search.toLowerCase());
+
+    const matchesCompany =
+      selectedCompany === "all" ||
+      d.company_name?.toLowerCase() === selectedCompany.toLowerCase();
+
+    const matchesType =
+      selectedType === "all" ||
+      d.category?.toLowerCase().includes(selectedType.toLowerCase());
+
+    return matchesSearch && matchesCompany && matchesType;
+  });
+
+  // Get unique company names for dropdown
+  const companies = Array.from(
+    new Set(
+      documents
+        .map((d) => d.company_name)
+        .filter((name) => name && name.trim() !== ""),
+    ),
+  ).sort();
 
   return (
     <>
@@ -331,6 +361,35 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              {/* Company Filter Dropdown */}
+              <div className="relative">
+                <select
+                  value={selectedCompany}
+                  onChange={(e) => setSelectedCompany(e.target.value)}
+                  className="appearance-none pl-3 pr-8 py-1.5 theme-input border rounded-lg text-xs font-medium text-theme-primary cursor-pointer hover:border-blue-500 transition-all"
+                >
+                  <option value="all">All Companies</option>
+                  {companies.map((company) => (
+                    <option key={company} value={company}>
+                      {company}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-theme-tertiary pointer-events-none" />
+              </div>
+              {/* Type Filter Dropdown */}
+              <div className="relative">
+                <select
+                  value={selectedType}
+                  onChange={(e) => setSelectedType(e.target.value)}
+                  className="appearance-none pl-3 pr-8 py-1.5 theme-input border rounded-lg text-xs font-medium text-theme-primary cursor-pointer hover:border-blue-500 transition-all"
+                >
+                  <option value="all">All</option>
+                  <option value="sales">Sales</option>
+                  <option value="purchase">Purchase</option>
+                </select>
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-theme-tertiary pointer-events-none" />
+              </div>
               <button
                 onClick={fetchDocuments}
                 title="Refresh"
@@ -385,14 +444,11 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
                   <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest w-[5%]">
                     #
                   </th>
-                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest w-[25%]">
+                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest w-[30%]">
                     File Name
                   </th>
-                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest w-[15%]">
-                    Vendor
-                  </th>
-                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest w-[15%]">
-                    Customer
+                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest w-[20%]">
+                    Category
                   </th>
                   <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest w-[15%]">
                     Uploaded
@@ -400,7 +456,7 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
                   <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest w-[10%]">
                     Status
                   </th>
-                  <th className="px-3 py-3 text-center text-[10px] font-bold uppercase tracking-widest w-[15%]">
+                  <th className="px-3 py-3 text-center text-[10px] font-bold uppercase tracking-widest w-[20%]">
                     Actions
                   </th>
                 </tr>
@@ -418,7 +474,7 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
                       <div className="flex items-center gap-2 min-w-0">
                         {getFileIcon(doc.file_type, doc.file_name)}
                         <span
-                          className="text-theme-primary font-medium truncate max-w-[160px]"
+                          className="text-theme-primary font-medium truncate max-w-[200px]"
                           title={doc.file_name}
                         >
                           {doc.file_name || `Document ${idx + 1}`}
@@ -427,18 +483,10 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
                     </td>
                     <td className="px-3 py-3">
                       <span
-                        className="text-theme-secondary truncate block max-w-[100px]"
-                        title={doc.vendor_name}
+                        className="text-theme-secondary truncate block max-w-[150px] capitalize"
+                        title={doc.category}
                       >
-                        {doc.vendor_name || "-"}
-                      </span>
-                    </td>
-                    <td className="px-3 py-3">
-                      <span
-                        className="text-theme-secondary truncate block max-w-[100px]"
-                        title={doc.customer_name}
-                      >
-                        {doc.customer_name || "-"}
+                        {doc.category || "-"}
                       </span>
                     </td>
                     <td className="px-3 py-3 text-theme-secondary">
