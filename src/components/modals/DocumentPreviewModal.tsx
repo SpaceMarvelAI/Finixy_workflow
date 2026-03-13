@@ -229,14 +229,25 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
           field,
         )
       ) {
-        // Amounts: Max 10 Crore
-        const numValue = parseFloat(value) || 0;
+        // Amounts: No negative values, Max 10 Crore
+        const numValue = parseFloat(value);
+
+        // Check for negative values
+        if (!isNaN(numValue) && numValue < 0) {
+          errorMsg = "Negative amounts are not allowed";
+          setValidationError(errorMsg);
+          setTimeout(() => setValidationError(null), 3000);
+          return prev; // Don't update with negative value
+        }
+
+        // Check max amount
         if (exceedsMaxAmount(numValue)) {
           errorMsg = getValidationError(
             field.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
             "max_amount",
           );
         }
+
         sanitizedValue = validateAmount(value);
       }
 

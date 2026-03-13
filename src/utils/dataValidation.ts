@@ -51,10 +51,21 @@ export const sanitizeName = (value: string, maxLength: number = VALIDATION_RULES
 /**
  * Validate and cap amount to maximum limit
  */
-export const validateAmount = (value: number | string): number => {
+export const validateAmount = (value: number | string): number | string => {
+  // Allow empty string (user deleted everything)
+  if (value === '' || value === null || value === undefined) {
+    return '';
+  }
+  
   const num = typeof value === 'string' ? parseFloat(value) : value;
   
-  if (isNaN(num) || num < 0) {
+  // Return empty if not a valid number
+  if (isNaN(num)) {
+    return '';
+  }
+  
+  // Prevent negative amounts
+  if (num < 0) {
     return 0;
   }
   
