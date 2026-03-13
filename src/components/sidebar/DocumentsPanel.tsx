@@ -25,13 +25,9 @@ interface DocumentItem {
   file_type: string;
   file_size: number;
   uploaded_at: string;
-  status: string;
-  vendor_name?: string;
-  customer_name?: string;
+  payment_status?: string;
   company_name?: string;
   category?: string;
-  grand_total?: number;
-  currency?: string;
   canonical_data?: any;
 }
 
@@ -53,13 +49,6 @@ const getFileIcon = (fileType: string, fileName: string) => {
   return <File className="w-4 h-4 text-theme-tertiary" />;
 };
 
-const formatBytes = (bytes: number) => {
-  if (!bytes) return "-";
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / 1048576).toFixed(1)} MB`;
-};
-
 const formatDate = (dateStr: string) => {
   if (!dateStr) return "-";
   return new Date(dateStr).toLocaleDateString("en-IN", {
@@ -71,13 +60,9 @@ const formatDate = (dateStr: string) => {
 
 const getStatusColor = (status: string) => {
   switch (status?.toLowerCase()) {
-    case "processed":
-    case "success":
+    case "paid":
       return "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/30";
-    case "processing":
-      return "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border-yellow-500/30";
-    case "failed":
-    case "error":
+    case "unpaid":
       return "bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30";
     default:
       return "bg-gray-500/20 text-gray-600 dark:text-gray-400 border-gray-500/30";
@@ -135,21 +120,7 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
       raw.createdAt ||
       raw.date ||
       "";
-    const status =
-      raw.status || raw.processing_status || raw.document_status || "ready";
     const canonical = raw.canonical_data || {};
-    const vendor_name =
-      raw.vendor_name ||
-      raw.vendor ||
-      canonical.vendor?.name ||
-      canonical.extracted_fields?.vendor_name ||
-      "";
-    const customer_name =
-      raw.customer_name ||
-      raw.customer ||
-      canonical.customer?.name ||
-      canonical.extracted_fields?.customer_name ||
-      "";
     const company_name =
       raw.company_name ||
       raw.company ||
@@ -157,15 +128,19 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
       canonical.extracted_fields?.company_name ||
       "";
     const category = raw.category || raw.document_type || raw.doc_type || "";
+    const payment_status =
+      raw.payment_status ||
+      raw.paymentStatus ||
+      canonical.payment_status ||
+      canonical.extracted_fields?.payment_status ||
+      "";
     return {
       id,
       file_name,
       file_type,
       file_size,
       uploaded_at,
-      status,
-      vendor_name,
-      customer_name,
+      payment_status,
       company_name,
       category,
       canonical_data: raw.canonical_data,
@@ -347,7 +322,6 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
   const filtered = documents.filter((d) => {
     const matchesSearch =
       d.file_name?.toLowerCase().includes(search.toLowerCase()) ||
-      d.vendor_name?.toLowerCase().includes(search.toLowerCase()) ||
       d.category?.toLowerCase().includes(search.toLowerCase());
 
     const matchesCompany =
@@ -524,9 +498,9 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
                     setSelectedDate("all");
                   }}
                   disabled={selectedYear === "all"}
-                  className="appearance-none pl-3 pr-8 py-1.5 theme-input border rounded-lg text-xs font-medium text-theme-primary cursor-pointer hover:border-blue-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="appearance-none pl-3 pr-4 py-1.5 theme-input border rounded-lg text-xs font-medium text-theme-primary cursor-pointer hover:border-blue-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <option value="all">All Months</option>
+                  <option value="all">Months</option>
                   {monthNames.map((month, index) => (
                     <option key={index + 1} value={(index + 1).toString()}>
                       {month}
@@ -550,7 +524,7 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
                     } as React.CSSProperties
                   }
                 >
-                  <option value="all">All Dates</option>
+                  <option value="all">Dates</option>
                   {dates.map((date) => (
                     <option key={date} value={date}>
                       {date}
@@ -585,7 +559,7 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search files, vendors..."
+              placeholder="Search files, categories..."
               className="w-full pl-9 pr-3 py-2 theme-input border rounded-lg text-xs"
             />
           </div>
@@ -664,9 +638,9 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
                     </td>
                     <td className="px-3 py-3">
                       <span
-                        className={`px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-wider border ${getStatusColor(doc.status)}`}
+                        className={`px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-wider border ${getStatusColor(doc.payment_status || "unpaid")}`}
                       >
-                        {doc.status || "ready"}
+                        {doc.payment_status || "unpaid"}
                       </span>
                     </td>
                     <td className="px-3 py-3">
