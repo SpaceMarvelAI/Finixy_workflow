@@ -368,15 +368,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
   }, []);
 
   const handleNewChat = useCallback(() => {
-    clearWorkflow();
-    setChatHistory([]);
-    setCurrentChatId(null);
+    // If chat is already open, close it
+    if (isChatExpanded) {
+      onToggleChat();
+    } else {
+      // If chat is closed, clear and open it
+      clearWorkflow();
+      setChatHistory([]);
+      setCurrentChatId(null);
+      onToggleChat();
+    }
     setIsHistoryOpen(false);
     setIsDocumentsOpen(false);
     setIsReportsOpen(false);
-    if (!isChatExpanded) {
-      onToggleChat();
-    }
   }, [
     clearWorkflow,
     setChatHistory,
@@ -425,10 +429,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   // ICON BUTTON HELPER — adapts to dark/light
   // ============================================================================
   const iconBtnBase =
-    "w-full px-1.5 py-1.5 flex items-center gap-2 rounded transition-all group hover:bg-white/5";
+    "w-full px-1.5 py-1.5 flex items-center gap-2 rounded transition-colors group hover:bg-white/5";
 
   const iconBox = (active: boolean, colors: string) =>
-    `w-6 h-6 rounded flex items-center justify-center flex-shrink-0 transition-all ${
+    `w-7 h-7 rounded flex items-center justify-center flex-shrink-0 transition-colors ${
       active
         ? colors
         : "bg-gray-800/50 text-gray-400 hover:bg-gray-700/50 hover:text-gray-300"
@@ -447,7 +451,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div
         className={`relative flex flex-col items-start py-3 gap-1 border-r border-gray-800/50 h-full z-50 transition-all duration-300
           bg-black/40
-          ${isSidebarExpanded ? "w-44" : "w-12"}`}
+          ${isSidebarExpanded ? "w-44" : "w-11"}`}
       >
         {/* EXPAND/COLLAPSE BUTTON */}
         <button
@@ -455,9 +459,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
           className={`${iconBtnBase} mb-1`}
           title={isSidebarExpanded ? "Collapse Sidebar" : "Expand Sidebar"}
         >
-          <div className="w-6 h-6 bg-gray-800/50 text-gray-400 rounded flex items-center justify-center flex-shrink-0 transition-all hover:bg-gray-700/50 hover:text-gray-300">
+          <div className="w-7 h-7 bg-gray-800/50 text-gray-400 rounded flex items-center justify-center flex-shrink-0 transition-colors hover:bg-gray-700/50 hover:text-gray-300">
             <ChevronRight
-              className={`w-3.5 h-3.5 transition-transform duration-300 ${isSidebarExpanded ? "rotate-180" : ""}`}
+              className={`w-4 h-4 transition-transform duration-300 ${isSidebarExpanded ? "rotate-180" : ""}`}
             />
           </div>
           {isSidebarExpanded && (
@@ -475,8 +479,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           className={iconBtnBase}
           title="New Chat"
         >
-          <div className="w-6 h-6 bg-blue-600/80 hover:bg-blue-600 rounded flex items-center justify-center flex-shrink-0 transition-all">
-            <Plus className="w-3.5 h-3.5 text-white" />
+          <div className="w-7 h-7 bg-blue-600/80 hover:bg-blue-600 rounded flex items-center justify-center flex-shrink-0 transition-colors">
+            <Plus className="w-4 h-4 text-white" />
           </div>
           {isSidebarExpanded && (
             <span className="text-xs font-medium text-gray-300 whitespace-nowrap">
@@ -503,7 +507,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             )}
           >
             <MessageSquare
-              className={`w-3.5 h-3.5 ${isChatExpanded ? "text-white" : iconColor}`}
+              className={`w-4 h-4 ${isChatExpanded ? "text-white" : iconColor}`}
             />
           </div>
           {isSidebarExpanded && (
@@ -530,7 +534,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             )}
           >
             <History
-              className={`w-3.5 h-3.5 ${isHistoryOpen ? "text-white" : iconColor}`}
+              className={`w-4 h-4 ${isHistoryOpen ? "text-white" : iconColor}`}
             />
           </div>
           {isSidebarExpanded && (
@@ -557,7 +561,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             )}
           >
             <FolderOpen
-              className={`w-3.5 h-3.5 ${isDocumentsOpen ? "text-white" : iconColor}`}
+              className={`w-4 h-4 ${isDocumentsOpen ? "text-white" : iconColor}`}
             />
           </div>
           {isSidebarExpanded && (
@@ -584,7 +588,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             )}
           >
             <BarChart3
-              className={`w-3.5 h-3.5 ${isReportsOpen ? "text-white" : iconColor}`}
+              className={`w-4 h-4 ${isReportsOpen ? "text-white" : iconColor}`}
             />
           </div>
           {isSidebarExpanded && (
