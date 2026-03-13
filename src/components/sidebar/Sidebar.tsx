@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
 import {
   Plus,
   History,
@@ -108,11 +114,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
   // FETCH CHAT HISTORY
   // ============================================================================
   const fetchHistory = useCallback(async () => {
-    if (isFetchingRef.current) return;
+    console.log("🔄 [SIDEBAR] fetchHistory called", {
+      isFetching: isFetchingRef.current,
+      isHistoryOpen,
+    });
+
+    if (isFetchingRef.current) {
+      console.log("⏸️ [SIDEBAR] Already fetching, skipping...");
+      return;
+    }
+
     isFetchingRef.current = true;
     setLoading(true);
+
     try {
+      console.log("📡 [SIDEBAR] Calling chatService.getChatHistory...");
       const response = await chatService.getChatHistory(100, 0);
+
+      console.log("✅ [SIDEBAR] Chat history response:", response);
+
       if (response.data && Array.isArray(response.data)) {
         const uniqueChatsMap = new Map<string, ChatItem>();
         response.data.forEach((chat: ChatItem) => {
@@ -120,17 +140,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
             uniqueChatsMap.set(chat.chat_id, chat);
           }
         });
-        setChatItems(Array.from(uniqueChatsMap.values()));
+        const chats = Array.from(uniqueChatsMap.values());
+        console.log("📊 [SIDEBAR] Processed chats:", chats.length);
+        setChatItems(chats);
       } else {
+        console.warn("⚠️ [SIDEBAR] Invalid response format:", response);
         showToast("Invalid response format", "error");
         setChatItems([]);
       }
-    } catch {
+    } catch (error: any) {
+      console.error("❌ [SIDEBAR] Failed to load history:", error);
+      console.error("❌ [SIDEBAR] Error details:", {
+        message: error.message,
+        code: error.code,
+        response: error.response?.data,
+        status: error.response?.status,
+      });
       showToast("Failed to load history", "error");
       setChatItems([]);
     } finally {
       setLoading(false);
       isFetchingRef.current = false;
+      console.log("✅ [SIDEBAR] fetchHistory completed");
     }
   }, [showToast]);
 
@@ -149,14 +180,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
           if (chat.messages && Array.isArray(chat.messages)) {
             setChatHistory(chat.messages);
           } else {
-            setChatHistory([{ role: "assistant", content: INITIAL_CHAT_MESSAGE }]);
+            setChatHistory([
+              { role: "assistant", content: INITIAL_CHAT_MESSAGE },
+            ]);
           }
 
           let workflow_id = null;
           let latest_report_id = null;
 
           if (chat.final_report_ids && chat.final_report_ids.length > 0) {
-            latest_report_id = chat.final_report_ids[chat.final_report_ids.length - 1];
+            latest_report_id =
+              chat.final_report_ids[chat.final_report_ids.length - 1];
           }
           if (chat.messages) {
             for (let i = chat.messages.length - 1; i >= 0; i--) {
@@ -172,20 +206,37 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           if (workflow_id) {
             try {
-              const wfResponse = await chatService.getWorkflowDetails(workflow_id);
-              if (wfResponse.data?.status === "success" && wfResponse.data.workflow) {
+              const wfResponse =
+                await chatService.getWorkflowDetails(workflow_id);
+              if (
+                wfResponse.data?.status === "success" &&
+                wfResponse.data.workflow
+              ) {
                 const wf = wfResponse.data.workflow;
                 const rawNodes = wf.workflow_definition?.nodes || [];
                 const rawEdges = wf.workflow_definition?.edges || [];
                 if (rawNodes.length > 0) {
-                  const safeNodes = mapBackendNodesToFrontend(rawNodes, wf.name || "", wf.report_type || "");
-                  const safeEdges = mapBackendEdgesToFrontend(rawEdges, safeNodes);
-                  loadWorkflow(wf.name || wf.query || "Loaded Workflow", safeNodes, safeEdges, latest_report_id || undefined);
+                  const safeNodes = mapBackendNodesToFrontend(
+                    rawNodes,
+                    wf.name || "",
+                    wf.report_type || "",
+                  );
+                  const safeEdges = mapBackendEdgesToFrontend(
+                    rawEdges,
+                    safeNodes,
+                  );
+                  loadWorkflow(
+                    wf.name || wf.query || "Loaded Workflow",
+                    safeNodes,
+                    safeEdges,
+                    latest_report_id || undefined,
+                  );
                   showToast("Workflow loaded", "success");
                 }
               }
             } catch {
-              if (latest_report_id) loadWorkflow("New Workflow", [], [], latest_report_id);
+              if (latest_report_id)
+                loadWorkflow("New Workflow", [], [], latest_report_id);
             }
           } else if (latest_report_id) {
             loadWorkflow("New Workflow", [], [], latest_report_id);
@@ -196,14 +247,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
         showToast("Failed to load chat", "error");
       }
     },
-    [activeMenuId, editingId, showToast, setCurrentChatId, setChatHistory, loadWorkflow],
+    [
+      activeMenuId,
+      editingId,
+      showToast,
+      setCurrentChatId,
+      setChatHistory,
+      loadWorkflow,
+    ],
   );
 
   const handleViewReport = useCallback(
     async (report_id: string) => {
       try {
         const response = await reportService.getReport(report_id);
-        const report = response.data.report || (response.data.report_id ? response.data : null);
+        const report =
+          response.data.report ||
+          (response.data.report_id ? response.data : null);
 
         if (report) {
           loadWorkflow(
@@ -212,7 +272,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             [],
             report_id,
             report.download_url || report.report_url,
-            report.report_title ? `${report.report_title}.xlsx` : "report.xlsx"
+            report.report_title ? `${report.report_title}.xlsx` : "report.xlsx",
           );
           setIsReportsOpen(false);
           if (onTabChange) onTabChange("report");
@@ -222,7 +282,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         showToast("Failed to load report details", "error");
       }
     },
-    [loadWorkflow, onTabChange, showToast]
+    [loadWorkflow, onTabChange, showToast],
   );
 
   // ============================================================================
@@ -236,14 +296,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
       try {
         const newPinnedStatus = !item.pinned;
         setChatItems((prev) =>
-          prev.map((i) => (i.chat_id === id ? { ...i, pinned: newPinnedStatus } : i)),
+          prev.map((i) =>
+            i.chat_id === id ? { ...i, pinned: newPinnedStatus } : i,
+          ),
         );
         await chatService.updateChat(id, { pinned: newPinnedStatus });
         showToast(newPinnedStatus ? "Pinned" : "Unpinned");
       } catch {
         showToast("Failed to pin", "error");
         setChatItems((prev) =>
-          prev.map((i) => (i.chat_id === id ? { ...i, pinned: item.pinned } : i)),
+          prev.map((i) =>
+            i.chat_id === id ? { ...i, pinned: item.pinned } : i,
+          ),
         );
       }
       setActiveMenuId(null);
@@ -266,7 +330,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
       try {
         await chatService.updateChat(editingId, { session_title: editValue });
         setChatItems((prev) =>
-          prev.map((i) => (i.chat_id === editingId ? { ...i, session_title: editValue } : i)),
+          prev.map((i) =>
+            i.chat_id === editingId ? { ...i, session_title: editValue } : i,
+          ),
         );
         showToast("Renamed");
       } catch {
@@ -376,13 +442,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
           ${isSidebarExpanded ? "w-48" : "w-13"}`}
       >
         {/* EXPAND/COLLAPSE BUTTON */}
-        <button 
+        <button
           onClick={() => setIsSidebarExpanded(!isSidebarExpanded)}
           className={`${iconBtnBase} mb-2`}
           title={isSidebarExpanded ? "Collapse Sidebar" : "Expand Sidebar"}
         >
           <div className="w-7 h-7 bg-theme-tertiary text-theme-primary rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg transition-all hover:bg-theme-primary">
-            <ChevronRight className={`w-4 h-4 transition-transform duration-300 ${isSidebarExpanded ? "rotate-180" : ""}`} />
+            <ChevronRight
+              className={`w-4 h-4 transition-transform duration-300 ${isSidebarExpanded ? "rotate-180" : ""}`}
+            />
           </div>
           {isSidebarExpanded && (
             <span className="text-sm font-bold text-theme-primary whitespace-nowrap">
@@ -394,7 +462,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="w-full h-px bg-theme-primary/50 mb-2" />
 
         {/* NEW CHAT */}
-        <button onClick={handleNewChat} className={iconBtnBase} title="New Chat">
+        <button
+          onClick={handleNewChat}
+          className={iconBtnBase}
+          title="New Chat"
+        >
           <div className="w-7 h-7 bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg group-hover:shadow-blue-500/50 transition-all">
             <Plus className="w-4 h-4 text-white" />
           </div>
@@ -406,14 +478,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </button>
 
         {/* ASK FINIXY AI */}
-        <button onClick={onToggleChat} className={iconBtnBase} title={isChatExpanded ? "Collapse Chat" : "Expand Chat"}>
-          <div className={iconBox(
-            isChatExpanded,
-            theme === "light" 
-              ? "bg-purple-100 border border-purple-200 shadow-sm" 
-              : "bg-gradient-to-br from-purple-600 to-purple-700 group-hover:from-purple-500 group-hover:to-purple-600 group-hover:shadow-purple-500/50",
-          )}>
-            <MessageSquare className={`w-4 h-4 ${isChatExpanded && theme === "light" ? "text-purple-600" : iconColor}`} />
+        <button
+          onClick={onToggleChat}
+          className={iconBtnBase}
+          title={isChatExpanded ? "Collapse Chat" : "Expand Chat"}
+        >
+          <div
+            className={iconBox(
+              isChatExpanded,
+              theme === "light"
+                ? "bg-purple-100 border border-purple-200 shadow-sm"
+                : "bg-gradient-to-br from-purple-600 to-purple-700 group-hover:from-purple-500 group-hover:to-purple-600 group-hover:shadow-purple-500/50",
+            )}
+          >
+            <MessageSquare
+              className={`w-4 h-4 ${isChatExpanded && theme === "light" ? "text-purple-600" : iconColor}`}
+            />
           </div>
           {isSidebarExpanded && (
             <span className="text-sm font-medium text-theme-secondary whitespace-nowrap">
@@ -424,17 +504,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* HISTORY */}
         <button
-          onClick={() => { setIsHistoryOpen(!isHistoryOpen); setIsDocumentsOpen(false); }}
+          onClick={() => {
+            setIsHistoryOpen(!isHistoryOpen);
+            setIsDocumentsOpen(false);
+          }}
           className={iconBtnBase}
           title="History"
         >
-          <div className={iconBox(
-            isHistoryOpen,
-            theme === "light" 
-              ? "bg-cyan-100 border border-cyan-200 shadow-sm"
-              : "bg-gradient-to-br from-cyan-600 to-cyan-700 group-hover:from-cyan-500 group-hover:to-cyan-600 group-hover:shadow-cyan-500/50",
-          )}>
-            <History className={`w-4 h-4 ${isHistoryOpen && theme === "light" ? "text-cyan-600" : iconColor}`} />
+          <div
+            className={iconBox(
+              isHistoryOpen,
+              theme === "light"
+                ? "bg-cyan-100 border border-cyan-200 shadow-sm"
+                : "bg-gradient-to-br from-cyan-600 to-cyan-700 group-hover:from-cyan-500 group-hover:to-cyan-600 group-hover:shadow-cyan-500/50",
+            )}
+          >
+            <History
+              className={`w-4 h-4 ${isHistoryOpen && theme === "light" ? "text-cyan-600" : iconColor}`}
+            />
           </div>
           {isSidebarExpanded && (
             <span className="text-sm font-medium text-theme-secondary whitespace-nowrap">
@@ -445,17 +532,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* MY DOCUMENTS */}
         <button
-          onClick={() => { setIsDocumentsOpen(!isDocumentsOpen); setIsHistoryOpen(false); }}
+          onClick={() => {
+            setIsDocumentsOpen(!isDocumentsOpen);
+            setIsHistoryOpen(false);
+          }}
           className={iconBtnBase}
           title="My Documents"
         >
-          <div className={iconBox(
-            isDocumentsOpen,
-            theme === "light" 
-              ? "bg-indigo-100 border border-indigo-200 shadow-sm"
-              : "bg-gradient-to-br from-indigo-600 to-purple-700 group-hover:from-indigo-500 group-hover:to-purple-600 group-hover:shadow-indigo-500/50",
-          )}>
-            <FolderOpen className={`w-4 h-4 ${isDocumentsOpen && theme === "light" ? "text-indigo-600" : iconColor}`} />
+          <div
+            className={iconBox(
+              isDocumentsOpen,
+              theme === "light"
+                ? "bg-indigo-100 border border-indigo-200 shadow-sm"
+                : "bg-gradient-to-br from-indigo-600 to-purple-700 group-hover:from-indigo-500 group-hover:to-purple-600 group-hover:shadow-indigo-500/50",
+            )}
+          >
+            <FolderOpen
+              className={`w-4 h-4 ${isDocumentsOpen && theme === "light" ? "text-indigo-600" : iconColor}`}
+            />
           </div>
           {isSidebarExpanded && (
             <span className="text-sm font-medium text-theme-secondary whitespace-nowrap">
@@ -479,7 +573,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               isReportsOpen,
               theme === "light"
                 ? "bg-emerald-100 border border-emerald-200 shadow-sm"
-                : "bg-gradient-to-br from-emerald-600 to-green-700 group-hover:from-emerald-500 group-hover:to-green-600 group-hover:shadow-emerald-500/50"
+                : "bg-gradient-to-br from-emerald-600 to-green-700 group-hover:from-emerald-500 group-hover:to-green-600 group-hover:shadow-emerald-500/50",
             )}
           >
             <BarChart3
@@ -511,7 +605,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {/* Header */}
             <div className="p-4 border-b border-theme-primary">
               <div className="flex justify-between items-center mb-3">
-                <h3 className="font-semibold text-theme-primary text-sm">Chat History</h3>
+                <h3 className="font-semibold text-theme-primary text-sm">
+                  Chat History
+                </h3>
                 <button
                   onClick={() => setIsHistoryOpen(false)}
                   className="text-theme-tertiary hover:text-theme-primary hover:bg-theme-tertiary p-1.5 rounded-lg transition-all"
@@ -532,7 +628,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
 
             {/* Chat List */}
-            <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar" ref={menuRef}>
+            <div
+              className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar"
+              ref={menuRef}
+            >
               {loading ? (
                 <div className="flex flex-col items-center justify-center h-32 text-theme-tertiary">
                   <Loader2 className="w-6 h-6 animate-spin mb-2 text-blue-400" />
@@ -608,7 +707,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           {item.pinned ? "Unpin" : "Pin"}
                         </button>
                         <button
-                          onClick={(e) => startRename(e, item.chat_id, item.session_title)}
+                          onClick={(e) =>
+                            startRename(e, item.chat_id, item.session_title)
+                          }
                           className="w-full text-left px-3 py-2 text-xs text-theme-secondary hover:bg-theme-tertiary flex items-center gap-2"
                         >
                           <Edit2 className="w-3 h-3" /> Rename
@@ -651,8 +752,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div className="w-14 h-14 bg-red-500/20 rounded-lg flex items-center justify-center mb-4 border-2 border-red-500/40">
                 <AlertTriangle className="w-7 h-7 text-red-400" />
               </div>
-              <h3 className="text-lg font-bold text-theme-primary mb-2">Delete Chat?</h3>
-              <p className="text-sm text-theme-secondary mb-6">This action cannot be undone.</p>
+              <h3 className="text-lg font-bold text-theme-primary mb-2">
+                Delete Chat?
+              </h3>
+              <p className="text-sm text-theme-secondary mb-6">
+                This action cannot be undone.
+              </p>
               <div className="flex gap-3 w-full">
                 <button
                   onClick={() => setShowDeleteModal(false)}
