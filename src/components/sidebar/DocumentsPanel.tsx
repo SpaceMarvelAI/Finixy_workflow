@@ -25,6 +25,7 @@ interface DocumentItem {
   uploaded_at: string;
   status: string;
   vendor_name?: string;
+  customer_name?: string;
   category?: string;
   grand_total?: number;
   currency?: string;
@@ -39,7 +40,10 @@ const getFileIcon = (fileType: string, fileName: string) => {
   const ext = fileName?.split(".").pop()?.toLowerCase() || "";
   if (fileType?.includes("spreadsheet") || ext === "xlsx" || ext === "xls")
     return <FileSpreadsheet className="w-4 h-4 text-emerald-500" />;
-  if (fileType?.includes("image") || ["jpg", "jpeg", "png", "webp"].includes(ext))
+  if (
+    fileType?.includes("image") ||
+    ["jpg", "jpeg", "png", "webp"].includes(ext)
+  )
     return <FileImage className="w-4 h-4 text-blue-500" />;
   if (fileType?.includes("pdf") || ext === "pdf")
     return <FileText className="w-4 h-4 text-red-500" />;
@@ -85,7 +89,10 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
   const [loadingPreviewId, setLoadingPreviewId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-  const [toast, setToast] = useState<{ msg: string; type: "success" | "error" } | null>(null);
+  const [toast, setToast] = useState<{
+    msg: string;
+    type: "success" | "error";
+  } | null>(null);
 
   const showToast = (msg: string, type: "success" | "error" = "success") => {
     setToast({ msg, type });
@@ -93,18 +100,59 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
   };
 
   const normalizeDoc = (raw: any): DocumentItem => {
-    const id = raw.id || raw.document_id || raw.doc_id || raw._id || raw.uuid || "";
+    const id =
+      raw.id || raw.document_id || raw.doc_id || raw._id || raw.uuid || "";
     const file_name =
-      raw.file_name || raw.filename || raw.original_filename || raw.originalFilename || raw.file || raw.name || "";
-    const file_type = raw.file_type || raw.fileType || raw.mime_type || raw.mimeType || raw.content_type || "";
+      raw.file_name ||
+      raw.filename ||
+      raw.original_filename ||
+      raw.originalFilename ||
+      raw.file ||
+      raw.name ||
+      "";
+    const file_type =
+      raw.file_type ||
+      raw.fileType ||
+      raw.mime_type ||
+      raw.mimeType ||
+      raw.content_type ||
+      "";
     const file_size = raw.file_size || raw.fileSize || raw.size || 0;
-    const uploaded_at = raw.uploaded_at || raw.upload_date || raw.created_at || raw.createdAt || raw.date || "";
-    const status = raw.status || raw.processing_status || raw.document_status || "ready";
+    const uploaded_at =
+      raw.uploaded_at ||
+      raw.upload_date ||
+      raw.created_at ||
+      raw.createdAt ||
+      raw.date ||
+      "";
+    const status =
+      raw.status || raw.processing_status || raw.document_status || "ready";
     const canonical = raw.canonical_data || {};
     const vendor_name =
-      raw.vendor_name || raw.vendor || canonical.vendor?.name || canonical.extracted_fields?.vendor_name || "";
+      raw.vendor_name ||
+      raw.vendor ||
+      canonical.vendor?.name ||
+      canonical.extracted_fields?.vendor_name ||
+      "";
+    const customer_name =
+      raw.customer_name ||
+      raw.customer ||
+      canonical.customer?.name ||
+      canonical.extracted_fields?.customer_name ||
+      "";
     const category = raw.category || raw.document_type || raw.doc_type || "";
-    return { id, file_name, file_type, file_size, uploaded_at, status, vendor_name, category, canonical_data: raw.canonical_data };
+    return {
+      id,
+      file_name,
+      file_type,
+      file_size,
+      uploaded_at,
+      status,
+      vendor_name,
+      customer_name,
+      category,
+      canonical_data: raw.canonical_data,
+    };
   };
 
   const fetchDocuments = useCallback(async () => {
@@ -123,10 +171,15 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
     }
   }, []);
 
-  useEffect(() => { fetchDocuments(); }, [fetchDocuments]);
+  useEffect(() => {
+    fetchDocuments();
+  }, [fetchDocuments]);
 
   const handleViewParsed = async (doc: DocumentItem) => {
-    if (!doc.id) { showToast("Cannot load parsed data: document ID is missing", "error"); return; }
+    if (!doc.id) {
+      showToast("Cannot load parsed data: document ID is missing", "error");
+      return;
+    }
     setLoadingPreviewId(doc.id);
     try {
       const res = await documentService.getDocument(doc.id);
@@ -135,19 +188,31 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
         res.data?.data ||
         (res.data?.id || res.data?.document_id ? res.data : null);
       if (docObj) {
-        setPreviewData({ ...docObj, id: docObj.id || docObj.document_id || doc.id });
+        setPreviewData({
+          ...docObj,
+          id: docObj.id || docObj.document_id || doc.id,
+        });
       } else {
         showToast("Could not load parsed data", "error");
       }
     } catch (e: any) {
-      showToast(`Error: ${e?.response?.data?.detail || e?.message || "Unknown error"}`, "error");
+      showToast(
+        `Error: ${e?.response?.data?.detail || e?.message || "Unknown error"}`,
+        "error",
+      );
     } finally {
       setLoadingPreviewId(null);
     }
   };
 
-  const triggerBlobDownload = (data: any, contentType: string, fileName: string) => {
-    const blob = new Blob([data], { type: contentType || "application/octet-stream" });
+  const triggerBlobDownload = (
+    data: any,
+    contentType: string,
+    fileName: string,
+  ) => {
+    const blob = new Blob([data], {
+      type: contentType || "application/octet-stream",
+    });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -159,7 +224,10 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
   };
 
   const handleDownload = async (doc: DocumentItem) => {
-    if (!doc.id) { showToast("Cannot download: document ID is missing", "error"); return; }
+    if (!doc.id) {
+      showToast("Cannot download: document ID is missing", "error");
+      return;
+    }
     const fileName = doc.file_name || `document_${doc.id}`;
     try {
       try {
@@ -167,8 +235,14 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
         const docDetail =
           detailRes.data?.document ||
           detailRes.data?.data ||
-          (detailRes.data?.id || detailRes.data?.document_id ? detailRes.data : null);
-        const s3Url = docDetail?.file_url || docDetail?.fileUrl || docDetail?.s3_url || docDetail?.download_url;
+          (detailRes.data?.id || detailRes.data?.document_id
+            ? detailRes.data
+            : null);
+        const s3Url =
+          docDetail?.file_url ||
+          docDetail?.fileUrl ||
+          docDetail?.s3_url ||
+          docDetail?.download_url;
         if (s3Url && s3Url.startsWith("http")) {
           const link = document.createElement("a");
           link.href = s3Url;
@@ -180,7 +254,9 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
           showToast("Download started!");
           return;
         }
-      } catch { /* fall through */ }
+      } catch {
+        /* fall through */
+      }
 
       try {
         const res = await documentService.downloadFile(doc.id);
@@ -196,19 +272,28 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
       triggerBlobDownload(res.data, res.headers?.["content-type"], fileName);
       showToast("Download started!");
     } catch (e: any) {
-      showToast(`Download failed: ${e?.response?.data?.detail || e?.message || "Unknown error"}`, "error");
+      showToast(
+        `Download failed: ${e?.response?.data?.detail || e?.message || "Unknown error"}`,
+        "error",
+      );
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!id) { showToast("Cannot delete: document ID is missing", "error"); return; }
+    if (!id) {
+      showToast("Cannot delete: document ID is missing", "error");
+      return;
+    }
     setDeletingId(id);
     try {
       await documentService.deleteDocument(id);
       setDocuments((prev) => prev.filter((d) => d.id !== id));
       showToast("Document deleted successfully!");
     } catch (e: any) {
-      showToast(`Delete failed: ${e?.response?.data?.detail || e?.message || "Unknown error"}`, "error");
+      showToast(
+        `Delete failed: ${e?.response?.data?.detail || e?.message || "Unknown error"}`,
+        "error",
+      );
     } finally {
       setDeletingId(null);
       setConfirmDeleteId(null);
@@ -226,7 +311,7 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
     <>
       <div
         className="absolute left-full top-0 h-full theme-slide-panel border-r shadow-2xl flex flex-col z-[60]"
-        style={{ width: "720px" }}
+        style={{ width: "70vw" }}
       >
         {/* Header */}
         <div className="p-4 border-b border-theme-primary flex-shrink-0">
@@ -236,9 +321,12 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
                 <FileText className="w-4 h-4 text-theme-secondary" />
               </div>
               <div>
-                <h3 className="font-bold text-theme-primary text-sm">My Documents</h3>
+                <h3 className="font-bold text-theme-primary text-sm">
+                  My Documents
+                </h3>
                 <p className="text-[10px] text-theme-tertiary">
-                  {documents.length} file{documents.length !== 1 ? "s" : ""} uploaded
+                  {documents.length} file{documents.length !== 1 ? "s" : ""}{" "}
+                  uploaded
                 </p>
               </div>
             </div>
@@ -248,7 +336,9 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
                 title="Refresh"
                 className="p-1.5 rounded-lg text-theme-tertiary hover:text-theme-primary hover:bg-theme-tertiary transition-all"
               >
-                <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+                <RefreshCw
+                  className={`w-4 h-4 ${loading ? "animate-spin" : ""}`}
+                />
               </button>
               <button
                 onClick={onClose}
@@ -283,26 +373,47 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
             <div className="flex flex-col items-center justify-center h-40 gap-3 text-theme-tertiary">
               <FileText className="w-10 h-10 opacity-30" />
               <p className="text-sm">
-                {search ? "No documents match your search" : "No documents uploaded yet"}
+                {search
+                  ? "No documents match your search"
+                  : "No documents uploaded yet"}
               </p>
             </div>
           ) : (
             <table className="w-full text-xs">
               <thead className="sticky top-0 theme-table-head border-b z-10">
                 <tr>
-                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest w-10">#</th>
-                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest">File Name</th>
-                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest w-28">Vendor</th>
-                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest w-20">Size</th>
-                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest w-24">Uploaded</th>
-                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest w-20">Status</th>
-                  <th className="px-3 py-3 text-center text-[10px] font-bold uppercase tracking-widest w-28">Actions</th>
+                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest w-[5%]">
+                    #
+                  </th>
+                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest w-[25%]">
+                    File Name
+                  </th>
+                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest w-[15%]">
+                    Vendor
+                  </th>
+                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest w-[15%]">
+                    Customer
+                  </th>
+                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest w-[15%]">
+                    Uploaded
+                  </th>
+                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest w-[10%]">
+                    Status
+                  </th>
+                  <th className="px-3 py-3 text-center text-[10px] font-bold uppercase tracking-widest w-[15%]">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-theme-primary">
                 {filtered.map((doc, idx) => (
-                  <tr key={doc.id} className="theme-table-row transition-colors group">
-                    <td className="px-3 py-3 text-theme-tertiary font-mono">{idx + 1}</td>
+                  <tr
+                    key={doc.id}
+                    className="theme-table-row transition-colors group"
+                  >
+                    <td className="px-3 py-3 text-theme-tertiary font-mono">
+                      {idx + 1}
+                    </td>
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-2 min-w-0">
                         {getFileIcon(doc.file_type, doc.file_name)}
@@ -315,14 +426,28 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
                       </div>
                     </td>
                     <td className="px-3 py-3">
-                      <span className="text-theme-secondary truncate block max-w-[100px]" title={doc.vendor_name}>
+                      <span
+                        className="text-theme-secondary truncate block max-w-[100px]"
+                        title={doc.vendor_name}
+                      >
                         {doc.vendor_name || "-"}
                       </span>
                     </td>
-                    <td className="px-3 py-3 text-theme-tertiary font-mono">{formatBytes(doc.file_size)}</td>
-                    <td className="px-3 py-3 text-theme-secondary">{formatDate(doc.uploaded_at)}</td>
                     <td className="px-3 py-3">
-                      <span className={`px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-wider border ${getStatusColor(doc.status)}`}>
+                      <span
+                        className="text-theme-secondary truncate block max-w-[100px]"
+                        title={doc.customer_name}
+                      >
+                        {doc.customer_name || "-"}
+                      </span>
+                    </td>
+                    <td className="px-3 py-3 text-theme-secondary">
+                      {formatDate(doc.uploaded_at)}
+                    </td>
+                    <td className="px-3 py-3">
+                      <span
+                        className={`px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-wider border ${getStatusColor(doc.status)}`}
+                      >
                         {doc.status || "ready"}
                       </span>
                     </td>
@@ -385,9 +510,12 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
                 <AlertTriangle className="w-6 h-6 text-red-400" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-theme-primary mb-1">Delete Document?</h3>
+                <h3 className="text-base font-bold text-theme-primary mb-1">
+                  Delete Document?
+                </h3>
                 <p className="text-xs text-theme-secondary">
-                  This will permanently delete the file. This action cannot be undone.
+                  This will permanently delete the file. This action cannot be
+                  undone.
                 </p>
               </div>
               <div className="flex gap-3 w-full">
@@ -402,7 +530,11 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
                   disabled={!!deletingId}
                   className="flex-1 px-4 py-2.5 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white rounded-lg text-sm font-medium shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  {deletingId ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                  {deletingId ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="w-4 h-4" />
+                  )}
                   {deletingId ? "Deleting..." : "Delete"}
                 </button>
               </div>
@@ -419,7 +551,8 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
           onRefresh={async () => {
             if (previewData?.id) {
               const res = await documentService.getDocument(previewData.id);
-              if (res.data.status === "success") setPreviewData(res.data.document);
+              if (res.data.status === "success")
+                setPreviewData(res.data.document);
             }
           }}
         />
@@ -430,7 +563,9 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
         <div className="fixed bottom-6 right-6 z-[300]">
           <div
             className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-2xl border text-sm font-medium text-white ${
-              toast.type === "error" ? "bg-red-700 border-red-600" : "bg-theme-secondary border-theme-primary"
+              toast.type === "error"
+                ? "bg-red-700 border-red-600"
+                : "bg-theme-secondary border-theme-primary"
             }`}
           >
             {toast.type === "error" ? (

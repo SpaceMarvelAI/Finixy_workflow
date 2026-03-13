@@ -299,7 +299,7 @@ export const ReportsPanel: React.FC<ReportsPanelProps> = ({
     <>
       <div
         className="absolute left-full top-0 h-full theme-slide-panel border-r shadow-2xl flex flex-col z-[60]"
-        style={{ width: "650px" }}
+        style={{ width: "70vw" }}
       >
         {/* Header */}
         <div className="p-4 border-b border-theme-primary flex-shrink-0">
@@ -370,16 +370,16 @@ export const ReportsPanel: React.FC<ReportsPanelProps> = ({
             <table className="w-full text-xs">
               <thead className="sticky top-0 theme-table-head border-b z-10">
                 <tr>
-                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest">
+                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest w-[30%]">
                     Report Title
                   </th>
-                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest w-24">
+                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest w-[20%]">
                     Type
                   </th>
-                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest w-32">
+                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest w-[25%]">
                     Generated
                   </th>
-                  <th className="px-3 py-3 text-center text-[10px] font-bold uppercase tracking-widest w-28">
+                  <th className="px-3 py-3 text-center text-[10px] font-bold uppercase tracking-widest w-[25%]">
                     Actions
                   </th>
                 </tr>

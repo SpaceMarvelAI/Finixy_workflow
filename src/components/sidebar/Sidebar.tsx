@@ -603,7 +603,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* HISTORY PANEL */}
         {isHistoryOpen && (
-          <div className="absolute left-full top-0 h-full w-80 theme-slide-panel border-r shadow-2xl flex flex-col z-[60]">
+          <div
+            className="absolute left-full top-0 h-full theme-slide-panel border-r shadow-2xl flex flex-col z-[60]"
+            style={{ width: "500px" }}
+          >
             {/* Header */}
             <div className="p-4 border-b border-theme-primary">
               <div className="flex justify-between items-center mb-3">
