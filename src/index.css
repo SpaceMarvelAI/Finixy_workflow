@@ -270,3 +270,69 @@ body {
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: var(--accent-blue);
 }
+
+/* ============================================================
+   Workflow node execution animations — rotating border ring
+   ============================================================ */
+
+@property --node-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes node-rotate {
+  to {
+    --node-angle: 360deg;
+  }
+}
+
+/* shared setup for animated states */
+.node-status-pending,
+.node-status-running,
+.node-status-failed {
+  overflow: visible !important;
+}
+
+.node-status-pending::before,
+.node-status-running::before,
+.node-status-failed::before {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 11px;
+  z-index: -1;
+  animation: node-rotate 1.2s linear infinite;
+}
+
+/* red ring — pending / failed */
+.node-status-pending::before,
+.node-status-failed::before {
+  background: conic-gradient(
+    from var(--node-angle),
+    transparent 70%,
+    rgba(239, 68, 68, 0.9) 90%,
+    rgba(239, 68, 68, 1) 100%
+  );
+  box-shadow: 0 0 10px 2px rgba(239, 68, 68, 0.4);
+}
+
+/* green ring — running */
+.node-status-running::before {
+  background: conic-gradient(
+    from var(--node-angle),
+    transparent 70%,
+    rgba(34, 197, 94, 0.9) 90%,
+    rgba(34, 197, 94, 1) 100%
+  );
+  box-shadow: 0 0 10px 2px rgba(34, 197, 94, 0.4);
+  animation-duration: 0.7s;
+}
+
+/* completed — steady green glow, no spin */
+.node-status-completed {
+  border-color: rgba(34, 197, 94, 0.6) !important;
+  box-shadow:
+    0 0 14px 3px rgba(34, 197, 94, 0.4),
+    0 8px 32px 0 rgba(0, 0, 0, 0.2) !important;
+}

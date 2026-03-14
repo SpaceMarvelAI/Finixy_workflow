@@ -407,47 +407,81 @@ export const WorkflowCanvas: React.FC = () => {
 
     setIsExecuting(true);
 
-    try {
-      console.log("🚀 Running workflow:", config.name);
-      console.log("📋 Chat ID:", currentChatId);
-
-      // Re-execute the workflow by sending the original query
-      const query = config.name || "Execute workflow";
-
-      const response = await chatService.sendQuery(
-        query,
-        currentChatId || undefined,
-      );
-
-      console.log("✅ Workflow executed:", response.data);
-
-      // Update workflow with new execution results
-      if (response.data.workflow) {
-        const workflow = response.data.workflow;
-
-        // Update node statuses to completed
-        setNodes((currentNodes) =>
-          currentNodes.map((node) => ({
-            ...node,
-            data: {
-              ...node.data,
-              status: workflow.status === "completed" ? "completed" : "failed",
-            },
-          })),
-        );
-
-        showNotification("Workflow executed successfully!", "success");
+    // Step 1: Build ordered node list (topological — follow edges source→target)
+    const buildOrderedNodes = (allNodes: any[], allEdges: any[]) => {
+      const edgeMap: Record<string, string> = {};
+      allEdges.forEach((e) => {
+        edgeMap[e.source] = e.target;
+      });
+      const targetSet = new Set(allEdges.map((e) => e.target));
+      const firstNode = allNodes.find((n) => !targetSet.has(n.id));
+      if (!firstNode) return allNodes.map((n) => n.id);
+      const ordered: string[] = [];
+      let current: string | undefined = firstNode.id;
+      while (current && ordered.length < allNodes.length) {
+        ordered.push(current);
+        current = edgeMap[current];
       }
-    } catch (error: any) {
-      console.error("❌ Workflow execution failed:", error);
+      // append any disconnected nodes
+      allNodes.forEach((n) => {
+        if (!ordered.includes(n.id)) ordered.push(n.id);
+      });
+      return ordered;
+    };
+
+    const orderedIds = buildOrderedNodes(nodes, edges);
+
+    // Step 2: Set all nodes to "pending" (red glow)
+    setNodes((cur) =>
+      cur.map((n) => ({ ...n, data: { ...n.data, status: "pending" } })),
+    );
+
+    // Step 3: Fire the actual API call in parallel
+    const apiPromise = chatService
+      .sendQuery(config.name || "Execute workflow", currentChatId || undefined)
+      .catch((err) => ({ error: err }));
+
+    // Step 4: Animate nodes one-by-one green with 600ms delay each
+    for (let i = 0; i < orderedIds.length; i++) {
+      await new Promise((res) => setTimeout(res, 600));
+      const nodeId = orderedIds[i];
+      setNodes((cur) =>
+        cur.map((n) =>
+          n.id === nodeId
+            ? { ...n, data: { ...n.data, status: "running" } }
+            : n,
+        ),
+      );
+    }
+
+    // Step 5: Wait for API, then mark all completed or failed
+    const result: any = await apiPromise;
+    const success = !result?.error && result?.data;
+
+    setNodes((cur) =>
+      cur.map((n) => ({
+        ...n,
+        data: { ...n.data, status: success ? "completed" : "failed" },
+      })),
+    );
+
+    if (success) {
+      showNotification("Workflow executed successfully!", "success");
+      // Reset back to normal after 5 seconds
+      setTimeout(() => {
+        setNodes((cur) =>
+          cur.map((n) => ({ ...n, data: { ...n.data, status: undefined } })),
+        );
+      }, 5000);
+    } else {
       showNotification(
-        `Workflow execution failed: ${error.response?.data?.detail || error.message}`,
+        `Workflow execution failed: ${result?.error?.response?.data?.detail || result?.error?.message || "Unknown error"}`,
         "error",
       );
-    } finally {
-      setIsExecuting(false);
     }
-  }, [config, nodes, currentChatId, setNodes, showNotification]);
+
+    setIsExecuting(false);
+  }, [config, nodes, edges, currentChatId, setNodes, showNotification]);
 
   // Keep refs in sync with latest handlers (must be after both handlers are defined)
   useEffect(() => {

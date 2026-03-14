@@ -330,9 +330,19 @@ const CustomNodeComponent: React.FC<CustomNodeProps> = ({ data, id }) => {
 
   return (
     <div
-      className="relative bg-theme-secondary border border-theme-primary hover:border-blue-500/50 rounded-lg shadow-2xl transition-all cursor-pointer min-w-[280px] theme-transition"
+      className={`relative bg-theme-secondary border rounded-lg shadow-2xl transition-all cursor-pointer min-w-[280px] theme-transition ${
+        safeData.status === "pending"
+          ? "node-status-pending"
+          : safeData.status === "running"
+            ? "node-status-running"
+            : safeData.status === "completed"
+              ? "node-status-completed"
+              : safeData.status === "failed"
+                ? "node-status-failed"
+                : ""
+      }`}
       onClick={() => setSelectedNode(id)}
-      style={{ boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.2)" }}
+      style={{ boxShadow: "0 8px 32px 0 rgba(0,0,0,0.2)" }}
     >
       {nodeType !== "trigger" && (
         <Handle
