@@ -89,6 +89,11 @@ export const authService = {
       const response = await api.post('/auth/login', { email, password });
       if (response.data.access_token) {
         sessionStorage.setItem('access_token', response.data.access_token);
+        // Store user info for display — backend returns company_name, not user name
+        sessionStorage.setItem('user_email', email);
+        if (response.data.company_name) {
+          sessionStorage.setItem('user_name', response.data.company_name);
+        }
         console.log('✅ [AUTH] Login successful, token saved');
       }
       return response.data;

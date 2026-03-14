@@ -33,9 +33,6 @@ import {
 import { DocumentsPanel } from "./DocumentsPanel";
 import { ReportsPanel } from "./ReportsPanel";
 
-// ============================================================================
-// TYPES
-// ============================================================================
 interface Toast {
   id: number;
   message: string;
@@ -60,9 +57,6 @@ interface SidebarProps {
   onTabChange?: (tab: "workflow" | "analysis" | "report") => void;
 }
 
-// ============================================================================
-// MAIN COMPONENT
-// ============================================================================
 export const Sidebar: React.FC<SidebarProps> = ({
   isChatExpanded,
   onToggleChat,
@@ -94,9 +88,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const menuRef = useRef<HTMLDivElement>(null);
   const isFetchingRef = useRef(false);
 
-  // ============================================================================
-  // TOAST
-  // ============================================================================
   const showToast = useCallback(
     (message: string, type: "success" | "error" = "success") => {
       const id = Date.now();
@@ -109,29 +100,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
     [],
   );
 
-  // ============================================================================
-  // FETCH CHAT HISTORY
-  // ============================================================================
   const fetchHistory = useCallback(async () => {
-    console.log("🔄 [SIDEBAR] fetchHistory called", {
-      isFetching: isFetchingRef.current,
-      isHistoryOpen,
-    });
-
-    if (isFetchingRef.current) {
-      console.log("⏸️ [SIDEBAR] Already fetching, skipping...");
-      return;
-    }
-
+    if (isFetchingRef.current) return;
     isFetchingRef.current = true;
     setLoading(true);
-
     try {
-      console.log("📡 [SIDEBAR] Calling chatService.getChatHistory...");
       const response = await chatService.getChatHistory(100, 0);
-
-      console.log("✅ [SIDEBAR] Chat history response:", response);
-
       if (response.data && Array.isArray(response.data)) {
         const uniqueChatsMap = new Map<string, ChatItem>();
         response.data.forEach((chat: ChatItem) => {
@@ -139,34 +113,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
             uniqueChatsMap.set(chat.chat_id, chat);
           }
         });
-        const chats = Array.from(uniqueChatsMap.values());
-        console.log("📊 [SIDEBAR] Processed chats:", chats.length);
-        setChatItems(chats);
+        setChatItems(Array.from(uniqueChatsMap.values()));
       } else {
-        console.warn("⚠️ [SIDEBAR] Invalid response format:", response);
-        showToast("Invalid response format", "error");
         setChatItems([]);
       }
-    } catch (error: any) {
-      console.error("❌ [SIDEBAR] Failed to load history:", error);
-      console.error("❌ [SIDEBAR] Error details:", {
-        message: error.message,
-        code: error.code,
-        response: error.response?.data,
-        status: error.response?.status,
-      });
+    } catch {
       showToast("Failed to load history", "error");
       setChatItems([]);
     } finally {
       setLoading(false);
       isFetchingRef.current = false;
-      console.log("✅ [SIDEBAR] fetchHistory completed");
     }
   }, [showToast]);
 
-  // ============================================================================
-  // LOAD CHAT
-  // ============================================================================
   const handleChatItemClick = useCallback(
     async (chat_id: string) => {
       if (activeMenuId || editingId) return;
@@ -263,7 +222,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
         const report =
           response.data.report ||
           (response.data.report_id ? response.data : null);
-
         if (report) {
           loadWorkflow(
             "Report Workflow",
@@ -284,9 +242,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     [loadWorkflow, onTabChange, showToast],
   );
 
-  // ============================================================================
-  // PIN / RENAME / DELETE
-  // ============================================================================
   const handlePin = useCallback(
     async (e: React.MouseEvent, id: string) => {
       e.stopPropagation();
@@ -368,11 +323,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   }, []);
 
   const handleNewChat = useCallback(() => {
-    // If chat is already open, close it
     if (isChatExpanded) {
       onToggleChat();
     } else {
-      // If chat is closed, clear and open it
       clearWorkflow();
       setChatHistory([]);
       setCurrentChatId(null);
@@ -389,9 +342,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     onToggleChat,
   ]);
 
-  // ============================================================================
-  // FILTERED HISTORY
-  // ============================================================================
   const filteredHistory = chatItems
     .filter((item) =>
       item.session_title.toLowerCase().includes(searchQuery.toLowerCase()),
@@ -404,74 +354,53 @@ export const Sidebar: React.FC<SidebarProps> = ({
       );
     });
 
-  // ============================================================================
-  // EFFECTS
-  // ============================================================================
   useEffect(() => {
     if (isHistoryOpen) fetchHistory();
   }, [isHistoryOpen, fetchHistory]);
-
   useEffect(() => {
     if (sidebarRefreshTrigger > 0 && isHistoryOpen) fetchHistory();
   }, [sidebarRefreshTrigger, isHistoryOpen, fetchHistory]);
-
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node))
         setActiveMenuId(null);
-      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // ============================================================================
-  // ICON BUTTON HELPER — adapts to dark/light
-  // ============================================================================
+  // Theme-aware helpers
   const iconBtnBase =
-    "w-full px-1.5 py-1.5 flex items-center gap-2 rounded transition-colors group hover:bg-white/5";
-
+    "w-full px-1.5 py-1.5 flex items-center gap-2 rounded transition-colors group hover:bg-theme-tertiary";
   const iconBox = (active: boolean, colors: string) =>
-    `w-7 h-7 rounded flex items-center justify-center flex-shrink-0 transition-colors ${
-      active
-        ? colors
-        : "bg-gray-800/50 text-gray-400 hover:bg-gray-700/50 hover:text-gray-300"
-    }`;
+    `w-7 h-7 rounded flex items-center justify-center flex-shrink-0 transition-colors ${active ? colors : "bg-theme-tertiary text-theme-secondary hover:bg-theme-secondary hover:text-theme-primary"}`;
+  const iconColor = "text-theme-secondary";
 
-  const iconColor = useMemo(() => {
-    return "text-gray-400";
-  }, [theme]);
-
-  // ============================================================================
-  // RENDER
-  // ============================================================================
   return (
     <>
       {/* SIDEBAR RAIL */}
       <div
-        className={`relative flex flex-col items-start py-3 gap-1 border-r border-gray-800/50 h-full z-50 transition-all duration-300
-          bg-black/40
-          ${isSidebarExpanded ? "w-44" : "w-11"}`}
+        className={`relative flex flex-col items-start py-3 gap-1 border-r border-theme-primary h-full z-50 transition-all duration-300 bg-theme-secondary ${isSidebarExpanded ? "w-44" : "w-11"}`}
       >
-        {/* EXPAND/COLLAPSE BUTTON */}
+        {/* EXPAND/COLLAPSE */}
         <button
           onClick={() => setIsSidebarExpanded(!isSidebarExpanded)}
           className={`${iconBtnBase} mb-1`}
           title={isSidebarExpanded ? "Collapse Sidebar" : "Expand Sidebar"}
         >
-          <div className="w-7 h-7 bg-gray-800/50 text-gray-400 rounded flex items-center justify-center flex-shrink-0 transition-colors hover:bg-gray-700/50 hover:text-gray-300">
+          <div className="w-7 h-7 bg-theme-tertiary text-theme-secondary rounded flex items-center justify-center flex-shrink-0 transition-colors hover:text-theme-primary">
             <ChevronRight
               className={`w-4 h-4 transition-transform duration-300 ${isSidebarExpanded ? "rotate-180" : ""}`}
             />
           </div>
           {isSidebarExpanded && (
-            <span className="text-xs font-medium text-gray-400 whitespace-nowrap">
+            <span className="text-xs font-medium text-theme-secondary whitespace-nowrap">
               Menu
             </span>
           )}
         </button>
 
-        <div className="w-full h-px bg-gray-800/30 mb-1" />
+        <div className="w-full h-px bg-theme-primary mb-1" />
 
         {/* NEW CHAT */}
         <button
@@ -483,7 +412,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <Plus className="w-4 h-4 text-white" />
           </div>
           {isSidebarExpanded && (
-            <span className="text-xs font-medium text-gray-300 whitespace-nowrap">
+            <span className="text-xs font-medium text-theme-secondary whitespace-nowrap">
               New Chat
             </span>
           )}
@@ -511,7 +440,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             />
           </div>
           {isSidebarExpanded && (
-            <span className="text-xs font-medium text-gray-300 whitespace-nowrap">
+            <span className="text-xs font-medium text-theme-secondary whitespace-nowrap">
               Ask Finixy AI
             </span>
           )}
@@ -538,7 +467,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             />
           </div>
           {isSidebarExpanded && (
-            <span className="text-xs font-medium text-gray-300 whitespace-nowrap">
+            <span className="text-xs font-medium text-theme-secondary whitespace-nowrap">
               History
             </span>
           )}
@@ -565,7 +494,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             />
           </div>
           {isSidebarExpanded && (
-            <span className="text-xs font-medium text-gray-300 whitespace-nowrap">
+            <span className="text-xs font-medium text-theme-secondary whitespace-nowrap">
               My Documents
             </span>
           )}
@@ -592,7 +521,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             />
           </div>
           {isSidebarExpanded && (
-            <span className="text-xs font-medium text-gray-300 whitespace-nowrap">
+            <span className="text-xs font-medium text-theme-secondary whitespace-nowrap">
               My Reports
             </span>
           )}
@@ -604,7 +533,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             className="absolute left-full top-0 h-full theme-slide-panel border-r shadow-2xl flex flex-col z-[40]"
             style={{ width: "500px" }}
           >
-            {/* Header */}
             <div className="p-4 border-b border-theme-primary">
               <div className="flex justify-between items-center mb-3">
                 <h3 className="font-semibold text-theme-primary text-sm">
@@ -628,8 +556,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 />
               </div>
             </div>
-
-            {/* Chat List */}
             <div
               className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar"
               ref={menuRef}
@@ -649,18 +575,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <div
                     key={item.chat_id}
                     onClick={() => handleChatItemClick(item.chat_id)}
-                    className={`group relative flex items-center gap-3 p-3 hover:bg-theme-tertiary rounded-lg cursor-pointer transition-all border ${
-                      item.pinned
-                        ? "bg-theme-tertiary border-theme-secondary"
-                        : "border-transparent hover:border-theme-primary"
-                    }`}
+                    className={`group relative flex items-center gap-3 p-3 hover:bg-theme-tertiary rounded-lg cursor-pointer transition-all border ${item.pinned ? "bg-theme-tertiary border-theme-secondary" : "border-transparent hover:border-theme-primary"}`}
                   >
                     <div
-                      className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                        item.pinned
-                          ? "bg-theme-secondary border border-yellow-500 text-yellow-500 shadow-lg"
-                          : "bg-theme-tertiary border border-theme-primary text-blue-500"
-                      }`}
+                      className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${item.pinned ? "bg-theme-secondary border border-yellow-500 text-yellow-500 shadow-lg" : "bg-theme-tertiary border border-theme-primary text-blue-500"}`}
                     >
                       {item.pinned ? (
                         <Pin className="w-4 h-4 fill-current" />
@@ -732,12 +650,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         )}
 
-        {/* DOCUMENTS PANEL */}
         {isDocumentsOpen && (
           <DocumentsPanel onClose={() => setIsDocumentsOpen(false)} />
         )}
-
-        {/* REPORTS PANEL */}
         {isReportsOpen && (
           <ReportsPanel
             onClose={() => setIsReportsOpen(false)}
@@ -784,11 +699,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-xl border ${
-              toast.type === "error"
-                ? "bg-red-600 border-red-500"
-                : "bg-theme-secondary border-theme-primary"
-            }`}
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-xl border ${toast.type === "error" ? "bg-red-600 border-red-500" : "bg-theme-secondary border-theme-primary"}`}
           >
             {toast.type === "error" ? (
               <AlertTriangle className="w-5 h-5 text-white" />

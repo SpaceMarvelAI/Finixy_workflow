@@ -61,7 +61,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               disabled={loading || uploading}
-              className="flex-shrink-0 h-7 px-3 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 shadow-md"
+              className="flex-shrink-0 h-7 px-3 bg-theme-tertiary hover:bg-theme-primary text-theme-primary text-xs rounded-sm border border-theme-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 shadow-md"
             >
               <span className="whitespace-nowrap">
                 {selectedCompany === "all" ? "All Companies" : selectedCompany}
@@ -79,16 +79,16 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 />
 
                 {/* Dropdown List */}
-                <div className="absolute bottom-full right-0 mb-1 w-48 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-20 max-h-60 overflow-y-auto">
+                <div className="absolute bottom-full right-0 mb-1 w-48 bg-theme-secondary border border-theme-primary rounded-lg shadow-xl z-20 max-h-60 overflow-y-auto custom-scrollbar">
                   <button
                     onClick={() => {
                       onCompanyChange?.("all");
                       setIsDropdownOpen(false);
                     }}
-                    className={`w-full text-left px-4 py-2 text-xs hover:bg-gray-700 transition-colors ${
+                    className={`w-full text-left px-4 py-2 text-xs hover:bg-theme-tertiary transition-colors ${
                       selectedCompany === "all"
-                        ? "bg-gray-700 text-blue-400"
-                        : "text-gray-300"
+                        ? "bg-theme-tertiary text-blue-400"
+                        : "text-theme-secondary"
                     }`}
                   >
                     All Companies
@@ -100,10 +100,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                         onCompanyChange?.(company);
                         setIsDropdownOpen(false);
                       }}
-                      className={`w-full text-left px-4 py-2 text-xs hover:bg-gray-700 transition-colors ${
+                      className={`w-full text-left px-4 py-2 text-xs hover:bg-theme-tertiary transition-colors ${
                         selectedCompany === company
-                          ? "bg-gray-700 text-blue-400"
-                          : "text-gray-300"
+                          ? "bg-theme-tertiary text-blue-400"
+                          : "text-theme-secondary"
                       }`}
                     >
                       {company}
@@ -119,7 +119,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading || loading}
             title="Upload Invoice"
-            className="flex-shrink-0 w-7 h-7 bg-gray-700 hover:bg-gray-600 text-white rounded-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shadow-md"
+            className="flex-shrink-0 w-7 h-7 bg-theme-tertiary hover:bg-theme-primary text-theme-primary border border-theme-primary rounded-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shadow-md"
           >
             <Plus className="w-5 h-5" />
           </button>

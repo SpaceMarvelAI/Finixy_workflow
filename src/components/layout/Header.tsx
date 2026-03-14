@@ -19,9 +19,13 @@ export const Header: React.FC<HeaderProps> = ({
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   // Get user info from session storage
-  const userEmail = sessionStorage.getItem("user_email") || "user@example.com";
+  const userEmail = sessionStorage.getItem("user_email") || "";
+  const companyName = sessionStorage.getItem("user_name") || "";
+  // Display name: company name if available, else the part before @ in email
   const userName =
-    sessionStorage.getItem("user_name") || userEmail.split("@")[0];
+    companyName || (userEmail ? userEmail.split("@")[0] : "User");
+  // Display email: show actual email, fallback to empty
+  const displayEmail = userEmail;
 
   const handleLogout = () => {
     sessionStorage.removeItem("access_token");
@@ -92,7 +96,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Theme Toggle */}
         <button
           onClick={toggleTheme}
-          className="p-2 rounded-lg theme-input hover:brightness-95 dark:hover:brightness-110 transition-all duration-200 border shadow-sm"
+          className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
           aria-label="Toggle theme"
           title={
             theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"
@@ -127,13 +131,11 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="relative">
           <button
             onClick={() => setShowProfileMenu(!showProfileMenu)}
-            className="flex items-center gap-2 p-2 rounded-lg theme-input hover:brightness-95 dark:hover:brightness-110 transition-all duration-200 border shadow-sm"
-            title="Profile"
+            className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold text-sm hover:opacity-90 transition-opacity shadow-sm"
+            title={userName}
             id="profile-button"
           >
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-              {userName.charAt(0).toUpperCase()}
-            </div>
+            {userName.charAt(0).toUpperCase()}
           </button>
 
           {/* Profile Dropdown Menu */}
@@ -163,7 +165,7 @@ export const Header: React.FC<HeaderProps> = ({
                         {userName}
                       </p>
                       <p className="text-xs text-theme-tertiary truncate">
-                        {userEmail}
+                        {displayEmail}
                       </p>
                     </div>
                   </div>
