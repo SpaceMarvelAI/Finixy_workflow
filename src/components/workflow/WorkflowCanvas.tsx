@@ -500,7 +500,7 @@ export const WorkflowCanvas: React.FC = () => {
 
       {/* Notification Toast - Positioned below Run button */}
       {notification.show && (
-        <div className="fixed top-36 right-4 z-[100] animate-slide-in-right">
+        <div className="fixed top-36 right-4 z-[95] animate-slide-in-right">
           <div
             className={`flex items-center gap-3 px-5 py-3.5 rounded-lg shadow-2xl backdrop-blur-sm min-w-[280px] ${
               notification.type === "success"

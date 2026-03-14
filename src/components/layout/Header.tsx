@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import { useTheme } from "@store/ThemeContext";
+import { User, LogOut, Settings } from "lucide-react";
 
 type Tab = "workflow" | "analysis" | "report";
 
@@ -15,6 +16,19 @@ export const Header: React.FC<HeaderProps> = ({
   hasReport = false,
 }) => {
   const { theme, toggleTheme } = useTheme();
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+
+  // Get user info from session storage
+  const userEmail = sessionStorage.getItem("user_email") || "user@example.com";
+  const userName =
+    sessionStorage.getItem("user_name") || userEmail.split("@")[0];
+
+  const handleLogout = () => {
+    sessionStorage.removeItem("access_token");
+    sessionStorage.removeItem("user_email");
+    sessionStorage.removeItem("user_name");
+    window.location.href = "/login";
+  };
 
   const allTabs: { id: Tab; label: string }[] = [
     { id: "workflow", label: "Workflow" },
@@ -37,7 +51,7 @@ export const Header: React.FC<HeaderProps> = ({
   const getSliderWidth = () => `calc(${100 / tabs.length}% - 4px)`;
 
   return (
-    <header className="theme-panel border-b px-6 py-3 flex items-center justify-between shadow-xl backdrop-blur-sm">
+    <header className="theme-panel border-b px-6 py-3 flex items-center justify-between shadow-xl backdrop-blur-sm relative z-[200]">
       {/* LEFT: Logo */}
       <div className="flex items-center gap-3">
         <img
@@ -73,17 +87,24 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
-      {/* RIGHT: Theme Toggle */}
-      <div className="flex items-center">
+      {/* RIGHT: Theme Toggle & Profile */}
+      <div className="flex items-center gap-2">
+        {/* Theme Toggle */}
         <button
           onClick={toggleTheme}
           className="p-2 rounded-lg theme-input hover:brightness-95 dark:hover:brightness-110 transition-all duration-200 border shadow-sm"
           aria-label="Toggle theme"
-          title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+          title={
+            theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"
+          }
         >
           {theme === "dark" ? (
             /* Sun icon – shown in dark mode to switch to light */
-            <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+            <svg
+              className="w-5 h-5 text-yellow-400"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
               <path
                 fillRule="evenodd"
                 d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
@@ -92,11 +113,86 @@ export const Header: React.FC<HeaderProps> = ({
             </svg>
           ) : (
             /* Moon icon – shown in light mode to switch to dark */
-            <svg className="w-5 h-5 text-theme-primary" fill="currentColor" viewBox="0 0 20 20">
+            <svg
+              className="w-5 h-5 text-theme-primary"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
               <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
             </svg>
           )}
         </button>
+
+        {/* Profile Button */}
+        <div className="relative">
+          <button
+            onClick={() => setShowProfileMenu(!showProfileMenu)}
+            className="flex items-center gap-2 p-2 rounded-lg theme-input hover:brightness-95 dark:hover:brightness-110 transition-all duration-200 border shadow-sm"
+            title="Profile"
+            id="profile-button"
+          >
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+              {userName.charAt(0).toUpperCase()}
+            </div>
+          </button>
+
+          {/* Profile Dropdown Menu */}
+          {showProfileMenu && (
+            <>
+              {/* Backdrop */}
+              <div
+                className="fixed inset-0 z-[9998]"
+                onClick={() => setShowProfileMenu(false)}
+              />
+
+              {/* Menu - Fixed positioning */}
+              <div
+                className="fixed top-16 right-6 w-64 theme-panel border rounded-lg shadow-2xl z-[9999] overflow-hidden"
+                style={{
+                  animation: "fadeIn 0.2s ease-out",
+                }}
+              >
+                {/* User Info */}
+                <div className="p-4 border-b border-theme-primary bg-gradient-to-br from-blue-500/10 to-indigo-600/10">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                      {userName.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-theme-primary truncate">
+                        {userName}
+                      </p>
+                      <p className="text-xs text-theme-tertiary truncate">
+                        {userEmail}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Menu Items */}
+                <div className="py-2">
+                  <button
+                    onClick={() => {
+                      setShowProfileMenu(false);
+                      // Add settings navigation here
+                    }}
+                    className="w-full px-4 py-2.5 flex items-center gap-3 text-theme-secondary hover:bg-theme-tertiary hover:text-theme-primary transition-all text-sm"
+                  >
+                    <Settings className="w-4 h-4" />
+                    Settings
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full px-4 py-2.5 flex items-center gap-3 text-red-500 hover:bg-red-500/10 transition-all text-sm"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Logout
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </header>
   );

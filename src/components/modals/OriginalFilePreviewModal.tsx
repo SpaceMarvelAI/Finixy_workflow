@@ -37,7 +37,7 @@ export const OriginalFilePreviewModal: React.FC<
 
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-gray-900/70 backdrop-blur-sm p-6 animate-in fade-in duration-200"
+      className="fixed inset-0 z-[250] flex items-center justify-center bg-gray-900/70 backdrop-blur-sm p-6 animate-in fade-in duration-200"
       onClick={onClose}
     >
       <div

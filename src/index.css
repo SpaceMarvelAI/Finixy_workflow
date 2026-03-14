@@ -41,10 +41,10 @@
    DARK THEME
    ============================================================ */
 html.dark {
-  --bg-primary: #000000;
-  --bg-secondary: #111827;
-  --bg-tertiary: #1f2937;
-  --bg-elevated: #1f2937;
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #161616;
+  --bg-tertiary: #212121;
+  --bg-elevated: #212121;
   --bg-overlay: rgba(0, 0, 0, 0.7);
 
   --text-primary: #f9fafb;
@@ -77,12 +77,14 @@ body {
   padding: 0;
   background: var(--bg-primary);
   color: var(--text-primary);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
-    "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans",
-    "Helvetica Neue", sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu",
+    "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
 #root {
@@ -121,19 +123,37 @@ body {
    ============================================================ */
 
 /* Backgrounds */
-.bg-theme-primary   { background-color: var(--bg-primary); }
-.bg-theme-secondary { background-color: var(--bg-secondary); }
-.bg-theme-tertiary  { background-color: var(--bg-tertiary); }
-.bg-theme-elevated  { background-color: var(--bg-elevated); }
+.bg-theme-primary {
+  background-color: var(--bg-primary);
+}
+.bg-theme-secondary {
+  background-color: var(--bg-secondary);
+}
+.bg-theme-tertiary {
+  background-color: var(--bg-tertiary);
+}
+.bg-theme-elevated {
+  background-color: var(--bg-elevated);
+}
 
 /* Text */
-.text-theme-primary   { color: var(--text-primary); }
-.text-theme-secondary { color: var(--text-secondary); }
-.text-theme-tertiary  { color: var(--text-tertiary); }
+.text-theme-primary {
+  color: var(--text-primary);
+}
+.text-theme-secondary {
+  color: var(--text-secondary);
+}
+.text-theme-tertiary {
+  color: var(--text-tertiary);
+}
 
 /* Borders */
-.border-theme-primary   { border-color: var(--border-primary); }
-.border-theme-secondary { border-color: var(--border-secondary); }
+.border-theme-primary {
+  border-color: var(--border-primary);
+}
+.border-theme-secondary {
+  border-color: var(--border-secondary);
+}
 
 /* ============================================================
    THEME-AWARE COMPONENT PATTERNS
@@ -145,7 +165,10 @@ body {
   background-color: var(--bg-secondary);
   border-color: var(--border-primary);
   color: var(--text-primary);
-  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease,
+    color 0.3s ease;
 }
 
 /* Input / textarea / select fields */
@@ -153,7 +176,9 @@ body {
   background-color: var(--bg-tertiary);
   border-color: var(--border-primary);
   color: var(--text-primary);
-  transition: background-color 0.3s ease, border-color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease;
 }
 .theme-input::placeholder {
   color: var(--text-tertiary);
@@ -176,7 +201,10 @@ body {
   background: linear-gradient(135deg, var(--bg-secondary), var(--bg-primary));
   border-color: var(--border-primary);
   color: var(--text-primary);
-  transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+  transition:
+    background 0.3s ease,
+    border-color 0.3s ease,
+    color 0.3s ease;
 }
 
 /* Table header */
@@ -187,10 +215,14 @@ body {
 }
 
 /* Table row hover */
-.theme-table-row:hover { background-color: var(--bg-tertiary); }
+.theme-table-row:hover {
+  background-color: var(--bg-tertiary);
+}
 
 /* Modal overlay */
-.theme-modal-overlay { background-color: var(--bg-overlay); }
+.theme-modal-overlay {
+  background-color: var(--bg-overlay);
+}
 
 /* Modal dialog box */
 .theme-modal {
@@ -214,17 +246,27 @@ body {
 
 /* Smooth transition for all theme-sensitive elements */
 .theme-transition {
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    border-color 0.3s ease;
 }
 
 /* ============================================================
    SCROLLBAR
    Adapts to the active theme automatically.
    ============================================================ */
-.custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-.custom-scrollbar::-webkit-scrollbar-track { background: var(--bg-secondary); }
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: var(--border-secondary);
   border-radius: 4px;
 }
-.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--accent-blue); }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-blue);
+}
