@@ -69,11 +69,11 @@ const MainLayout: React.FC = () => {
   }, [currentChatId, chatId, navigate, setCurrentChatId]);
 
   useEffect(() => {
-    if ((config.reportUrl || config.reportId) && currentChatId) {
+    if (config.reportUrl || config.reportId) {
       setCurrentReportId(config.reportId || null);
       setCurrentReportUrl(config.reportUrl || null);
       setCurrentReportFileName(config.reportFileName || "report.xlsx");
-      setReportChatId(currentChatId);
+      if (currentChatId) setReportChatId(currentChatId);
     } else if (!currentChatId && (config.reportId || config.reportUrl)) {
       setCurrentReportId(null);
       setCurrentReportUrl(null);

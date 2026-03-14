@@ -37,7 +37,7 @@ export const Header: React.FC<HeaderProps> = ({
   const allTabs: { id: Tab; label: string }[] = [
     { id: "workflow", label: "Workflow" },
     { id: "analysis", label: "Analysis" },
-    { id: "report", label: "Report" },
+    { id: "report", label: "Data" },
   ];
 
   const tabs = hasReport
