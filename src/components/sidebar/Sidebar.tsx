@@ -59,12 +59,14 @@ interface SidebarProps {
   isChatExpanded: boolean;
   onToggleChat: () => void;
   onTabChange?: (tab: "workflow" | "analysis" | "report") => void;
+  onViewParsedDocument?: (data: any) => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
   isChatExpanded,
   onToggleChat,
   onTabChange,
+  onViewParsedDocument,
 }) => {
   const { theme } = useTheme();
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
@@ -725,7 +727,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
         )}
 
         {isDocumentsOpen && (
-          <DocumentsPanel onClose={() => setIsDocumentsOpen(false)} />
+          <DocumentsPanel
+            onClose={() => setIsDocumentsOpen(false)}
+            onViewParsedDocument={onViewParsedDocument}
+            onTabChange={onTabChange}
+          />
         )}
         {isReportsOpen && (
           <ReportsPanel

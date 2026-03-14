@@ -18,6 +18,7 @@ import { NodePalette } from "@components/workflow/NodePalette";
 import { ReportViewer } from "@components/report/ReportViewer";
 import { AnalysisViewer } from "@components/analysis/AnalysisViewer";
 import { Login } from "@components/auth/Login";
+import { DocumentPreviewModal } from "@components/modals/DocumentPreviewModal";
 
 type Tab = "workflow" | "analysis" | "report";
 
@@ -37,6 +38,7 @@ const MainLayout: React.FC = () => {
     useState<string>("report.xlsx");
   const [isWorkflowMounted, setIsWorkflowMounted] = useState(false);
   const [reportChatId, setReportChatId] = useState<string | null>(null);
+  const [parsedDocumentData, setParsedDocumentData] = useState<any>(null);
 
   useEffect(() => {
     setIsWorkflowMounted(true);
@@ -97,7 +99,9 @@ const MainLayout: React.FC = () => {
       <Header
         activeTab={activeTab}
         onTabChange={setActiveTab}
-        hasReport={!!currentReportId || !!currentReportUrl}
+        hasReport={
+          !!currentReportId || !!currentReportUrl || !!parsedDocumentData
+        }
       />
 
       <div className="flex-1 flex overflow-hidden">
@@ -105,6 +109,11 @@ const MainLayout: React.FC = () => {
           isChatExpanded={isChatExpanded}
           onToggleChat={() => setIsChatExpanded(!isChatExpanded)}
           onTabChange={setActiveTab}
+          onViewParsedDocument={(data) => {
+            setParsedDocumentData(data);
+            setCurrentReportId(null);
+            setCurrentReportUrl(null);
+          }}
         />
 
         {/* Chat Panel */}
@@ -143,12 +152,26 @@ const MainLayout: React.FC = () => {
 
           {isWorkflowMounted && activeTab === "report" && (
             <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-              <ReportViewer
-                reportId={currentReportId}
-                reportUrl={currentReportUrl}
-                reportFileName={currentReportFileName}
-                onGoBack={handleGoBackToWorkflow}
-              />
+              {parsedDocumentData ? (
+                <DocumentPreviewModal
+                  previewData={parsedDocumentData}
+                  onClose={() => {
+                    setParsedDocumentData(null);
+                    setActiveTab("workflow");
+                  }}
+                  onRefresh={async () => {
+                    // re-fetch if needed
+                  }}
+                  inline
+                />
+              ) : (
+                <ReportViewer
+                  reportId={currentReportId}
+                  reportUrl={currentReportUrl}
+                  reportFileName={currentReportFileName}
+                  onGoBack={handleGoBackToWorkflow}
+                />
+              )}
             </div>
           )}
         </div>

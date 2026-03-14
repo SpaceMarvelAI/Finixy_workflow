@@ -28,12 +28,14 @@ interface DocumentPreviewModalProps {
   previewData: any;
   onClose: () => void;
   onRefresh?: () => void;
+  inline?: boolean;
 }
 
 export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
   previewData,
   onClose,
   onRefresh,
+  inline = false,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedData, setEditedData] = useState<any>(null);
@@ -721,6 +723,230 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
 
   const data = isEditing ? editedData : previewData;
 
+  // Shared content sections used by both inline and modal views
+  const renderInlineContent = (d: any) => (
+    <>
+      {/* 1. Financial Overview Cards */}
+      <div>
+        <h4 className="text-xs font-black text-theme-tertiary uppercase tracking-widest mb-2">
+          Financial Summary
+        </h4>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[
+            { label: "Grand Total", field: "grand_total", color: "blue" },
+            { label: "Tax Total", field: "tax_total", color: "purple" },
+            { label: "Paid Amount", field: "paid_amount", color: "emerald" },
+            { label: "Outstanding", field: "outstanding", color: "amber" },
+          ].map((item) => (
+            <div
+              key={item.field}
+              className={`theme-panel p-3 rounded border-l-4 border-l-${item.color}-500 shadow-lg border transition-all`}
+            >
+              <p className="text-[10px] text-theme-tertiary font-bold uppercase mb-1 tracking-tighter">
+                {item.label}
+              </p>
+              {isEditing ? (
+                <input
+                  type="number"
+                  min="0"
+                  value={getDisplayValue(item.field) ?? 0}
+                  onChange={(e) =>
+                    handleInputChange(item.field, e.target.value)
+                  }
+                  className="w-full bg-theme-tertiary border-none text-xl font-black text-theme-primary outline-none p-0 focus:ring-0"
+                />
+              ) : (
+                <p className="text-2xl font-black text-theme-primary">
+                  {formatCurrency(getDisplayValue(item.field))}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 2. Entity Details & System Metadata */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <h4 className="text-xs font-black text-theme-tertiary uppercase tracking-widest">
+            Entities & Details
+          </h4>
+          <div className="theme-panel rounded border shadow-lg divide-y divide-theme-primary overflow-hidden min-h-[180px] flex flex-col">
+            {[
+              { label: "Vendor Name", field: "vendor_name" },
+              { label: "Customer Name", field: "customer_name" },
+              {
+                label: "Document Number",
+                field: "document_number",
+                mono: true,
+              },
+            ].map((item) => (
+              <div
+                key={item.field}
+                className="p-2 flex justify-between items-center bg-transparent hover:bg-theme-tertiary transition-colors"
+              >
+                <span className="text-xs text-theme-tertiary font-bold">
+                  {item.label}
+                </span>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={getDisplayValue(item.field) ?? ""}
+                    onChange={(e) =>
+                      handleInputChange(item.field, e.target.value)
+                    }
+                    className="theme-input border rounded px-3 py-1 text-sm font-bold outline-none focus:ring-1 focus:ring-blue-500 text-right"
+                  />
+                ) : (
+                  <span
+                    className={`text-sm font-bold ${(item as any).mono ? "font-mono text-blue-400" : "text-theme-primary"}`}
+                  >
+                    {getDisplayValue(item.field) || "N/A"}
+                  </span>
+                )}
+              </div>
+            ))}
+            <div className="p-2 flex justify-between items-center bg-transparent hover:bg-theme-tertiary transition-colors">
+              <span className="text-xs text-theme-tertiary font-bold">
+                Status
+              </span>
+              <div>{getStatusBadge(d.status)}</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <h4 className="text-xs font-black text-theme-tertiary uppercase tracking-widest">
+            Technical Analysis
+          </h4>
+          <div className="theme-panel rounded border shadow-lg p-2 min-h-[180px] flex flex-col justify-between">
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-[10px] text-theme-tertiary font-bold uppercase tracking-widest">
+                  File Properties
+                </p>
+                <p className="text-sm font-bold text-theme-primary uppercase mt-0.5">
+                  {d.file_type?.replace(".", "") || "PDF"} /{" "}
+                  {formatBytes(d.file_size)}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] text-theme-tertiary font-bold uppercase tracking-widest">
+                  AI Confidence
+                </p>
+                <p className="text-sm font-bold text-emerald-400 mt-0.5">
+                  {d.confidence_score
+                    ? `${(d.confidence_score * 100).toFixed(0)}%`
+                    : "N/A"}
+                </p>
+              </div>
+            </div>
+            <div className="pt-2 border-t border-theme-primary mt-2">
+              <p className="text-[10px] text-theme-tertiary font-bold uppercase tracking-widest mb-0.5">
+                Processing Result
+              </p>
+              <span className="inline-block px-3 py-1 bg-blue-500/20 text-blue-400 text-[10px] font-black rounded uppercase tracking-tighter border border-blue-500/30">
+                Itemized Records Extracted Successfully
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 3. Itemized Records Table */}
+      <div>
+        <h4 className="text-xs font-black text-theme-tertiary uppercase tracking-widest mb-2">
+          Itemized Records
+        </h4>
+        {renderLineItems(d.canonical_data, isEditing)}
+      </div>
+    </>
+  );
+
+  // Inline mode: render as a full-height panel (no overlay)
+  if (inline) {
+    return (
+      <div className="h-full w-full flex flex-col bg-theme-primary overflow-hidden theme-transition">
+        {/* Header */}
+        <div className="px-4 py-3 border-b border-theme-primary flex justify-between items-center bg-theme-secondary flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded shadow-lg shadow-blue-500/20">
+              <FileText className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-bold text-base text-theme-primary tracking-tight">
+                {data.file_name || "Document Preview"}
+              </h3>
+              <span className="text-xs text-theme-tertiary flex items-center gap-1">
+                <Calendar className="w-3 h-3" /> {formatDate(data.uploaded_at)}
+              </span>
+            </div>
+          </div>
+
+          {validationError && (
+            <div className="mx-3 p-2 bg-red-500/10 border border-red-500/30 rounded flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+              <p className="text-xs font-bold text-red-400">
+                {validationError}
+              </p>
+            </div>
+          )}
+
+          <div className="flex items-center gap-2">
+            {!isEditing ? (
+              <button
+                onClick={() => setIsEditing(true)}
+                className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded transition-all"
+              >
+                <Edit2 className="w-3.5 h-3.5" /> Edit Data
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className={`flex items-center gap-2 px-3 py-1.5 ${saveSuccess ? "bg-emerald-600" : "bg-blue-600 hover:bg-blue-500"} text-white text-xs font-bold rounded transition-all disabled:opacity-50`}
+                >
+                  {saving ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : saveSuccess ? (
+                    <Check className="w-3.5 h-3.5" />
+                  ) : (
+                    <Save className="w-3.5 h-3.5" />
+                  )}
+                  {saveSuccess
+                    ? "Saved!"
+                    : saving
+                      ? "Saving..."
+                      : "Save Changes"}
+                </button>
+                <button
+                  onClick={() => setIsEditing(false)}
+                  disabled={saving}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-theme-tertiary hover:bg-theme-secondary text-theme-primary text-xs font-bold rounded border border-theme-primary transition-all"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" /> Cancel
+                </button>
+              </>
+            )}
+            <button
+              onClick={onClose}
+              className="p-1.5 text-theme-tertiary hover:text-red-400 hover:bg-red-500/10 rounded transition-all"
+              title="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar bg-theme-primary">
+          {renderInlineContent(data)}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className="fixed inset-0 z-[50] flex items-center justify-center bg-black/80 backdrop-blur-sm p-2 animate-in fade-in duration-200"
@@ -808,169 +1034,9 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
         </div>
 
         <div className="p-3 overflow-y-auto flex-1 bg-theme-primary space-y-3 custom-scrollbar">
-          {/* 1. Financial Overview Cards */}
-          <div>
-            <h4 className="text-xs font-black text-theme-tertiary uppercase tracking-widest mb-2">
-              Financial Summary
-            </h4>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {[
-                { label: "Grand Total", field: "grand_total", color: "blue" },
-                { label: "Tax Total", field: "tax_total", color: "purple" },
-                {
-                  label: "Paid Amount",
-                  field: "paid_amount",
-                  color: "emerald",
-                },
-                { label: "Outstanding", field: "outstanding", color: "amber" },
-              ].map((item) => (
-                <div
-                  key={item.field}
-                  className={`theme-panel p-3 rounded border-l-4 border-l-${item.color}-500 shadow-lg border transition-all`}
-                >
-                  <p className="text-[10px] text-theme-tertiary font-bold uppercase mb-1 tracking-tighter">
-                    {item.label}
-                  </p>
-                  {isEditing ? (
-                    <input
-                      type="number"
-                      min="0"
-                      value={getDisplayValue(item.field) ?? 0}
-                      onChange={(e) => {
-                        handleInputChange(item.field, e.target.value);
-                      }}
-                      className="w-full bg-theme-tertiary border-none text-xl font-black text-theme-primary outline-none p-0 focus:ring-0"
-                    />
-                  ) : (
-                    <p className="text-2xl font-black text-theme-primary">
-                      {formatCurrency(getDisplayValue(item.field))}
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* 2. Entity Details & System Metadata */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Entity Details Card */}
-            <div className="space-y-2">
-              <h4 className="text-xs font-black text-theme-tertiary uppercase tracking-widest">
-                Entities & Details
-              </h4>
-              <div className="theme-panel rounded border shadow-lg divide-y divide-theme-primary overflow-hidden min-h-[180px] flex flex-col">
-                {[
-                  {
-                    label: "Vendor Name",
-                    field: "vendor_name",
-                  },
-                  {
-                    label: "Customer Name",
-                    field: "customer_name",
-                  },
-                  {
-                    label: "Document Number",
-                    field: "document_number",
-                    mono: true,
-                  },
-                ].map((item) => (
-                  <div
-                    key={item.field}
-                    className="p-2 flex justify-between items-center bg-transparent hover:bg-theme-tertiary transition-colors"
-                  >
-                    <span className="text-xs text-theme-tertiary font-bold">
-                      {item.label}
-                    </span>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        value={getDisplayValue(item.field) ?? ""}
-                        onChange={(e) =>
-                          handleInputChange(item.field, e.target.value)
-                        }
-                        className={`theme-input border rounded px-3 py-1 text-sm font-bold outline-none focus:ring-1 focus:ring-blue-500 text-right`}
-                      />
-                    ) : (
-                      <span
-                        className={`text-sm font-bold ${item.mono ? "font-mono text-blue-400" : "text-theme-primary"}`}
-                      >
-                        {getDisplayValue(item.field) || "N/A"}
-                      </span>
-                    )}
-                  </div>
-                ))}
-                <div className="p-2 flex justify-between items-center bg-transparent hover:bg-theme-tertiary transition-colors">
-                  <span className="text-xs text-theme-tertiary font-bold">
-                    Status
-                  </span>
-                  <div>{getStatusBadge(data.status)}</div>
-                </div>
-              </div>
-            </div>
-
-            {/* System Analysis Card */}
-            <div className="space-y-2">
-              <h4 className="text-xs font-black text-theme-tertiary uppercase tracking-widest">
-                Technical Analysis
-              </h4>
-              <div className="theme-panel rounded border shadow-lg p-2 min-h-[180px] flex flex-col justify-between">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-[10px] text-theme-tertiary font-bold uppercase tracking-widest">
-                      File Properties
-                    </p>
-                    <p className="text-sm font-bold text-theme-primary uppercase mt-0.5">
-                      {data.file_type?.replace(".", "") || "PDF"} /{" "}
-                      {formatBytes(data.file_size)}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-[10px] text-theme-tertiary font-bold uppercase tracking-widest">
-                      AI Confidence
-                    </p>
-                    <p className="text-sm font-bold text-emerald-400 mt-0.5">
-                      {data.confidence_score
-                        ? `${(data.confidence_score * 100).toFixed(0)}%`
-                        : "N/A"}
-                    </p>
-                  </div>
-                </div>
-                <div className="pt-2 border-t border-theme-primary mt-2">
-                  <p className="text-[10px] text-theme-tertiary font-bold uppercase tracking-widest mb-0.5">
-                    Processing Result
-                  </p>
-                  <span className="inline-block px-3 py-1 bg-blue-500/20 text-blue-400 text-[10px] font-black rounded uppercase tracking-tighter border border-blue-500/30">
-                    Itemized Records Extracted Successfully
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* 3. Itemized Records Table */}
-          <div>
-            <h4 className="text-xs font-black text-theme-tertiary uppercase tracking-widest mb-2">
-              Itemized Records
-            </h4>
-            {renderLineItems(data.canonical_data, isEditing)}
-          </div>
+          {renderInlineContent(data)}
         </div>
       </div>
-      <style>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 8px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: rgba(0, 0, 0, 0.3);
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #6b7280;
-          border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #9ca3af;
-        }
-      `}</style>
     </div>
   );
 };

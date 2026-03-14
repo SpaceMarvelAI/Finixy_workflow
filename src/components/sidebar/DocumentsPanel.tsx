@@ -35,6 +35,8 @@ interface DocumentItem {
 
 interface DocumentsPanelProps {
   onClose: () => void;
+  onViewParsedDocument?: (data: any) => void;
+  onTabChange?: (tab: "workflow" | "analysis" | "report") => void;
 }
 
 const getFileIcon = (fileType: string, fileName: string) => {
@@ -142,7 +144,11 @@ const CategoryDropdown: React.FC<{
   );
 };
 
-export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
+export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({
+  onClose,
+  onViewParsedDocument,
+  onTabChange,
+}) => {
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
@@ -278,10 +284,19 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
         res.data?.data ||
         (res.data?.id || res.data?.document_id ? res.data : null);
       if (docObj) {
-        setPreviewData({
+        const normalized = {
           ...docObj,
           id: docObj.id || docObj.document_id || doc.id,
-        });
+        };
+        if (onViewParsedDocument) {
+          // Route to Data tab inline view
+          onViewParsedDocument(normalized);
+          if (onTabChange) onTabChange("report");
+          onClose();
+        } else {
+          // Fallback: modal
+          setPreviewData(normalized);
+        }
       } else {
         showToast("Could not load parsed data", "error");
       }
