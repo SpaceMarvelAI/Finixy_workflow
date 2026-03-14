@@ -12,6 +12,7 @@ import {
   BarChart3,
   Edit2,
   Save,
+  ChevronDown,
 } from "lucide-react";
 import { reportService } from "../../services/api";
 
@@ -19,6 +20,7 @@ interface ReportItem {
   report_id: string;
   report_title: string;
   report_type: string;
+  company_name?: string;
   status: string;
   generated_at?: string;
   created_at?: string;
@@ -48,6 +50,11 @@ export const ReportsPanel: React.FC<ReportsPanelProps> = ({
   const [reports, setReports] = useState<ReportItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
+  const [selectedCompany, setSelectedCompany] = useState<string>("all");
+  const [selectedType, setSelectedType] = useState<string>("all");
+  const [selectedYear, setSelectedYear] = useState<string>("all");
+  const [selectedMonth, setSelectedMonth] = useState<string>("all");
+  const [selectedDate, setSelectedDate] = useState<string>("all");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const [toast, setToast] = useState<{
@@ -289,17 +296,78 @@ export const ReportsPanel: React.FC<ReportsPanelProps> = ({
     }
   };
 
-  const filtered = reports.filter(
-    (r) =>
+  const filtered = reports.filter((r) => {
+    const matchesSearch =
       r.report_title?.toLowerCase().includes(search.toLowerCase()) ||
-      r.report_type?.toLowerCase().includes(search.toLowerCase()),
+      r.report_type?.toLowerCase().includes(search.toLowerCase());
+
+    const matchesCompany =
+      selectedCompany === "all" ||
+      r.company_name?.toLowerCase() === selectedCompany.toLowerCase();
+
+    const matchesType =
+      selectedType === "all" ||
+      r.report_type?.toLowerCase().includes(selectedType.toLowerCase());
+
+    // Date filtering
+    let matchesDate = true;
+    const dateStr = r.generated_at || r.created_at;
+    if (dateStr) {
+      const reportDate = new Date(dateStr);
+      const reportYear = reportDate.getFullYear().toString();
+      const reportMonth = (reportDate.getMonth() + 1).toString();
+      const reportDay = reportDate.getDate().toString();
+
+      if (selectedYear !== "all" && reportYear !== selectedYear) {
+        matchesDate = false;
+      } else if (selectedMonth !== "all" && reportMonth !== selectedMonth) {
+        matchesDate = false;
+      } else if (selectedDate !== "all" && reportDay !== selectedDate) {
+        matchesDate = false;
+      }
+    }
+
+    return matchesSearch && matchesCompany && matchesType && matchesDate;
+  });
+
+  // Get unique company names for dropdown
+  const companies = Array.from(
+    new Set(
+      reports
+        .map((r) => r.company_name)
+        .filter((name) => name && name.trim() !== ""),
+    ),
+  ).sort();
+
+  // Get unique years from 1995 to 2050
+  const years = Array.from({ length: 2050 - 1995 + 1 }, (_, i) =>
+    (2050 - i).toString(),
   );
+
+  // Month names for display
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+
+  // All dates from 1 to 31
+  const dates = Array.from({ length: 31 }, (_, i) => (i + 1).toString());
 
   return (
     <>
       <div
-        className="absolute left-full top-0 h-full theme-slide-panel border-r shadow-2xl flex flex-col z-[60]"
-        style={{ width: "650px" }}
+        className="absolute left-full top-0 h-full theme-slide-panel border-r shadow-2xl flex flex-col z-[40]"
+        style={{ width: "70vw" }}
       >
         {/* Header */}
         <div className="p-4 border-b border-theme-primary flex-shrink-0">
@@ -319,6 +387,109 @@ export const ReportsPanel: React.FC<ReportsPanelProps> = ({
               </div>
             </div>
             <div className="flex items-center gap-2">
+              {/* Company Filter Dropdown */}
+              <div className="relative">
+                <select
+                  value={selectedCompany}
+                  onChange={(e) => setSelectedCompany(e.target.value)}
+                  className="appearance-none pl-3 pr-8 py-1.5 theme-input border rounded-lg text-xs font-medium text-theme-primary cursor-pointer hover:border-blue-500 transition-all"
+                >
+                  <option value="all">All Companies</option>
+                  {companies.map((company) => (
+                    <option key={company} value={company}>
+                      {company}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-theme-tertiary pointer-events-none" />
+              </div>
+              {/* Type Filter Dropdown */}
+              <div className="relative">
+                <select
+                  value={selectedType}
+                  onChange={(e) => setSelectedType(e.target.value)}
+                  className="appearance-none pl-3 pr-6  py-1.5 theme-input border rounded-lg text-xs font-medium text-theme-primary cursor-pointer hover:border-blue-500 transition-all"
+                >
+                  <option value="all">All Types</option>
+                  <option value="ap">Account Payable</option>
+                  <option value="ar">Account Receivable</option>
+                  <option value="dr">Data Reconciliation</option>
+                </select>
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-theme-tertiary pointer-events-none" />
+              </div>
+
+              {/* Year Filter Dropdown */}
+              <div className="relative">
+                <select
+                  value={selectedYear}
+                  onChange={(e) => {
+                    setSelectedYear(e.target.value);
+                    setSelectedMonth("all");
+                    setSelectedDate("all");
+                  }}
+                  className="appearance-none pl-3 pr-8 py-1.5 theme-input border rounded-lg text-xs font-medium text-theme-primary cursor-pointer hover:border-blue-500 transition-all [&::-webkit-scrollbar]:hidden"
+                  style={
+                    {
+                      scrollbarWidth: "none",
+                      msOverflowStyle: "none",
+                    } as React.CSSProperties
+                  }
+                >
+                  <option value="all">Years</option>
+                  {years.map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-theme-tertiary pointer-events-none" />
+              </div>
+
+              {/* Month Filter Dropdown */}
+              <div className="relative">
+                <select
+                  value={selectedMonth}
+                  onChange={(e) => {
+                    setSelectedMonth(e.target.value);
+                    setSelectedDate("all");
+                  }}
+                  disabled={selectedYear === "all"}
+                  className="appearance-none pl-3 pr-4 py-1.5 theme-input border rounded-lg text-xs font-medium text-theme-primary cursor-pointer hover:border-blue-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <option value="all">Months</option>
+                  {monthNames.map((month, index) => (
+                    <option key={index + 1} value={(index + 1).toString()}>
+                      {month}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-theme-tertiary pointer-events-none" />
+              </div>
+
+              {/* Date Filter Dropdown */}
+              <div className="relative">
+                <select
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  disabled={selectedYear === "all" || selectedMonth === "all"}
+                  className="appearance-none pl-3 pr-8 py-1.5 theme-input border rounded-lg text-xs font-medium text-theme-primary cursor-pointer hover:border-blue-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed [&::-webkit-scrollbar]:hidden"
+                  style={
+                    {
+                      scrollbarWidth: "none",
+                      msOverflowStyle: "none",
+                    } as React.CSSProperties
+                  }
+                >
+                  <option value="all">Dates</option>
+                  {dates.map((date) => (
+                    <option key={date} value={date}>
+                      {date}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-theme-tertiary pointer-events-none" />
+              </div>
+
               <button
                 onClick={fetchReports}
                 title="Refresh"
@@ -370,16 +541,16 @@ export const ReportsPanel: React.FC<ReportsPanelProps> = ({
             <table className="w-full text-xs">
               <thead className="sticky top-0 theme-table-head border-b z-10">
                 <tr>
-                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest">
+                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest w-[30%]">
                     Report Title
                   </th>
-                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest w-24">
+                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest w-[20%]">
                     Type
                   </th>
-                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest w-32">
+                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest w-[25%]">
                     Generated
                   </th>
-                  <th className="px-3 py-3 text-center text-[10px] font-bold uppercase tracking-widest w-28">
+                  <th className="px-3 py-3 text-center text-[10px] font-bold uppercase tracking-widest w-[25%]">
                     Actions
                   </th>
                 </tr>
@@ -493,7 +664,7 @@ export const ReportsPanel: React.FC<ReportsPanelProps> = ({
 
       {/* Toast */}
       {toast && (
-        <div className="fixed bottom-6 right-6 z-[300]">
+        <div className="fixed bottom-6 right-6 z-[95]">
           <div
             className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-2xl border text-sm font-medium text-white ${
               toast.type === "error"
@@ -513,7 +684,7 @@ export const ReportsPanel: React.FC<ReportsPanelProps> = ({
 
       {/* Delete Confirmation Modal */}
       {deleteConfirm && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[400]">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[90]">
           <div className="theme-card border rounded-xl shadow-2xl p-6 max-w-md w-full mx-4">
             <div className="flex items-start gap-4 mb-4">
               <div className="w-12 h-12 bg-red-500/10 rounded-full flex items-center justify-center flex-shrink-0">

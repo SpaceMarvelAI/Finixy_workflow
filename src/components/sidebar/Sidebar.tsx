@@ -8,7 +8,6 @@ import React, {
 import {
   Plus,
   History,
-  Settings,
   Search,
   X,
   ChevronRight,
@@ -369,11 +368,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
   }, []);
 
   const handleNewChat = useCallback(() => {
-    clearWorkflow();
-    setChatHistory([]);
-    setCurrentChatId(null);
+    // If chat is already open, close it
+    if (isChatExpanded) {
+      onToggleChat();
+    } else {
+      // If chat is closed, clear and open it
+      clearWorkflow();
+      setChatHistory([]);
+      setCurrentChatId(null);
+      onToggleChat();
+    }
     setIsHistoryOpen(false);
-  }, [clearWorkflow, setChatHistory, setCurrentChatId]);
+    setIsDocumentsOpen(false);
+    setIsReportsOpen(false);
+  }, [
+    clearWorkflow,
+    setChatHistory,
+    setCurrentChatId,
+    isChatExpanded,
+    onToggleChat,
+  ]);
 
   // ============================================================================
   // FILTERED HISTORY
@@ -415,19 +429,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
   // ICON BUTTON HELPER — adapts to dark/light
   // ============================================================================
   const iconBtnBase =
-    "w-full px-2 py-2.5 flex items-center gap-3 rounded-lg transition-all group hover:bg-black/5 dark:hover:bg-white/5";
+    "w-full px-1.5 py-1.5 flex items-center gap-2 rounded transition-colors group hover:bg-white/5";
 
   const iconBox = (active: boolean, colors: string) =>
-    `w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg transition-all ${
+    `w-7 h-7 rounded flex items-center justify-center flex-shrink-0 transition-colors ${
       active
         ? colors
-        : theme === "light"
-          ? "bg-theme-tertiary text-theme-secondary shadow-md border border-theme-primary/50"
-          : "bg-theme-tertiary text-theme-primary"
+        : "bg-gray-800/50 text-gray-400 hover:bg-gray-700/50 hover:text-gray-300"
     }`;
 
   const iconColor = useMemo(() => {
-    return theme === "light" ? "text-theme-secondary" : "text-white";
+    return "text-gray-400";
   }, [theme]);
 
   // ============================================================================
@@ -437,29 +449,29 @@ export const Sidebar: React.FC<SidebarProps> = ({
     <>
       {/* SIDEBAR RAIL */}
       <div
-        className={`relative flex flex-col items-start py-4 gap-2 border-r h-full z-50 transition-all duration-300 theme-transition
-          bg-theme-secondary border-theme-primary
-          ${isSidebarExpanded ? "w-48" : "w-13"}`}
+        className={`relative flex flex-col items-start py-3 gap-1 border-r border-gray-800/50 h-full z-50 transition-all duration-300
+          bg-black/40
+          ${isSidebarExpanded ? "w-44" : "w-11"}`}
       >
         {/* EXPAND/COLLAPSE BUTTON */}
         <button
           onClick={() => setIsSidebarExpanded(!isSidebarExpanded)}
-          className={`${iconBtnBase} mb-2`}
+          className={`${iconBtnBase} mb-1`}
           title={isSidebarExpanded ? "Collapse Sidebar" : "Expand Sidebar"}
         >
-          <div className="w-7 h-7 bg-theme-tertiary text-theme-primary rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg transition-all hover:bg-theme-primary">
+          <div className="w-7 h-7 bg-gray-800/50 text-gray-400 rounded flex items-center justify-center flex-shrink-0 transition-colors hover:bg-gray-700/50 hover:text-gray-300">
             <ChevronRight
               className={`w-4 h-4 transition-transform duration-300 ${isSidebarExpanded ? "rotate-180" : ""}`}
             />
           </div>
           {isSidebarExpanded && (
-            <span className="text-sm font-bold text-theme-primary whitespace-nowrap">
+            <span className="text-xs font-medium text-gray-400 whitespace-nowrap">
               Menu
             </span>
           )}
         </button>
 
-        <div className="w-full h-px bg-theme-primary/50 mb-2" />
+        <div className="w-full h-px bg-gray-800/30 mb-1" />
 
         {/* NEW CHAT */}
         <button
@@ -467,11 +479,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
           className={iconBtnBase}
           title="New Chat"
         >
-          <div className="w-7 h-7 bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg group-hover:shadow-blue-500/50 transition-all">
+          <div className="w-7 h-7 bg-blue-600/80 hover:bg-blue-600 rounded flex items-center justify-center flex-shrink-0 transition-colors">
             <Plus className="w-4 h-4 text-white" />
           </div>
           {isSidebarExpanded && (
-            <span className="text-sm font-medium text-theme-secondary whitespace-nowrap">
+            <span className="text-xs font-medium text-gray-300 whitespace-nowrap">
               New Chat
             </span>
           )}
@@ -479,24 +491,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* ASK FINIXY AI */}
         <button
-          onClick={onToggleChat}
+          onClick={() => {
+            onToggleChat();
+            setIsHistoryOpen(false);
+            setIsDocumentsOpen(false);
+            setIsReportsOpen(false);
+          }}
           className={iconBtnBase}
           title={isChatExpanded ? "Collapse Chat" : "Expand Chat"}
         >
           <div
             className={iconBox(
               isChatExpanded,
-              theme === "light"
-                ? "bg-purple-100 border border-purple-200 shadow-sm"
-                : "bg-gradient-to-br from-purple-600 to-purple-700 group-hover:from-purple-500 group-hover:to-purple-600 group-hover:shadow-purple-500/50",
+              "bg-purple-600/80 text-white hover:bg-purple-600",
             )}
           >
             <MessageSquare
-              className={`w-4 h-4 ${isChatExpanded && theme === "light" ? "text-purple-600" : iconColor}`}
+              className={`w-4 h-4 ${isChatExpanded ? "text-white" : iconColor}`}
             />
           </div>
           {isSidebarExpanded && (
-            <span className="text-sm font-medium text-theme-secondary whitespace-nowrap">
+            <span className="text-xs font-medium text-gray-300 whitespace-nowrap">
               Ask Finixy AI
             </span>
           )}
@@ -507,6 +522,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           onClick={() => {
             setIsHistoryOpen(!isHistoryOpen);
             setIsDocumentsOpen(false);
+            setIsReportsOpen(false);
           }}
           className={iconBtnBase}
           title="History"
@@ -514,17 +530,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div
             className={iconBox(
               isHistoryOpen,
-              theme === "light"
-                ? "bg-cyan-100 border border-cyan-200 shadow-sm"
-                : "bg-gradient-to-br from-cyan-600 to-cyan-700 group-hover:from-cyan-500 group-hover:to-cyan-600 group-hover:shadow-cyan-500/50",
+              "bg-cyan-600/80 text-white hover:bg-cyan-600",
             )}
           >
             <History
-              className={`w-4 h-4 ${isHistoryOpen && theme === "light" ? "text-cyan-600" : iconColor}`}
+              className={`w-4 h-4 ${isHistoryOpen ? "text-white" : iconColor}`}
             />
           </div>
           {isSidebarExpanded && (
-            <span className="text-sm font-medium text-theme-secondary whitespace-nowrap">
+            <span className="text-xs font-medium text-gray-300 whitespace-nowrap">
               History
             </span>
           )}
@@ -535,6 +549,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           onClick={() => {
             setIsDocumentsOpen(!isDocumentsOpen);
             setIsHistoryOpen(false);
+            setIsReportsOpen(false);
           }}
           className={iconBtnBase}
           title="My Documents"
@@ -542,17 +557,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div
             className={iconBox(
               isDocumentsOpen,
-              theme === "light"
-                ? "bg-indigo-100 border border-indigo-200 shadow-sm"
-                : "bg-gradient-to-br from-indigo-600 to-purple-700 group-hover:from-indigo-500 group-hover:to-purple-600 group-hover:shadow-indigo-500/50",
+              "bg-indigo-600/80 text-white hover:bg-indigo-600",
             )}
           >
             <FolderOpen
-              className={`w-4 h-4 ${isDocumentsOpen && theme === "light" ? "text-indigo-600" : iconColor}`}
+              className={`w-4 h-4 ${isDocumentsOpen ? "text-white" : iconColor}`}
             />
           </div>
           {isSidebarExpanded && (
-            <span className="text-sm font-medium text-theme-secondary whitespace-nowrap">
+            <span className="text-xs font-medium text-gray-300 whitespace-nowrap">
               My Documents
             </span>
           )}
@@ -571,37 +584,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div
             className={iconBox(
               isReportsOpen,
-              theme === "light"
-                ? "bg-emerald-100 border border-emerald-200 shadow-sm"
-                : "bg-gradient-to-br from-emerald-600 to-green-700 group-hover:from-emerald-500 group-hover:to-green-600 group-hover:shadow-emerald-500/50",
+              "bg-emerald-600/80 text-white hover:bg-emerald-600",
             )}
           >
             <BarChart3
-              className={`w-4 h-4 ${isReportsOpen && theme === "light" ? "text-emerald-600" : iconColor}`}
+              className={`w-4 h-4 ${isReportsOpen ? "text-white" : iconColor}`}
             />
           </div>
           {isSidebarExpanded && (
-            <span className="text-sm font-medium text-theme-secondary whitespace-nowrap">
+            <span className="text-xs font-medium text-gray-300 whitespace-nowrap">
               My Reports
-            </span>
-          )}
-        </button>
-
-        {/* SETTINGS */}
-        <button className={`${iconBtnBase} mt-auto`}>
-          <div className="w-7 h-7 bg-theme-tertiary text-theme-primary rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg transition-all">
-            <Settings className="w-4 h-4 text-theme-secondary" />
-          </div>
-          {isSidebarExpanded && (
-            <span className="text-sm font-medium text-theme-secondary whitespace-nowrap">
-              Settings
             </span>
           )}
         </button>
 
         {/* HISTORY PANEL */}
         {isHistoryOpen && (
-          <div className="absolute left-full top-0 h-full w-80 theme-slide-panel border-r shadow-2xl flex flex-col z-[60]">
+          <div
+            className="absolute left-full top-0 h-full theme-slide-panel border-r shadow-2xl flex flex-col z-[40]"
+            style={{ width: "500px" }}
+          >
             {/* Header */}
             <div className="p-4 border-b border-theme-primary">
               <div className="flex justify-between items-center mb-3">
@@ -746,7 +748,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* DELETE MODAL */}
       {showDeleteModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center theme-modal-overlay backdrop-blur-sm">
+        <div className="fixed inset-0 z-[70] flex items-center justify-center theme-modal-overlay backdrop-blur-sm">
           <div className="theme-modal border rounded-lg shadow-2xl w-96 p-6">
             <div className="flex flex-col items-center text-center">
               <div className="w-14 h-14 bg-red-500/20 rounded-lg flex items-center justify-center mb-4 border-2 border-red-500/40">
@@ -778,7 +780,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       )}
 
       {/* TOASTS */}
-      <div className="fixed bottom-4 right-4 z-[110] flex flex-col gap-2">
+      <div className="fixed bottom-4 right-4 z-[95] flex flex-col gap-2">
         {toasts.map((toast) => (
           <div
             key={toast.id}

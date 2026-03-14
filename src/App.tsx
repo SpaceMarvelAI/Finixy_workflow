@@ -38,7 +38,9 @@ const MainLayout: React.FC = () => {
   const [isWorkflowMounted, setIsWorkflowMounted] = useState(false);
   const [reportChatId, setReportChatId] = useState<string | null>(null);
 
-  useEffect(() => { setIsWorkflowMounted(true); }, []);
+  useEffect(() => {
+    setIsWorkflowMounted(true);
+  }, []);
 
   useEffect(() => {
     if (currentChatId && reportChatId && currentChatId !== reportChatId) {
@@ -122,7 +124,9 @@ const MainLayout: React.FC = () => {
             className="flex flex-col flex-1"
             style={{
               display:
-                activeTab === "workflow" || !isWorkflowMounted ? "flex" : "none",
+                activeTab === "workflow" || !isWorkflowMounted
+                  ? "flex"
+                  : "none",
             }}
           >
             <NodePalette />
