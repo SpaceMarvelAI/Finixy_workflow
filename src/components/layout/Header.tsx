@@ -55,22 +55,22 @@ export const Header: React.FC<HeaderProps> = ({
   const getSliderWidth = () => `calc(${100 / tabs.length}% - 4px)`;
 
   return (
-    <header className="theme-panel border-b px-6 py-3 flex items-center justify-between shadow-xl backdrop-blur-sm relative z-[200]">
+    <header className="theme-panel border-b px-4 py-1.5 flex items-center justify-between shadow-md backdrop-blur-sm relative z-[200]">
       {/* LEFT: Logo */}
       <div className="flex items-center gap-3">
         <img
           src="/logo.svg"
           alt="Finixy Logo"
-          className={`w-32 h-12 object-contain ${theme === "light" ? "invert" : ""}`}
+          className={`w-24 h-8 object-contain ${theme === "light" ? "invert" : ""}`}
         />
       </div>
 
       {/* CENTER: Sliding Tab Selector */}
       <div className="absolute left-1/2 transform -translate-x-1/2">
-        <div className="relative theme-panel border rounded-lg p-1 flex gap-1 shadow-lg">
+        <div className="relative theme-panel border rounded p-0.5 flex gap-0.5 shadow-md">
           {/* Animated background slider */}
           <div
-            className="absolute top-1 bottom-1 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg transition-all duration-300 ease-out shadow-lg"
+            className="absolute top-0.5 bottom-0.5 bg-gradient-to-r from-blue-500 to-blue-600 rounded transition-all duration-300 ease-out shadow-md"
             style={{ left: getSliderPosition(), width: getSliderWidth() }}
           />
 
@@ -79,7 +79,7 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
-              className={`relative z-10 px-8 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
+              className={`relative z-10 px-6 py-1.5 rounded text-xs font-medium transition-all duration-300 ${
                 activeTab === tab.id
                   ? "text-white"
                   : "text-theme-secondary hover:text-theme-primary"
@@ -149,7 +149,7 @@ export const Header: React.FC<HeaderProps> = ({
 
               {/* Menu - Fixed positioning */}
               <div
-                className="fixed top-16 right-6 w-64 theme-panel border rounded-lg shadow-2xl z-[9999] overflow-hidden"
+                className="fixed top-12 right-6 w-64 theme-panel border rounded shadow-2xl z-[9999] overflow-hidden"
                 style={{
                   animation: "fadeIn 0.2s ease-out",
                 }}
