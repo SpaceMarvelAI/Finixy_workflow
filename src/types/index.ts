@@ -211,6 +211,9 @@ export interface NodeData {
   name?: string;
   description?: string; 
   params?: Record<string, any>;
+  onRunWorkflow?: () => void;
+  onDeleteWorkflow?: () => void;
+  isFirstNode?: boolean;
 }
 
 export interface WorkflowNode {

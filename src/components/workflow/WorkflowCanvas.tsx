@@ -43,7 +43,10 @@ export const WorkflowCanvas: React.FC = () => {
     React.useState<ReactFlowInstance | null>(null);
 
   const isInternalUpdate = useRef(false);
-  const prevConfigRef = useRef(config);
+  // Stable refs so trigger node callbacks always call the latest handler
+  const runWorkflowRef = useRef<() => void>(() => {});
+  const deleteWorkflowRef = useRef<() => void>(() => {});
+  const prevConfigRef = useRef<any>({});
 
   // Show notification helper
   const showNotification = useCallback(
@@ -100,8 +103,25 @@ export const WorkflowCanvas: React.FC = () => {
         );
       }
 
-      // Force update nodes
-      setNodes(config.nodes || []);
+      // Force update nodes — inject callbacks into the first node (no incoming edges)
+      const targetNodeIds = new Set(
+        (config.edges || []).map((e: any) => e.target),
+      );
+      const nodesWithCallbacks = (config.nodes || []).map((node: any) => {
+        const isFirstNode = !targetNodeIds.has(node.id);
+        return isFirstNode
+          ? {
+              ...node,
+              data: {
+                ...node.data,
+                isFirstNode: true,
+                onRunWorkflow: () => runWorkflowRef.current(),
+                onDeleteWorkflow: () => deleteWorkflowRef.current(),
+              },
+            }
+          : { ...node, data: { ...node.data, isFirstNode: false } };
+      });
+      setNodes(nodesWithCallbacks);
 
       // Force update edges with proper formatting - MUST USE 'custom' TYPE
       const formattedEdges = (config.edges || []).map((edge, idx) => {
@@ -362,7 +382,20 @@ export const WorkflowCanvas: React.FC = () => {
   );
 
   // ============================================================================
-  // RUN WORKFLOW HANDLER
+  // DELETE WORKFLOW HANDLER
+  // ============================================================================
+  const handleDeleteWorkflow = useCallback(() => {
+    setNodes([]);
+    setEdges([]);
+    updateConfig({
+      ...config,
+      nodes: [],
+      edges: [],
+      lastModified: new Date().toISOString(),
+    });
+    showNotification("Workflow deleted", "success");
+  }, [config, setNodes, setEdges, updateConfig, showNotification]);
+
   // ============================================================================
   // RUN WORKFLOW HANDLER
   // ============================================================================
@@ -416,41 +449,28 @@ export const WorkflowCanvas: React.FC = () => {
     }
   }, [config, nodes, currentChatId, setNodes, showNotification]);
 
+  // Keep refs in sync with latest handlers (must be after both handlers are defined)
+  useEffect(() => {
+    runWorkflowRef.current = handleRunWorkflow;
+  }, [handleRunWorkflow]);
+  useEffect(() => {
+    deleteWorkflowRef.current = handleDeleteWorkflow;
+  }, [handleDeleteWorkflow]);
+
   return (
     <div
       className="h-full bg-theme-primary theme-transition relative"
       ref={reactFlowWrapper}
     >
-      {/* Node Count & Run Button - Top Right */}
+      {/* Node Count - Top Right */}
       {nodes.length > 0 && (
-        <div className="absolute top-4 right-4 z-10 flex items-center gap-3">
-          {/* Node Count */}
+        <div className="absolute top-4 right-4 z-10">
           <div className="theme-panel border rounded-lg px-4 py-2 shadow-xl backdrop-blur-md flex items-center gap-2">
             <Layers className="w-4 h-4 text-blue-500" />
             <span className="text-sm font-medium text-theme-secondary">
               {nodes.length} {nodes.length === 1 ? "Node" : "Nodes"}
             </span>
           </div>
-
-          {/* Run Button */}
-          <button
-            onClick={handleRunWorkflow}
-            disabled={isExecuting}
-            className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 disabled:from-gray-600 disabled:to-gray-700 text-white px-4 py-2 rounded-lg shadow-xl backdrop-blur-md flex items-center gap-2 transition-all hover:scale-105 disabled:hover:scale-100 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
-            title="Execute workflow"
-          >
-            {isExecuting ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Running...</span>
-              </>
-            ) : (
-              <>
-                <Play className="w-4 h-4" />
-                <span>Run</span>
-              </>
-            )}
-          </button>
         </div>
       )}
 
