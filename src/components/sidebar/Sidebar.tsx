@@ -21,6 +21,8 @@ import {
   FileText,
   FolderOpen,
   BarChart3,
+  Landmark,
+  GitCompare,
 } from "lucide-react";
 import { useTheme } from "../../store/ThemeContext";
 import { chatService, reportService } from "../../services/api";
@@ -32,6 +34,8 @@ import {
 } from "../../utils/workflowMapper";
 import { DocumentsPanel } from "./DocumentsPanel";
 import { ReportsPanel } from "./ReportsPanel";
+import { BankStatementsPanel } from "./BankStatementsPanel";
+import { ReconciliationPanel } from "./ReconciliationPanel";
 
 interface Toast {
   id: number;
@@ -75,6 +79,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isDocumentsOpen, setIsDocumentsOpen] = useState(false);
   const [isReportsOpen, setIsReportsOpen] = useState(false);
+  const [isBankStatementsOpen, setIsBankStatementsOpen] = useState(false);
+  const [isReconciliationOpen, setIsReconciliationOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [chatItems, setChatItems] = useState<ChatItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -334,6 +340,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     setIsHistoryOpen(false);
     setIsDocumentsOpen(false);
     setIsReportsOpen(false);
+    setIsBankStatementsOpen(false);
+    setIsReconciliationOpen(false);
   }, [
     clearWorkflow,
     setChatHistory,
@@ -425,6 +433,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             setIsHistoryOpen(false);
             setIsDocumentsOpen(false);
             setIsReportsOpen(false);
+            setIsBankStatementsOpen(false);
+            setIsReconciliationOpen(false);
           }}
           className={iconBtnBase}
           title={isChatExpanded ? "Collapse Chat" : "Expand Chat"}
@@ -452,6 +462,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             setIsHistoryOpen(!isHistoryOpen);
             setIsDocumentsOpen(false);
             setIsReportsOpen(false);
+            setIsBankStatementsOpen(false);
+            setIsReconciliationOpen(false);
           }}
           className={iconBtnBase}
           title="History"
@@ -479,6 +491,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             setIsDocumentsOpen(!isDocumentsOpen);
             setIsHistoryOpen(false);
             setIsReportsOpen(false);
+            setIsBankStatementsOpen(false);
+            setIsReconciliationOpen(false);
           }}
           className={iconBtnBase}
           title="My Documents"
@@ -506,6 +520,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             setIsReportsOpen(!isReportsOpen);
             setIsDocumentsOpen(false);
             setIsHistoryOpen(false);
+            setIsBankStatementsOpen(false);
+            setIsReconciliationOpen(false);
           }}
           className={iconBtnBase}
           title="My Reports"
@@ -523,6 +539,64 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {isSidebarExpanded && (
             <span className="text-xs font-medium text-theme-secondary whitespace-nowrap">
               My Reports
+            </span>
+          )}
+        </button>
+
+        {/* BANK STATEMENTS */}
+        <button
+          onClick={() => {
+            setIsBankStatementsOpen(!isBankStatementsOpen);
+            setIsReportsOpen(false);
+            setIsDocumentsOpen(false);
+            setIsHistoryOpen(false);
+            setIsReconciliationOpen(false);
+          }}
+          className={iconBtnBase}
+          title="Bank Statements"
+        >
+          <div
+            className={iconBox(
+              isBankStatementsOpen,
+              "bg-sky-600/80 text-white hover:bg-sky-600",
+            )}
+          >
+            <Landmark
+              className={`w-4 h-4 ${isBankStatementsOpen ? "text-white" : iconColor}`}
+            />
+          </div>
+          {isSidebarExpanded && (
+            <span className="text-xs font-medium text-theme-secondary whitespace-nowrap">
+              Bank Statements
+            </span>
+          )}
+        </button>
+
+        {/* RECONCILIATION */}
+        <button
+          onClick={() => {
+            setIsReconciliationOpen(!isReconciliationOpen);
+            setIsBankStatementsOpen(false);
+            setIsReportsOpen(false);
+            setIsDocumentsOpen(false);
+            setIsHistoryOpen(false);
+          }}
+          className={iconBtnBase}
+          title="Reconciliation"
+        >
+          <div
+            className={iconBox(
+              isReconciliationOpen,
+              "bg-violet-600/80 text-white hover:bg-violet-600",
+            )}
+          >
+            <GitCompare
+              className={`w-4 h-4 ${isReconciliationOpen ? "text-white" : iconColor}`}
+            />
+          </div>
+          {isSidebarExpanded && (
+            <span className="text-xs font-medium text-theme-secondary whitespace-nowrap">
+              Reconciliation
             </span>
           )}
         </button>
@@ -658,6 +732,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onClose={() => setIsReportsOpen(false)}
             onViewReport={handleViewReport}
           />
+        )}
+        {isBankStatementsOpen && (
+          <BankStatementsPanel onClose={() => setIsBankStatementsOpen(false)} />
+        )}
+        {isReconciliationOpen && (
+          <ReconciliationPanel onClose={() => setIsReconciliationOpen(false)} />
         )}
       </div>
 
