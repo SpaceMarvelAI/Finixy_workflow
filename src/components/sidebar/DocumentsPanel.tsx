@@ -29,6 +29,7 @@ interface DocumentItem {
   company_name?: string;
   category?: string;
   canonical_data?: any;
+  userCategory?: string;
 }
 
 interface DocumentsPanelProps {
@@ -67,6 +68,77 @@ const getStatusColor = (status: string) => {
     default:
       return "bg-gray-500/20 text-gray-600 dark:text-gray-400 border-gray-500/30";
   }
+};
+
+const CATEGORY_OPTIONS = [
+  { value: "", label: "- Select -" },
+  { value: "sales", label: "Sales" },
+  { value: "purchase", label: "Purchase" },
+];
+
+const CategoryDropdown: React.FC<{
+  value: string;
+  onChange: (val: string) => void;
+}> = ({ value, onChange }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node))
+        setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const selected = CATEGORY_OPTIONS.find((o) => o.value === value);
+
+  return (
+    <div ref={ref} className="relative inline-block">
+      <button
+        onClick={() => setOpen((p) => !p)}
+        className="flex items-center gap-1.5 px-2 py-0.5 rounded border border-theme-primary bg-theme-tertiary text-xs text-theme-secondary hover:border-blue-500/50 transition-colors outline-none whitespace-nowrap"
+      >
+        <span
+          className={
+            value === ""
+              ? "text-theme-tertiary"
+              : value === "sales"
+                ? "text-emerald-400"
+                : "text-orange-400"
+          }
+        >
+          {selected?.label ?? "- Select -"}
+        </span>
+        <ChevronDown className="w-3 h-3 text-theme-tertiary flex-shrink-0" />
+      </button>
+      {open && (
+        <div className="absolute left-0 top-full mt-1 z-50 bg-theme-secondary border border-theme-primary rounded shadow-xl min-w-[110px] overflow-hidden">
+          {CATEGORY_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => {
+                onChange(opt.value);
+                setOpen(false);
+              }}
+              className={`w-full text-left px-3 py-1.5 text-xs transition-colors hover:bg-theme-tertiary ${
+                opt.value === value ? "bg-theme-tertiary" : ""
+              } ${
+                opt.value === ""
+                  ? "text-theme-tertiary"
+                  : opt.value === "sales"
+                    ? "text-emerald-500"
+                    : "text-orange-400"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 };
 
 export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
@@ -127,7 +199,30 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
       canonical.company?.name ||
       canonical.extracted_fields?.company_name ||
       "";
-    const category = raw.category || raw.document_type || raw.doc_type || "";
+
+    // Derive sales/purchase from document_type in canonical_data
+    const docType =
+      canonical.document_metadata?.document_type ||
+      raw.category ||
+      raw.document_type ||
+      raw.doc_type ||
+      "";
+    const salesTypes = ["customer_invoice", "sales_order", "credit_note"];
+    const purchaseTypes = [
+      "vendor_invoice",
+      "purchase_order",
+      "expense_bill",
+      "debit_note",
+    ];
+    let category = "";
+    if (salesTypes.some((t) => docType.toLowerCase().includes(t))) {
+      category = "sales";
+    } else if (purchaseTypes.some((t) => docType.toLowerCase().includes(t))) {
+      category = "purchase";
+    } else {
+      category = docType;
+    }
+
     const payment_status =
       raw.payment_status ||
       raw.paymentStatus ||
@@ -144,6 +239,8 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
       company_name,
       category,
       canonical_data: raw.canonical_data,
+      userCategory:
+        category === "sales" || category === "purchase" ? category : "",
     };
   };
 
@@ -319,6 +416,12 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
     }
   };
 
+  const handleCategoryChange = (id: string, value: string) => {
+    setDocuments((prev) =>
+      prev.map((d) => (d.id === id ? { ...d, userCategory: value } : d)),
+    );
+  };
+
   const filtered = documents.filter((d) => {
     const matchesSearch =
       d.file_name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -330,7 +433,8 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
 
     const matchesType =
       selectedType === "all" ||
-      d.category?.toLowerCase().includes(selectedType.toLowerCase());
+      (d.userCategory || d.category)?.toLowerCase() ===
+        selectedType.toLowerCase();
 
     // Date filtering
     let matchesDate = true;
@@ -455,7 +559,7 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
                   onChange={(e) => setSelectedType(e.target.value)}
                   className="appearance-none pl-3 pr-8 py-1.5 theme-input border rounded-lg text-xs font-medium text-theme-primary cursor-pointer hover:border-blue-500 transition-all"
                 >
-                  <option value="all">All</option>
+                  <option value="all">- Select -</option>
                   <option value="sales">Sales</option>
                   <option value="purchase">Purchase</option>
                 </select>
@@ -626,12 +730,10 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
                       </div>
                     </td>
                     <td className="px-3 py-3">
-                      <span
-                        className="text-theme-secondary truncate block max-w-[150px] capitalize"
-                        title={doc.category}
-                      >
-                        {doc.category || "-"}
-                      </span>
+                      <CategoryDropdown
+                        value={doc.userCategory ?? ""}
+                        onChange={(val) => handleCategoryChange(doc.id, val)}
+                      />
                     </td>
                     <td className="px-3 py-3 text-theme-secondary">
                       {formatDate(doc.uploaded_at)}
