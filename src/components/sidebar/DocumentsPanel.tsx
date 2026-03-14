@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { documentService } from "../../services/api";
 import { DocumentPreviewModal } from "../modals/DocumentPreviewModal";
+import { validateFileUpload } from "../../utils/fileSecurityCheck";
 
 interface DocumentItem {
   id: string;
@@ -395,6 +396,14 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // Security check before upload
+    const security = await validateFileUpload(file);
+    if (!security.safe) {
+      showToast(`Security check failed: ${security.reason}`, "error");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
     setUploading(true);
     try {
       const response = await documentService.upload(file);
@@ -519,7 +528,7 @@ export const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ onClose }) => {
                 ref={fileInputRef}
                 onChange={handleFileUpload}
                 className="hidden"
-                accept=".pdf,.csv,.xlsx"
+                accept=".pdf,.csv,.xlsx,.xls,.jpg,.jpeg,.png"
               />
 
               {/* Upload Button */}
