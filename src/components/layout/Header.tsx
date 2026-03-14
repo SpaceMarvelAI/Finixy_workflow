@@ -49,10 +49,10 @@ export const Header: React.FC<HeaderProps> = ({
     const tabIndex = tabs.findIndex((tab) => tab.id === activeTab);
     if (tabIndex === -1) return "4px";
     const percentage = (100 / tabs.length) * tabIndex;
-    return `calc(${percentage}% + ${tabIndex * 2 + 4}px)`;
+    return `calc(${percentage}% + 4px)`;
   };
 
-  const getSliderWidth = () => `calc(${100 / tabs.length}% - 4px)`;
+  const getSliderWidth = () => `calc(${100 / tabs.length}% - 8px)`;
 
   return (
     <header className="theme-panel border-b px-4 py-1.5 flex items-center justify-between shadow-md backdrop-blur-sm relative z-[200]">
@@ -67,10 +67,16 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* CENTER: Sliding Tab Selector */}
       <div className="absolute left-1/2 transform -translate-x-1/2">
-        <div className="relative theme-panel border rounded p-0.5 flex gap-0.5 shadow-md">
+        <div
+          className="relative theme-panel border rounded p-1 shadow-md"
+          style={{
+            display: "grid",
+            gridTemplateColumns: `repeat(${tabs.length}, 1fr)`,
+          }}
+        >
           {/* Animated background slider */}
           <div
-            className="absolute top-0.5 bottom-0.5 bg-gradient-to-r from-blue-500 to-blue-600 rounded transition-all duration-300 ease-out shadow-md"
+            className="absolute top-1 bottom-1 bg-gradient-to-r from-blue-500 to-blue-600 rounded transition-all duration-300 ease-out shadow-md"
             style={{ left: getSliderPosition(), width: getSliderWidth() }}
           />
 
@@ -79,7 +85,7 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
-              className={`relative z-10 px-6 py-1.5 rounded text-xs font-medium transition-all duration-300 ${
+              className={`relative z-10 px-6 py-1.5 rounded text-xs font-medium transition-all duration-300 text-center ${
                 activeTab === tab.id
                   ? "text-white"
                   : "text-theme-secondary hover:text-theme-primary"
